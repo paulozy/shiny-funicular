@@ -2,5 +2,6 @@
 node_modules
 out
 *.log
+*.tsbuildinfo
 .env.local
-./plans/
+plans/
