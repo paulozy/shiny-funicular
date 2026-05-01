@@ -1,17 +1,17 @@
 'use client'
 
-import { CSSProperties, useState, useId } from 'react'
-import { UserInfo } from '@/lib/types/auth'
-import { OrganizationConfigResponse, UpdateOrganizationConfigRequest } from '@/lib/types/organization'
-import { apiFetch } from '@/lib/api/client'
-import { T } from '@/lib/tokens'
+import { MFIcon } from '@/components/icons/MFIcon'
 import { AppShell } from '@/components/shell/AppShell'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
-import { MFIcon } from '@/components/icons/MFIcon'
+import { apiFetch } from '@/lib/api/client'
+import { T } from '@/lib/tokens'
+import { UserInfo } from '@/lib/types/auth'
+import { OrganizationConfigResponse, UpdateOrganizationConfigRequest } from '@/lib/types/organization'
+import { CSSProperties, useId, useState } from 'react'
 
 interface SettingsClientProps {
   user: UserInfo
@@ -108,6 +108,7 @@ function SecretField({
     gridTemplateColumns: '1fr auto',
     gap: 8,
     alignItems: 'end',
+    marginBottom: 14,
   }
 
   return (
@@ -236,11 +237,15 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     value,
     onChange,
     options,
+    disabled = false,
+    hint,
   }: {
     label: string
     value: string
     onChange: (value: string) => void
     options: Array<{ value: string; label: string }>
+    disabled?: boolean
+    hint?: string
   }) => {
     const selectId = useId()
     const containerStyle: CSSProperties = {
@@ -264,7 +269,15 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
       borderRadius: T.radius.input,
       background: T.surface,
       color: T.ink,
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.6 : 1,
+    }
+
+    const hintStyle: CSSProperties = {
+      marginTop: '4px',
+      fontSize: '11.5px',
+      color: T.faint,
+      display: 'block',
     }
 
     return (
@@ -272,13 +285,44 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
         <label htmlFor={selectId} style={labelStyle}>
           {label}
         </label>
-        <select id={selectId} style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)}>
+        <select
+          id={selectId}
+          style={selectStyle}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
         </select>
+        {hint && <span style={hintStyle}>{hint}</span>}
+      </div>
+    )
+  }
+
+  const FieldGroup = ({ title, children }: { title: string; children: React.ReactNode }) => {
+    const groupStyle: CSSProperties = {
+      marginBottom: 20,
+    }
+
+    const groupTitleStyle: CSSProperties = {
+      fontSize: 12,
+      fontWeight: 600,
+      color: T.ink3,
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottom: `1px solid ${T.border}`,
+    }
+
+    return (
+      <div style={groupStyle}>
+        <div style={groupTitleStyle}>{title}</div>
+        {children}
       </div>
     )
   }
@@ -399,7 +443,9 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 14,
+    paddingBottom: 12,
+    marginBottom: 16,
+    borderBottom: `1px solid ${T.border}`,
   }
 
   const sectionTitleStyle: CSSProperties = {
@@ -407,25 +453,17 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     fontWeight: 600,
   }
 
-  const statusRowStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  }
-
   const toggleRowStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    padding: '12px 0 16px',
+    marginBottom: 14,
   }
 
   const oauthGridStyle: CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '0 16px',
+    gap: '16px 24px',
   }
 
   if (!isAdmin) {
@@ -494,164 +532,195 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
         <div style={tabContentStyle}>
           {activeTab === 'ia' && (
             <section style={sectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <MFIcon name="sparkles" size={15} color={T.ai} />
-                <span style={sectionTitleStyle}>IA</span>
-              </div>
-              <div style={statusRowStyle}>
+              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MFIcon name="sparkles" size={15} color={T.ai} />
+                  <span style={sectionTitleStyle}>IA</span>
+                </div>
                 <Tag variant={configured(config, 'anthropic_api_key') ? 'ok' : 'warn'}>
-                  Anthropic {configured(config, 'anthropic_api_key') ? 'configurado' : 'pendente'}
+                  {configured(config, 'anthropic_api_key') ? '✓ Configurado' : 'Pendente'}
                 </Tag>
               </div>
-              <SecretField
-                name="anthropic_api_key"
-                value={secrets.anthropic_api_key}
-                isConfigured={configured(config, 'anthropic_api_key')}
-                onChange={(value) => setSecret('anthropic_api_key', value)}
-                onClear={() => clearSecret('anthropic_api_key')}
-              />
-              <Input
-                label="Tokens por hora"
-                type="number"
-                min={1}
-                value={config.anthropic_tokens_per_hour}
-                onChange={(event) => setConfig((prev) => ({ ...prev, anthropic_tokens_per_hour: Number(event.target.value) }))}
-              />
+              <FieldGroup title="Chave de API">
+                <SecretField
+                  name="anthropic_api_key"
+                  value={secrets.anthropic_api_key}
+                  isConfigured={configured(config, 'anthropic_api_key')}
+                  onChange={(value) => setSecret('anthropic_api_key', value)}
+                  onClear={() => clearSecret('anthropic_api_key')}
+                />
+              </FieldGroup>
+              <FieldGroup title="Limites">
+                <Input
+                  label="Tokens por hora"
+                  type="number"
+                  min={1}
+                  value={config.anthropic_tokens_per_hour}
+                  onChange={(event) => setConfig((prev) => ({ ...prev, anthropic_tokens_per_hour: Number(event.target.value) }))}
+                />
+              </FieldGroup>
             </section>
           )}
 
           {activeTab === 'github' && (
             <section style={sectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <MFIcon name="branch" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>GitHub</span>
+              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MFIcon name="branch" size={15} color={T.accent} />
+                  <span style={sectionTitleStyle}>GitHub</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>
+                    Token {configured(config, 'github_token') ? '✓' : '✗'}
+                  </Tag>
+                  <Tag variant={config.github_pr_review_enabled ? 'ok' : 'default'}>
+                    Review {config.github_pr_review_enabled ? '✓' : '✗'}
+                  </Tag>
+                </div>
               </div>
-              <div style={statusRowStyle}>
-                <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>
-                  Token {configured(config, 'github_token') ? 'configurado' : 'pendente'}
-                </Tag>
-                <Tag variant={config.github_pr_review_enabled ? 'ok' : 'default'}>
-                  Review de PR {config.github_pr_review_enabled ? 'ativo' : 'inativo'}
-                </Tag>
-              </div>
-              <SecretField
-                name="github_token"
-                value={secrets.github_token}
-                isConfigured={configured(config, 'github_token')}
-                onChange={(value) => setSecret('github_token', value)}
-                onClear={() => clearSecret('github_token')}
-              />
-              <div style={toggleRowStyle}>
-                <Toggle
-                  checked={config.github_pr_review_enabled}
-                  onChange={(checked) => setConfig((prev) => ({ ...prev, github_pr_review_enabled: checked }))}
-                  label="Revisão automática de PRs"
+              <FieldGroup title="Acesso">
+                <SecretField
+                  name="github_token"
+                  value={secrets.github_token}
+                  isConfigured={configured(config, 'github_token')}
+                  onChange={(value) => setSecret('github_token', value)}
+                  onClear={() => clearSecret('github_token')}
                 />
-              </div>
-              <Input
-                label="Webhook base URL"
-                value={config.webhook_base_url ?? ''}
-                onChange={(event) => setConfig((prev) => ({ ...prev, webhook_base_url: event.target.value }))}
-                placeholder="https://idp.example.com"
-              />
+              </FieldGroup>
+              <FieldGroup title="Revisão de Pull Requests">
+                <div style={toggleRowStyle}>
+                  <Toggle
+                    checked={config.github_pr_review_enabled}
+                    onChange={(checked) => setConfig((prev) => ({ ...prev, github_pr_review_enabled: checked }))}
+                    label="Revisão automática"
+                  />
+                </div>
+                <Input
+                  label="Webhook base URL"
+                  value={config.webhook_base_url ?? ''}
+                  onChange={(event) => setConfig((prev) => ({ ...prev, webhook_base_url: event.target.value }))}
+                  placeholder="https://idp.example.com"
+                  hint="URL base para receber webhooks de eventos do GitHub"
+                />
+              </FieldGroup>
             </section>
           )}
 
           {activeTab === 'search' && (
             <section style={sectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <MFIcon name="search" size={15} color={T.ok} />
-                <span style={sectionTitleStyle}>Busca semântica</span>
-              </div>
-              <div style={statusRowStyle}>
+              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MFIcon name="search" size={15} color={T.ok} />
+                  <span style={sectionTitleStyle}>Busca semântica</span>
+                </div>
                 <Tag variant={configured(config, 'voyage_api_key') ? 'ok' : 'warn'}>
-                  Voyage {configured(config, 'voyage_api_key') ? 'configurado' : 'pendente'}
+                  {configured(config, 'voyage_api_key') ? '✓ Configurado' : 'Pendente'}
                 </Tag>
               </div>
-              <SelectField
-                label="Provider"
-                value={config.embeddings_provider}
-                onChange={(value) => setConfig((prev) => ({ ...prev, embeddings_provider: value }))}
-                options={[{ value: 'voyage', label: 'Voyage' }]}
-              />
-              <SecretField
-                name="voyage_api_key"
-                value={secrets.voyage_api_key}
-                isConfigured={configured(config, 'voyage_api_key')}
-                onChange={(value) => setSecret('voyage_api_key', value)}
-                onClear={() => clearSecret('voyage_api_key')}
-              />
-              <Input
-                label="Modelo"
-                value={config.embeddings_model}
-                onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_model: event.target.value }))}
-              />
-              <Input
-                label="Dimensões"
-                type="number"
-                min={1}
-                value={config.embeddings_dimensions}
-                onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_dimensions: Number(event.target.value) }))}
-              />
+              <FieldGroup title="Provider">
+                <SelectField
+                  label="Serviço de embeddings"
+                  value={config.embeddings_provider}
+                  onChange={(value) => setConfig((prev) => ({ ...prev, embeddings_provider: value }))}
+                  options={[{ value: 'voyage', label: 'Voyage' }]}
+                  disabled={true}
+                  hint="Somente Voyage disponível atualmente"
+                />
+              </FieldGroup>
+              <FieldGroup title="Chave de API">
+                <SecretField
+                  name="voyage_api_key"
+                  value={secrets.voyage_api_key}
+                  isConfigured={configured(config, 'voyage_api_key')}
+                  onChange={(value) => setSecret('voyage_api_key', value)}
+                  onClear={() => clearSecret('voyage_api_key')}
+                />
+              </FieldGroup>
+              <FieldGroup title="Modelo">
+                <Input
+                  label="Nome do modelo"
+                  value={config.embeddings_model}
+                  onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_model: event.target.value }))}
+                  hint="Exemplo: voyage-code-3"
+                />
+                <Input
+                  label="Dimensões do vetor"
+                  type="number"
+                  min={1}
+                  value={config.embeddings_dimensions}
+                  onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_dimensions: Number(event.target.value) }))}
+                  hint="Número de dimensões para os embeddings"
+                />
+              </FieldGroup>
             </section>
           )}
 
           {activeTab === 'oauth' && (
             <section style={sectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <MFIcon name="lock" size={15} color={T.ink3} />
-                <span style={sectionTitleStyle}>OAuth</span>
-              </div>
-              <div style={statusRowStyle}>
-                <Tag variant={config.github_client_id_configured ? 'ok' : 'warn'}>GitHub client ID</Tag>
-                <Tag variant={configured(config, 'github_client_secret') ? 'ok' : 'warn'}>GitHub secret</Tag>
-                <Tag variant={config.gitlab_client_id_configured ? 'ok' : 'warn'}>GitLab client ID</Tag>
-                <Tag variant={configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>GitLab secret</Tag>
+              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MFIcon name="lock" size={15} color={T.ink3} />
+                  <span style={sectionTitleStyle}>OAuth 2.0</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <Tag variant={config.github_client_id_configured && configured(config, 'github_client_secret') ? 'ok' : 'warn'}>
+                    GitHub {config.github_client_id_configured && configured(config, 'github_client_secret') ? '✓' : '✗'}
+                  </Tag>
+                  <Tag variant={config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>
+                    GitLab {config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? '✓' : '✗'}
+                  </Tag>
+                </div>
               </div>
               <div style={oauthGridStyle}>
                 <div>
-                  <Input
-                    label="GitHub callback URL"
-                    value={config.github_callback_url ?? ''}
-                    onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))}
-                  />
-                  <SecretField
-                    name="github_client_id"
-                    value={secrets.github_client_id}
-                    isConfigured={configured(config, 'github_client_id')}
-                    onChange={(value) => setSecret('github_client_id', value)}
-                    onClear={() => clearSecret('github_client_id')}
-                    secret={false}
-                  />
-                  <SecretField
-                    name="github_client_secret"
-                    value={secrets.github_client_secret}
-                    isConfigured={configured(config, 'github_client_secret')}
-                    onChange={(value) => setSecret('github_client_secret', value)}
-                    onClear={() => clearSecret('github_client_secret')}
-                  />
+                  <FieldGroup title="GitHub">
+                    <Input
+                      label="Callback URL"
+                      value={config.github_callback_url ?? ''}
+                      onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))}
+                      hint="URL para redirecionar após autenticação"
+                    />
+                    <SecretField
+                      name="github_client_id"
+                      value={secrets.github_client_id}
+                      isConfigured={configured(config, 'github_client_id')}
+                      onChange={(value) => setSecret('github_client_id', value)}
+                      onClear={() => clearSecret('github_client_id')}
+                      secret={false}
+                    />
+                    <SecretField
+                      name="github_client_secret"
+                      value={secrets.github_client_secret}
+                      isConfigured={configured(config, 'github_client_secret')}
+                      onChange={(value) => setSecret('github_client_secret', value)}
+                      onClear={() => clearSecret('github_client_secret')}
+                    />
+                  </FieldGroup>
                 </div>
                 <div>
-                  <Input
-                    label="GitLab callback URL"
-                    value={config.gitlab_callback_url ?? ''}
-                    onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))}
-                  />
-                  <SecretField
-                    name="gitlab_client_id"
-                    value={secrets.gitlab_client_id}
-                    isConfigured={configured(config, 'gitlab_client_id')}
-                    onChange={(value) => setSecret('gitlab_client_id', value)}
-                    onClear={() => clearSecret('gitlab_client_id')}
-                    secret={false}
-                  />
-                  <SecretField
-                    name="gitlab_client_secret"
-                    value={secrets.gitlab_client_secret}
-                    isConfigured={configured(config, 'gitlab_client_secret')}
-                    onChange={(value) => setSecret('gitlab_client_secret', value)}
-                    onClear={() => clearSecret('gitlab_client_secret')}
-                  />
+                  <FieldGroup title="GitLab">
+                    <Input
+                      label="Callback URL"
+                      value={config.gitlab_callback_url ?? ''}
+                      onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))}
+                      hint="URL para redirecionar após autenticação"
+                    />
+                    <SecretField
+                      name="gitlab_client_id"
+                      value={secrets.gitlab_client_id}
+                      isConfigured={configured(config, 'gitlab_client_id')}
+                      onChange={(value) => setSecret('gitlab_client_id', value)}
+                      onClear={() => clearSecret('gitlab_client_id')}
+                      secret={false}
+                    />
+                    <SecretField
+                      name="gitlab_client_secret"
+                      value={secrets.gitlab_client_secret}
+                      isConfigured={configured(config, 'gitlab_client_secret')}
+                      onChange={(value) => setSecret('gitlab_client_secret', value)}
+                      onClear={() => clearSecret('gitlab_client_secret')}
+                    />
+                  </FieldGroup>
                 </div>
               </div>
             </section>
