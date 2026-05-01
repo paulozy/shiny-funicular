@@ -8,7 +8,8 @@ let refreshPromise: Promise<void> | null = null
 class AuthError extends Error {
   constructor(
     public code: string,
-    message: string
+    message: string,
+    public status?: number
   ) {
     super(message)
     this.name = 'AuthError'
@@ -62,7 +63,7 @@ export async function apiFetch<T>(
       .json()
       .catch(() => ({ error: `http_${res.status}` }))
     const normalized = normalizeAuthError(body)
-    throw new AuthError(normalized.code, normalized.message)
+    throw new AuthError(normalized.code, normalized.message, res.status)
   }
 
   if (res.status === 204) {

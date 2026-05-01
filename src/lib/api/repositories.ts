@@ -1,11 +1,12 @@
+import { ErrorResponse } from '@/lib/types/auth'
 import {
   BackendRepositoryListResponse,
   BackendRepositoryResponse,
   CreateRepositoryRequest,
   RepositoryListResponse,
   RepositoryResponse,
+  RepositoryStats,
 } from '@/lib/types/repository'
-import { ErrorResponse } from '@/lib/types/auth'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
 
@@ -81,6 +82,15 @@ export function normalizeRepositoryList(body: BackendRepositoryListResponse): Re
   }
 }
 
+function normalizeRepositoryStats(stats?: Partial<RepositoryStats> | null): RepositoryStats {
+  return {
+    total_analyses: Number(stats?.total_analyses || 0),
+    latest_quality_score: Number(stats?.latest_quality_score || 0),
+    has_analysis: Boolean(stats?.has_analysis),
+    last_analyzed_at: stats?.last_analyzed_at || null,
+  }
+}
+
 export function normalizeRepository(repo: BackendRepositoryResponse): RepositoryResponse {
   const provider = repo.provider || repo.type || 'custom'
   return {
@@ -95,6 +105,9 @@ export function normalizeRepository(repo: BackendRepositoryResponse): Repository
     is_public: repo.is_public,
     metadata: repo.metadata || {},
     sync_status: repo.sync_status,
+    analysis_status: repo.analysis_status ?? null,
+    reviews_count: repo.reviews_count ?? null,
+    stats: normalizeRepositoryStats(repo.stats),
     created_at: repo.created_at,
     updated_at: repo.updated_at,
     organization_id: repo.organization_id,

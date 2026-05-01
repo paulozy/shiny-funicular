@@ -13,6 +13,14 @@ describe('repository api normalization', () => {
           organization_id: 'org-1',
           is_public: false,
           metadata: { default_branch: 'main', pr_count: 2 },
+          analysis_status: 'completed',
+          reviews_count: 5,
+          stats: {
+            total_analyses: 10,
+            latest_quality_score: 85,
+            has_analysis: true,
+            last_analyzed_at: '2026-04-30T14:23:15.123Z',
+          },
           created_at: '2026-01-01T00:00:00Z',
           updated_at: '2026-01-02T00:00:00Z',
         },
@@ -30,6 +38,14 @@ describe('repository api normalization', () => {
       provider: 'github',
       is_private: true,
       organization_id: 'org-1',
+      analysis_status: 'completed',
+      reviews_count: 5,
+      stats: {
+        total_analyses: 10,
+        latest_quality_score: 85,
+        has_analysis: true,
+        last_analyzed_at: '2026-04-30T14:23:15.123Z',
+      },
     })
     expect(normalized.total).toBe(1)
   })
@@ -58,6 +74,12 @@ describe('repository api normalization', () => {
       full_name: 'org/web',
       provider: 'github',
       is_private: false,
+      stats: {
+        total_analyses: 0,
+        latest_quality_score: 0,
+        has_analysis: false,
+        last_analyzed_at: null,
+      },
     })
   })
 })

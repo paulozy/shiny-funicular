@@ -47,6 +47,21 @@ export async function backendSemanticSearch(
   return handleResponse<SemanticSearchResponse>(response)
 }
 
+export async function backendSemanticSearchStream(
+  accessToken: string,
+  repoId: string,
+  params: SemanticSearchParams
+): Promise<Response> {
+  const query = buildSemanticSearchQuery({ ...params, synthesize: true })
+  return fetch(getApiUrl(`/repositories/${repoId}/search?${query}`), {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'text/event-stream',
+    },
+  })
+}
+
 export async function backendGenerateEmbeddings(
   accessToken: string,
   repoId: string,
