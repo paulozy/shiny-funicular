@@ -1,11 +1,10 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
+import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch, normalizeMinScore, normalizeSearchLimit } from '@/lib/search'
-import { AppShell } from '@/components/shell/AppShell'
-import { RepoSearchBox } from '@/components/search/RepoSearchBox'
-import { SearchResultsClient } from '@/components/search/SearchResultsClient'
+import { RepositorySearchExperience } from './RepositorySearchExperience'
 
 interface SearchPageProps {
   params: Promise<{ id: string }>
@@ -32,7 +31,10 @@ export default async function RepositorySearchPage({ params, searchParams }: Sea
     redirect('/login')
   }
 
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
+  const [repos, orgConfig] = await Promise.all([
+    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
+    user.role === 'admin' ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
+  ])
   const repo = repos?.repositories.find((item) => item.id === id)
 
   if (!repo) {
@@ -42,21 +44,20 @@ export default async function RepositorySearchPage({ params, searchParams }: Sea
   const branch = queryParams.branch || getDefaultSearchBranch(repo)
   const q = queryParams.q || ''
 
+  if (!repos) {
+    notFound()
+  }
+
   return (
-    <AppShell
+    <RepositorySearchExperience
       user={user}
-      activeHub="code"
-      breadcrumb={['Code', repo.name, 'busca']}
-      searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} initialQuery={q} />}
-    >
-      <SearchResultsClient
-        key={`${repo.id}:${q}:${branch}:${queryParams.limit || ''}:${queryParams.min_score || ''}`}
-        repo={repo}
-        initialQuery={q}
-        initialBranch={branch}
-        initialLimit={normalizeSearchLimit(queryParams.limit)}
-        initialMinScore={normalizeMinScore(queryParams.min_score)}
-      />
-    </AppShell>
+      repo={repo}
+      repos={repos}
+      orgConfig={orgConfig}
+      initialQuery={q}
+      initialBranch={branch}
+      initialLimit={normalizeSearchLimit(queryParams.limit)}
+      initialMinScore={normalizeMinScore(queryParams.min_score)}
+    />
   )
 }
