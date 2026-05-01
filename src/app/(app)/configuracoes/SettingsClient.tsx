@@ -128,8 +128,6 @@ function SecretField({
   )
 }
 
-type Tab = 'ia' | 'github' | 'search' | 'oauth'
-
 export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
   const [config, setConfig] = useState(baseline)
@@ -138,7 +136,6 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('ia')
 
   const isAdmin = user.role === 'admin'
   const summaryItems = [
@@ -356,31 +353,12 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     fontStyle: 'italic',
   }
 
-  const tabBarStyle: CSSProperties = {
-    position: 'sticky',
-    top: 54,
-    zIndex: 2,
-    display: 'flex',
-    gap: 0,
-    borderBottom: `1px solid ${T.border}`,
-    background: T.bg,
-    paddingLeft: 0,
-    margin: '0 -24px 0',
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+    gap: 14,
+    alignItems: 'start',
   }
-
-  const tabStyle = (isActive: boolean): CSSProperties => ({
-    padding: '12px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    color: isActive ? T.ink : T.ink3,
-    background: 'transparent',
-    borderTop: 'none',
-    borderLeft: 'none',
-    borderRight: 'none',
-    borderBottom: isActive ? `2px solid ${T.accent}` : `2px solid transparent`,
-    cursor: 'pointer',
-    transition: 'all 200ms ease-in-out',
-  })
 
   const titleStyle: CSSProperties = {
     margin: 0,
@@ -396,11 +374,6 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     textTransform: 'uppercase',
     color: T.faint,
     marginBottom: 4,
-  }
-
-  const tabContentStyle: CSSProperties = {
-    paddingTop: 16,
-    paddingBottom: 24,
   }
 
   const sectionStyle: CSSProperties = {
@@ -463,12 +436,6 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     marginBottom: 14,
   }
 
-  const oauthGridStyle: CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '16px 24px',
-  }
-
   if (!isAdmin) {
     return (
       <AppShell user={user} activeHub="settings" breadcrumb={['Configurações']}>
@@ -497,21 +464,6 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
           </div>
         </div>
 
-        <div style={tabBarStyle}>
-          <button style={tabStyle(activeTab === 'ia')} onClick={() => setActiveTab('ia')}>
-            IA
-          </button>
-          <button style={tabStyle(activeTab === 'github')} onClick={() => setActiveTab('github')}>
-            GitHub
-          </button>
-          <button style={tabStyle(activeTab === 'search')} onClick={() => setActiveTab('search')}>
-            Busca semântica
-          </button>
-          <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
-            OAuth
-          </button>
-        </div>
-
         {message && <Alert variant="ok">{message}</Alert>}
         {error && <Alert variant="danger">{error}</Alert>}
 
@@ -532,9 +484,8 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
           </div>
         </section>
 
-        <div style={tabContentStyle}>
-          {activeTab === 'ia' && (
-            <section style={sectionStyle}>
+        <div style={gridStyle}>
+          <section style={sectionStyle}>
               <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <MFIcon name="sparkles" size={15} color={T.ai} />
@@ -559,10 +510,8 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 onChange={(event) => setConfig((prev) => ({ ...prev, anthropic_tokens_per_hour: Number(event.target.value) }))}
               />
             </section>
-          )}
 
-          {activeTab === 'github' && (
-            <section style={sectionStyle}>
+          <section style={sectionStyle}>
               <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <MFIcon name="branch" size={15} color={T.accent} />
@@ -594,10 +543,8 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 placeholder="https://idp.example.com"
               />
             </section>
-          )}
 
-          {activeTab === 'search' && (
-            <section style={sectionStyle}>
+          <section style={sectionStyle}>
               <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <MFIcon name="search" size={15} color={T.ok} />
@@ -635,38 +582,36 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_dimensions: Number(event.target.value) }))}
               />
             </section>
-          )}
 
-          {activeTab === 'oauth' && (
-            <section style={sectionStyle}>
-              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MFIcon name="lock" size={15} color={T.ink3} />
-                  <span style={sectionTitleStyle}>OAuth 2.0</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <Tag variant={config.github_client_id_configured && configured(config, 'github_client_secret') ? 'ok' : 'warn'}>GitHub {config.github_client_id_configured && configured(config, 'github_client_secret') ? '✓' : '✗'}</Tag>
-                  <Tag variant={config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>GitLab {config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? '✓' : '✗'}</Tag>
-                </div>
+          <section style={sectionStyle}>
+            <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <MFIcon name="branch" size={15} color={T.accent} />
+                <span style={sectionTitleStyle}>GitHub OAuth</span>
               </div>
-              <div style={oauthGridStyle}>
-                <div>
-                  <FieldGroup title="GitHub">
-                    <Input label="Callback URL" value={config.github_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))} />
-                    <SecretField name="github_client_id" value={secrets.github_client_id} isConfigured={configured(config, 'github_client_id')} onChange={(value) => setSecret('github_client_id', value)} onClear={() => clearSecret('github_client_id')} secret={false} />
-                    <SecretField name="github_client_secret" value={secrets.github_client_secret} isConfigured={configured(config, 'github_client_secret')} onChange={(value) => setSecret('github_client_secret', value)} onClear={() => clearSecret('github_client_secret')} />
-                  </FieldGroup>
-                </div>
-                <div>
-                  <FieldGroup title="GitLab">
-                    <Input label="Callback URL" value={config.gitlab_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))} />
-                    <SecretField name="gitlab_client_id" value={secrets.gitlab_client_id} isConfigured={configured(config, 'gitlab_client_id')} onChange={(value) => setSecret('gitlab_client_id', value)} onClear={() => clearSecret('gitlab_client_id')} secret={false} />
-                    <SecretField name="gitlab_client_secret" value={secrets.gitlab_client_secret} isConfigured={configured(config, 'gitlab_client_secret')} onChange={(value) => setSecret('gitlab_client_secret', value)} onClear={() => clearSecret('gitlab_client_secret')} />
-                  </FieldGroup>
-                </div>
+              <Tag variant={config.github_client_id_configured && configured(config, 'github_client_secret') ? 'ok' : 'warn'}>
+                {config.github_client_id_configured && configured(config, 'github_client_secret') ? '✓' : '✗'}
+              </Tag>
+            </div>
+            <Input label="Callback URL" value={config.github_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))} />
+            <SecretField name="github_client_id" value={secrets.github_client_id} isConfigured={configured(config, 'github_client_id')} onChange={(value) => setSecret('github_client_id', value)} onClear={() => clearSecret('github_client_id')} secret={false} />
+            <SecretField name="github_client_secret" value={secrets.github_client_secret} isConfigured={configured(config, 'github_client_secret')} onChange={(value) => setSecret('github_client_secret', value)} onClear={() => clearSecret('github_client_secret')} />
+          </section>
+
+          <section style={sectionStyle}>
+            <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <MFIcon name="git" size={15} color={T.faint} />
+                <span style={sectionTitleStyle}>GitLab OAuth</span>
               </div>
-            </section>
-          )}
+              <Tag variant={config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>
+                {config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? '✓' : '✗'}
+              </Tag>
+            </div>
+            <Input label="Callback URL" value={config.gitlab_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))} />
+            <SecretField name="gitlab_client_id" value={secrets.gitlab_client_id} isConfigured={configured(config, 'gitlab_client_id')} onChange={(value) => setSecret('gitlab_client_id', value)} onClear={() => clearSecret('gitlab_client_id')} secret={false} />
+            <SecretField name="gitlab_client_secret" value={secrets.gitlab_client_secret} isConfigured={configured(config, 'gitlab_client_secret')} onChange={(value) => setSecret('gitlab_client_secret', value)} onClear={() => clearSecret('gitlab_client_secret')} />
+          </section>
         </div>
       </div>
     </AppShell>
