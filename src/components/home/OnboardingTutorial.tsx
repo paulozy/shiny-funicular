@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -8,10 +9,12 @@ import { Button } from '@/components/ui/Button'
 
 interface OnboardingTutorialProps {
   orgConfig?: OrganizationConfigResponse | null
+  canConfigure?: boolean
   onImportRepo: () => void
 }
 
-export function OnboardingTutorial({ orgConfig, onImportRepo }: OnboardingTutorialProps) {
+export function OnboardingTutorial({ orgConfig, canConfigure = false, onImportRepo }: OnboardingTutorialProps) {
+  const router = useRouter()
   const containerStyle: CSSProperties = {
     padding: '40px 60px',
     maxWidth: 600,
@@ -94,27 +97,31 @@ export function OnboardingTutorial({ orgConfig, onImportRepo }: OnboardingTutori
       <p style={subtitleStyle}>Configure sua organização e adicione seus primeiros repositórios para começar.</p>
 
       {/* Step 1: Organization Config */}
-      {orgConfig && (
+      {(orgConfig || canConfigure) && (
         <div style={stepStyle}>
           <div style={stepNumberStyle}>1</div>
           <div style={stepContentStyle}>
             <div style={stepTitleStyle}>Status da Organização</div>
-            <div style={stepTextStyle}>
-              {[
-                { key: 'GitHub Token', value: orgConfig.github_token },
-                { key: 'Chave Anthropic', value: orgConfig.anthropic_key },
-                { key: 'Chave Voyage', value: orgConfig.voyage_key },
-                { key: 'Webhook Base URL', value: orgConfig.webhook_base_url },
-              ].map((item) => (
-                <div key={item.key} style={configKeyStyle(!!item.value)}>
-                  <MFIcon name={item.value ? 'check' : 'x'} size={12} color={item.value ? T.ok : T.danger} />
-                  <span>
-                    {item.key}: <strong>{item.value ? '✓ Configurado' : '✗ Não configurado'}</strong>
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Button variant="default" size="sm">
+            {orgConfig ? (
+              <div style={stepTextStyle}>
+                {[
+                  { key: 'GitHub Token', value: orgConfig.github_token_configured },
+                  { key: 'Chave Anthropic', value: orgConfig.anthropic_api_key_configured },
+                  { key: 'Chave Voyage', value: orgConfig.voyage_api_key_configured },
+                  { key: 'Webhook Base URL', value: !!orgConfig.webhook_base_url },
+                ].map((item) => (
+                  <div key={item.key} style={configKeyStyle(!!item.value)}>
+                    <MFIcon name={item.value ? 'check' : 'x'} size={12} color={item.value ? T.ok : T.danger} />
+                    <span>
+                      {item.key}: <strong>{item.value ? '✓ Configurado' : '✗ Não configurado'}</strong>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={stepTextStyle}>Configure as chaves e features da organização antes de ativar os fluxos com IA.</div>
+            )}
+            <Button variant="default" size="sm" onClick={() => router.push('/settings')}>
               Configurar Organização
             </Button>
           </div>
@@ -123,7 +130,7 @@ export function OnboardingTutorial({ orgConfig, onImportRepo }: OnboardingTutori
 
       {/* Step 2: Import First Repo */}
       <div style={stepStyle}>
-        <div style={stepNumberStyle}>{orgConfig ? '2' : '1'}</div>
+        <div style={stepNumberStyle}>{orgConfig || canConfigure ? '2' : '1'}</div>
         <div style={stepContentStyle}>
           <div style={stepTitleStyle}>Adicionar Primeiro Repositório</div>
           <div style={stepTextStyle}>

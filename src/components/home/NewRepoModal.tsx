@@ -57,7 +57,7 @@ export function NewRepoModal({ isOpen, onClose, onSuccess }: NewRepoModalProps) 
   const overlayStyle: CSSProperties = {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(20, 18, 15, 0.32)',
+    background: T.overlay,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -70,7 +70,7 @@ export function NewRepoModal({ isOpen, onClose, onSuccess }: NewRepoModalProps) 
     background: T.surface,
     border: `1px solid ${T.borderStrong}`,
     borderRadius: 12,
-    boxShadow: '0 24px 60px rgba(0,0,0,.18)',
+    boxShadow: T.shadow,
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
