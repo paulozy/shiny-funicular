@@ -123,6 +123,12 @@ describe('/api/repositories', () => {
 
       expect(res.status).toBe(201)
       expect(data).toEqual(mockNewRepo)
+      expect(repositories.backendCreateRepository).toHaveBeenCalledWith('valid-token', {
+        url: 'https://github.com/org/test-repo',
+        description: 'test',
+        is_private: false,
+        is_public: true,
+      })
     })
   })
 })

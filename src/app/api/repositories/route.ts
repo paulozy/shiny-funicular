@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const response = await backendCreateRepository(token, body)
+    const response = await backendCreateRepository(token, {
+      ...body,
+      is_public: body.is_public ?? (body.is_private === undefined ? undefined : !body.is_private),
+    })
     return NextResponse.json(response, { status: 201 })
   } catch (error) {
     const normalized = normalizeAuthError(

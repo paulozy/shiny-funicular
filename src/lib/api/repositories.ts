@@ -1,4 +1,10 @@
-import { CreateRepositoryRequest, RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
+import {
+  BackendRepositoryListResponse,
+  BackendRepositoryResponse,
+  CreateRepositoryRequest,
+  RepositoryListResponse,
+  RepositoryResponse,
+} from '@/lib/types/repository'
 import { ErrorResponse } from '@/lib/types/auth'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
@@ -40,7 +46,8 @@ export async function backendGetRepositories(
     },
   })
 
-  return handleResponse<RepositoryListResponse>(response)
+  const body = await handleResponse<BackendRepositoryListResponse>(response)
+  return normalizeRepositoryList(body)
 }
 
 export async function backendCreateRepository(
@@ -53,8 +60,43 @@ export async function backendCreateRepository(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      url: body.url,
+      description: body.description,
+      is_public: body.is_public ?? (body.is_private === undefined ? undefined : !body.is_private),
+    }),
   })
 
-  return handleResponse<RepositoryResponse>(response)
+  const created = await handleResponse<BackendRepositoryResponse>(response)
+  return normalizeRepository(created)
+}
+
+export function normalizeRepositoryList(body: BackendRepositoryListResponse): RepositoryListResponse {
+  const rawItems = body.repositories || body.items || []
+  return {
+    repositories: rawItems.map(normalizeRepository),
+    total: Number(body.total || rawItems.length),
+    limit: Number(body.limit || rawItems.length),
+    offset: Number(body.offset || 0),
+  }
+}
+
+export function normalizeRepository(repo: BackendRepositoryResponse): RepositoryResponse {
+  const provider = repo.provider || repo.type || 'custom'
+  return {
+    id: repo.id,
+    name: repo.name,
+    full_name: repo.full_name || repo.name,
+    description: repo.description,
+    url: repo.url,
+    provider,
+    type: repo.type || provider,
+    is_private: repo.is_private ?? !repo.is_public,
+    is_public: repo.is_public,
+    metadata: repo.metadata || {},
+    sync_status: repo.sync_status,
+    created_at: repo.created_at,
+    updated_at: repo.updated_at,
+    organization_id: repo.organization_id,
+  }
 }

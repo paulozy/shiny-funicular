@@ -9,6 +9,7 @@ interface AppShellProps {
   user: UserInfo
   activeHub?: string
   breadcrumb?: string[]
+  searchSlot?: ReactNode
   topRight?: ReactNode
   aiPanel?: ReactNode
   aiPanelWidth?: number
@@ -57,6 +58,7 @@ export function AppShell({
   user,
   activeHub = 'code',
   breadcrumb = [],
+  searchSlot,
   topRight,
   aiPanel,
   aiPanelWidth = 320,
@@ -64,7 +66,8 @@ export function AppShell({
 }: AppShellProps) {
   const containerStyle: CSSProperties = {
     width: '100%',
-    height: '100%',
+    minHeight: '100vh',
+    height: '100vh',
     background: T.bg,
     display: 'flex',
     overflow: 'hidden',
@@ -258,24 +261,26 @@ export function AppShell({
           ))}
           <div style={{ flex: 1 }} />
 
-          <div style={searchBarStyle}>
-            <MFIcon name="search" size={13} color={T.faint} />
-            <span>buscar tudo…</span>
-            <span
-              style={{
-                marginLeft: 'auto',
-                fontSize: 10.5,
-                padding: '1px 5px',
-                border: `1px solid ${T.border}`,
-                borderRadius: 4,
-                background: T.surface,
-                color: T.ink3,
-                fontFamily: T.mono,
-              }}
-            >
-              ⌘K
-            </span>
-          </div>
+          {searchSlot || (
+            <div style={searchBarStyle}>
+              <MFIcon name="search" size={13} color={T.faint} />
+              <span>buscar tudo…</span>
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: 10.5,
+                  padding: '1px 5px',
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 4,
+                  background: T.surface,
+                  color: T.ink3,
+                  fontFamily: T.mono,
+                }}
+              >
+                ⌘K
+              </span>
+            </div>
+          )}
 
           {topRight}
 

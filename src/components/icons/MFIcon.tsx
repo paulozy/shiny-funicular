@@ -18,7 +18,11 @@ export function MFIcon({
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
   }
-  const s = { width: size, height: size, display: 'block', flexShrink: 0 }
+  const s = {
+    width: size,
+    height: size,
+    style: { display: 'block', flexShrink: 0 },
+  }
 
   switch (name) {
     case 'home':
