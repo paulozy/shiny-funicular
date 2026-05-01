@@ -86,7 +86,7 @@ export function SearchResultItem({ repoId, result }: SearchResultItemProps) {
     fontSize: 12,
     lineHeight: 1.55,
     color: T.ink2,
-    background: '#fbfbf8',
+    background: T.surfaceAlt,
     border: `1px solid ${T.border}`,
     borderRadius: 6,
     padding: 12,
