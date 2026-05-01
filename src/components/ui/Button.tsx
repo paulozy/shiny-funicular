@@ -31,18 +31,18 @@ export function Button({
 
   const variantStyles: Record<Variant, CSSProperties> = {
     default: {
-      backgroundColor: isHovered ? '#f9f9f7' : T.surface,
+      backgroundColor: isHovered ? T.surfaceHover : T.surface,
       color: T.ink,
       border: `1px solid ${T.borderStrong}`,
     },
     primary: {
-      backgroundColor: isHovered ? '#0f0f0f' : T.ink,
-      color: '#fff',
+      backgroundColor: isHovered ? T.ink2 : T.ink,
+      color: T.inkInverse,
       border: 'none',
     },
     accent: {
-      backgroundColor: isHovered ? '#c4633f' : T.accent,
-      color: '#fff',
+      backgroundColor: isHovered ? T.accentHover : T.accent,
+      color: T.inkInverse,
       border: 'none',
     },
   }

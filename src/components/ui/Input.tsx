@@ -1,4 +1,4 @@
-import React, { useState, CSSProperties } from 'react'
+import React, { useId, useState, CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -16,8 +16,9 @@ export function Input({
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false)
+  const generatedId = useId()
 
-  const inputId = id || `input-${Math.random().toString(36).slice(2)}`
+  const inputId = id || generatedId
 
   const inputStyle: CSSProperties = {
     width: '100%',
