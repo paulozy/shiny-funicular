@@ -1,14 +1,21 @@
 'use client'
 
-import { CSSProperties, ReactNode } from 'react'
+import { CSSProperties, ReactNode, useState } from 'react'
+import Link from 'next/link'
 import { UserInfo } from '@/lib/types/auth'
 import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
+import { ThemeToggle } from '@/components/shell/ThemeToggle'
+
+export interface BreadcrumbItem {
+  label: string
+  href?: string
+}
 
 interface AppShellProps {
   user: UserInfo
   activeHub?: string
-  breadcrumb?: string[]
+  breadcrumb?: Array<string | BreadcrumbItem>
   searchSlot?: ReactNode
   topRight?: ReactNode
   aiPanel?: ReactNode
@@ -17,8 +24,7 @@ interface AppShellProps {
 }
 
 const HUBS = [
-  { id: 'home', label: 'Início', icon: 'home' },
-  { id: 'code', label: 'Code', icon: 'code' },
+  { id: 'code', label: 'Code', icon: 'code', href: '/' },
   { id: 'infra', label: 'Infra', icon: 'box' },
   { id: 'arch', label: 'Arquitetura', icon: 'graph' },
   { id: 'deploy', label: 'Deploys', icon: 'rocket' },
@@ -64,6 +70,10 @@ export function AppShell({
   aiPanelWidth = 320,
   children,
 }: AppShellProps) {
+  const [aiPanelMode, setAiPanelMode] = useState<'collapsed' | 'normal' | 'expanded'>('normal')
+  const normalizedBreadcrumb = breadcrumb.map((item) => (typeof item === 'string' ? { label: item } : item))
+  const resolvedAiPanelWidth = aiPanelMode === 'collapsed' ? 52 : aiPanelMode === 'expanded' ? 420 : aiPanelWidth
+
   const containerStyle: CSSProperties = {
     width: '100%',
     minHeight: '100vh',
@@ -93,6 +103,8 @@ export function AppShell({
     fontWeight: 700,
     fontSize: 15,
     letterSpacing: '-0.01em',
+    color: T.ink,
+    textDecoration: 'none',
   }
 
   const orgBadgeStyle: CSSProperties = {
@@ -108,7 +120,7 @@ export function AppShell({
     gap: 1,
   }
 
-  const hubItemStyle = (active: boolean): CSSProperties => ({
+  const hubItemStyle = (active: boolean, disabled = false): CSSProperties => ({
     display: 'flex',
     alignItems: 'center',
     gap: 10,
@@ -119,7 +131,9 @@ export function AppShell({
     fontWeight: active ? 600 : 500,
     fontSize: 13,
     boxShadow: active ? '0 1px 0 rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.04)' : 'none',
-    cursor: 'pointer',
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.48 : 1,
+    textDecoration: 'none',
   })
 
   const userFooterStyle: CSSProperties = {
@@ -129,6 +143,25 @@ export function AppShell({
     alignItems: 'center',
     gap: 10,
     borderTop: `1px solid ${T.border}`,
+  }
+
+  const footerActionsStyle: CSSProperties = {
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  }
+
+  const settingsLinkStyle: CSSProperties = {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: activeHub === 'settings' ? T.surface : 'transparent',
+    color: T.faint,
+    textDecoration: 'none',
   }
 
   const userNameStyle: CSSProperties = {
@@ -196,12 +229,51 @@ export function AppShell({
   }
 
   const aiPanelStyle: CSSProperties = {
-    width: aiPanelWidth,
+    width: resolvedAiPanelWidth,
     borderLeft: `1px solid ${T.border}`,
     background: T.surface,
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
+    position: 'relative',
+    transition: 'width 160ms ease',
+  }
+
+  const aiPanelControlsStyle: CSSProperties = {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  }
+
+  const aiControlButtonStyle: CSSProperties = {
+    appearance: 'none',
+    border: `1px solid ${T.border}`,
+    borderRadius: 5,
+    background: T.surface,
+    color: T.ink3,
+    width: 24,
+    height: 24,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  }
+
+  const collapsedAiStyle: CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    writingMode: 'vertical-rl',
+    transform: 'rotate(180deg)',
+    gap: 8,
+    color: T.ink3,
+    fontSize: 12,
+    fontWeight: 600,
   }
 
   return (
@@ -219,17 +291,32 @@ export function AppShell({
             />
             <circle cx="12" cy="12" r="2.4" fill={T.accent} />
           </svg>
-          <span style={logoStyle}>idp.ai</span>
+          <Link href="/" style={logoStyle}>idp.ai</Link>
           <span style={orgBadgeStyle}>{user.organization?.name || 'Org'}</span>
         </div>
 
         <div style={hubsContainerStyle}>
           {HUBS.map((hub) => {
             const active = hub.id === activeHub
-            return (
-              <div key={hub.id} style={hubItemStyle(active)}>
+            const disabled = !hub.href
+            const content = (
+              <>
                 <MFIcon name={hub.icon} size={15} color={active ? T.accent : T.ink3} />
                 <span>{hub.label}</span>
+              </>
+            )
+
+            if (hub.href) {
+              return (
+                <Link key={hub.id} href={hub.href} style={hubItemStyle(active)}>
+                  {content}
+                </Link>
+              )
+            }
+
+            return (
+              <div key={hub.id} aria-disabled="true" title="Em breve" style={hubItemStyle(active, disabled)}>
+                {content}
               </div>
             )
           })}
@@ -241,8 +328,16 @@ export function AppShell({
             <span style={userInitialStyle}>{user.full_name}</span>
             <span style={userEmailStyle}>{user.email}</span>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <MFIcon name="gear" size={14} color={T.faint} />
+          <div style={footerActionsStyle}>
+            <ThemeToggle />
+            <Link
+              href="/settings"
+              aria-label="Configurações da organização"
+              title="Configurações da organização"
+              style={settingsLinkStyle}
+            >
+              <MFIcon name="gear" size={14} color={T.faint} />
+            </Link>
           </div>
         </div>
       </div>
@@ -251,20 +346,45 @@ export function AppShell({
       <main style={mainStyle}>
         {/* Topbar */}
         <div style={topbarStyle}>
-          {breadcrumb.map((crumb, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {normalizedBreadcrumb.map((crumb, i) => {
+            const isLast = i === normalizedBreadcrumb.length - 1
+            return (
+            <div key={`${crumb.label}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {i > 0 && <MFIcon name="chevron-right" size={12} color={T.faint} />}
-              <span style={{ ...breadcrumbStyle, color: i === breadcrumb.length - 1 ? T.ink : T.ink3, fontWeight: i === breadcrumb.length - 1 ? 600 : 500 }}>
-                {crumb}
-              </span>
+              {!isLast && crumb.href ? (
+                <Link
+                  href={crumb.href}
+                  style={{
+                    ...breadcrumbStyle,
+                    color: T.ink3,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                  }}
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span style={{ ...breadcrumbStyle, color: isLast ? T.ink : T.ink3, fontWeight: isLast ? 600 : 500 }}>
+                  {crumb.label}
+                </span>
+              )}
             </div>
-          ))}
+            )
+          })}
           <div style={{ flex: 1 }} />
 
           {searchSlot || (
-            <div style={searchBarStyle}>
+            <div
+              style={{
+                ...searchBarStyle,
+                opacity: 0.72,
+                cursor: 'default',
+              }}
+              aria-disabled="true"
+              title="Busca global em breve"
+            >
               <MFIcon name="search" size={13} color={T.faint} />
-              <span>buscar tudo…</span>
+              <span>busca global em breve</span>
               <span
                 style={{
                   marginLeft: 'auto',
@@ -277,7 +397,7 @@ export function AppShell({
                   fontFamily: T.mono,
                 }}
               >
-                ⌘K
+                em breve
               </span>
             </div>
           )}
@@ -290,7 +410,45 @@ export function AppShell({
         {/* Content + AI Panel */}
         <div style={contentWrapperStyle}>
           <div style={contentStyle}>{children}</div>
-          {aiPanel && <div style={aiPanelStyle}>{aiPanel}</div>}
+          {aiPanel && (
+            <div style={aiPanelStyle} data-ai-panel-mode={aiPanelMode}>
+              {aiPanelMode === 'collapsed' ? (
+                <button
+                  type="button"
+                  aria-label="Expandir Co-pensador"
+                  style={{ ...collapsedAiStyle, border: 0, background: 'transparent', cursor: 'pointer' }}
+                  onClick={() => setAiPanelMode('normal')}
+                >
+                  <AISpark size={14} />
+                  Co-pensador
+                </button>
+              ) : (
+                <>
+                  <div style={aiPanelControlsStyle}>
+                    <button
+                      type="button"
+                      aria-label="Recolher Co-pensador"
+                      title="Recolher Co-pensador"
+                      style={aiControlButtonStyle}
+                      onClick={() => setAiPanelMode('collapsed')}
+                    >
+                      <MFIcon name="chevron-right" size={12} color="currentColor" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={aiPanelMode === 'expanded' ? 'Restaurar Co-pensador' : 'Expandir Co-pensador'}
+                      title={aiPanelMode === 'expanded' ? 'Restaurar Co-pensador' : 'Expandir Co-pensador'}
+                      style={aiControlButtonStyle}
+                      onClick={() => setAiPanelMode((current) => (current === 'expanded' ? 'normal' : 'expanded'))}
+                    >
+                      <MFIcon name={aiPanelMode === 'expanded' ? 'chevron-right' : 'chevron-down'} size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  {aiPanel}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
