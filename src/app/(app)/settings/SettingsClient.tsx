@@ -1,21 +1,24 @@
 'use client'
 
-import { MFIcon } from '@/components/icons/MFIcon'
-import { AppShell } from '@/components/shell/AppShell'
-import { Alert } from '@/components/ui/Alert'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Tag } from '@/components/ui/Tag'
-import { Toggle } from '@/components/ui/Toggle'
-import { apiFetch } from '@/lib/api/client'
-import { T } from '@/lib/tokens'
+import { CSSProperties, useState, useId } from 'react'
 import { UserInfo } from '@/lib/types/auth'
 import { OrganizationConfigResponse, UpdateOrganizationConfigRequest } from '@/lib/types/organization'
-import { CSSProperties, useId, useState } from 'react'
+import { RepositoryListResponse } from '@/lib/types/repository'
+import { apiFetch } from '@/lib/api/client'
+import { T } from '@/lib/tokens'
+import { AppShell } from '@/components/shell/AppShell'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Alert } from '@/components/ui/Alert'
+import { Tag } from '@/components/ui/Tag'
+import { Toggle } from '@/components/ui/Toggle'
+import { MFIcon } from '@/components/icons/MFIcon'
+import { CoPensador } from '@/components/home/CoPensador'
 
 interface SettingsClientProps {
   user: UserInfo
   initialConfig: OrganizationConfigResponse | null
+  repos?: RepositoryListResponse | null
 }
 
 type SecretKey =
@@ -38,6 +41,17 @@ const SECRET_LABELS: Record<SecretKey, string> = {
   gitlab_client_id: 'GitLab client ID',
   gitlab_client_secret: 'GitLab client secret',
 }
+
+const LANGUAGE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'en', label: 'English (padrão)' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ja', label: '日本語' },
+  { value: 'zh-CN', label: '中文 (简体)' },
+]
 
 const EMPTY_SECRETS: SecretState = {
   anthropic_api_key: '',
@@ -109,7 +123,6 @@ function SecretField({
     gridTemplateColumns: '1fr auto',
     gap: 8,
     alignItems: 'end',
-    marginBottom: 14,
   }
 
   return (
@@ -129,7 +142,9 @@ function SecretField({
   )
 }
 
-export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
+type Tab = 'ia' | 'github' | 'search' | 'oauth'
+
+export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
   const [config, setConfig] = useState(baseline)
   const [secrets, setSecrets] = useState<SecretState>(EMPTY_SECRETS)
@@ -137,6 +152,7 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('ia')
 
   const isAdmin = user.role === 'admin'
   const summaryItems = [
@@ -185,6 +201,9 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     if ((config.gitlab_callback_url ?? '') !== (baseline.gitlab_callback_url ?? '')) {
       body.gitlab_callback_url = config.gitlab_callback_url ?? ''
     }
+    if (config.output_language !== baseline.output_language) {
+      body.output_language = config.output_language
+    }
 
     dirtySecrets.forEach((key) => {
       body[key] = secrets[key]
@@ -224,7 +243,12 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
       setDirtySecrets(new Set())
       setMessage('Configurações salvas.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível salvar as configurações.')
+      const code = err instanceof Error ? (err as { errorResponse?: { error?: string } }).errorResponse?.error : undefined
+      if (code === 'invalid_output_language') {
+        setError('Idioma inválido. Selecione uma das opções da lista.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Não foi possível salvar as configurações.')
+      }
     } finally {
       setSaving(false)
     }
@@ -235,15 +259,11 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     value,
     onChange,
     options,
-    disabled = false,
-    hint,
   }: {
     label: string
     value: string
     onChange: (value: string) => void
     options: Array<{ value: string; label: string }>
-    disabled?: boolean
-    hint?: string
   }) => {
     const selectId = useId()
     const containerStyle: CSSProperties = {
@@ -267,15 +287,7 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
       borderRadius: T.radius.input,
       background: T.surface,
       color: T.ink,
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      opacity: disabled ? 0.6 : 1,
-    }
-
-    const hintStyle: CSSProperties = {
-      marginTop: '4px',
-      fontSize: '11.5px',
-      color: T.faint,
-      display: 'block',
+      cursor: 'pointer',
     }
 
     return (
@@ -283,42 +295,13 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
         <label htmlFor={selectId} style={labelStyle}>
           {label}
         </label>
-        <select
-          id={selectId}
-          style={selectStyle}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-        >
+        <select id={selectId} style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)}>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
         </select>
-        {hint && <span style={hintStyle}>{hint}</span>}
-      </div>
-    )
-  }
-
-  const FieldGroup = ({ title, children }: { title: string; children: React.ReactNode }) => {
-    const groupStyle: CSSProperties = {
-      marginBottom: 14,
-    }
-
-    const groupTitleStyle: CSSProperties = {
-      fontSize: 11,
-      fontWeight: 600,
-      color: T.ink3,
-      textTransform: 'uppercase',
-      letterSpacing: '0.03em',
-      marginBottom: 8,
-    }
-
-    return (
-      <div style={groupStyle}>
-        {title && <div style={groupTitleStyle}>{title}</div>}
-        {children}
       </div>
     )
   }
@@ -354,12 +337,29 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     fontStyle: 'italic',
   }
 
-  const gridStyle: CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-    gap: 14,
-    alignItems: 'start',
+  const tabBarStyle: CSSProperties = {
+    position: 'sticky',
+    top: 54,
+    zIndex: 2,
+    display: 'flex',
+    gap: 0,
+    borderBottom: `1px solid ${T.border}`,
+    background: T.bg,
+    paddingLeft: 0,
+    margin: '0 -24px 0',
   }
+
+  const tabStyle = (isActive: boolean): CSSProperties => ({
+    padding: '12px 16px',
+    fontSize: 13,
+    fontWeight: 500,
+    color: isActive ? T.ink : T.ink3,
+    borderBottom: isActive ? `2px solid ${T.accent}` : `2px solid transparent`,
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 200ms ease-in-out',
+  })
 
   const titleStyle: CSSProperties = {
     margin: 0,
@@ -377,14 +377,20 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     marginBottom: 4,
   }
 
+  const tabContentStyle: CSSProperties = {
+    paddingTop: 16,
+    paddingBottom: 24,
+  }
+
+  const contentBelowTabsStyle: CSSProperties = {
+    paddingTop: 16,
+  }
+
   const sectionStyle: CSSProperties = {
     background: T.surface,
-    borderTop: `1px solid ${T.border}`,
-    borderLeft: `1px solid ${T.border}`,
-    borderRight: `1px solid ${T.border}`,
-    borderBottom: `1px solid ${T.border}`,
+    border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: '12px 14px',
+    padding: 16,
   }
 
   const overviewStyle: CSSProperties = {
@@ -420,9 +426,7 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    paddingBottom: 8,
-    marginBottom: 12,
-    borderBottom: `1px solid ${T.border}`,
+    marginBottom: 14,
   }
 
   const sectionTitleStyle: CSSProperties = {
@@ -430,16 +434,35 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
     fontWeight: 600,
   }
 
+  const statusRowStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  }
+
   const toggleRowStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
+    padding: '12px 0 16px',
+  }
+
+  const oauthGridStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '0 16px',
   }
 
   if (!isAdmin) {
     return (
-      <AppShell user={user} activeHub="settings" breadcrumb={['Configurações']}>
+      <AppShell
+        user={user}
+        activeHub="settings"
+        breadcrumb={[{ label: 'Configurações' }]}
+        aiPanel={repos ? <CoPensador repos={repos} orgConfig={initialConfig} /> : undefined}
+      >
         <div style={pageStyle}>
           <Alert variant="danger">Apenas administradores podem alterar configurações da organização.</Alert>
         </div>
@@ -448,7 +471,12 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
   }
 
   return (
-    <AppShell user={user} activeHub="settings" breadcrumb={['Configurações', user.organization?.name || 'Organização']}>
+    <AppShell
+      user={user}
+      activeHub="settings"
+      breadcrumb={[{ label: 'Configurações' }, { label: user.organization?.name || 'Organização' }]}
+      aiPanel={repos ? <CoPensador repos={repos} orgConfig={config} /> : undefined}
+    >
       <div style={pageStyle}>
         <div style={headerStyle}>
           <div>
@@ -465,35 +493,52 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
           </div>
         </div>
 
-        {message && <Alert variant="ok">{message}</Alert>}
-        {error && <Alert variant="danger">{error}</Alert>}
+        <div style={tabBarStyle}>
+          <button style={tabStyle(activeTab === 'ia')} onClick={() => setActiveTab('ia')}>
+            IA
+          </button>
+          <button style={tabStyle(activeTab === 'github')} onClick={() => setActiveTab('github')}>
+            GitHub
+          </button>
+          <button style={tabStyle(activeTab === 'search')} onClick={() => setActiveTab('search')}>
+            Busca semântica
+          </button>
+          <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
+            OAuth
+          </button>
+        </div>
 
-        <section style={overviewStyle}>
-          <div>
-            <div style={eyebrowStyle}>Status</div>
-            <div style={overviewNumberStyle}>
-              {readyCount}/{summaryItems.length}
+        <div style={contentBelowTabsStyle}>
+          {message && <Alert variant="ok">{message}</Alert>}
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          <section style={overviewStyle}>
+            <div>
+              <div style={eyebrowStyle}>Status</div>
+              <div style={overviewNumberStyle}>
+                {readyCount}/{summaryItems.length}
+              </div>
+              <div style={overviewDescriptionStyle}>itens configurados</div>
             </div>
-            <div style={overviewDescriptionStyle}>itens configurados</div>
-          </div>
-          <div style={overviewTagsStyle}>
-            {summaryItems.map((item) => (
-              <Tag key={item.label} variant={item.ready ? 'ok' : 'warn'}>
-                {item.label}
-              </Tag>
-            ))}
-          </div>
-        </section>
+            <div style={overviewTagsStyle}>
+              {summaryItems.map((item) => (
+                <Tag key={item.label} variant={item.ready ? 'ok' : 'warn'}>
+                  {item.label}
+                </Tag>
+              ))}
+            </div>
+          </section>
 
-        <div style={gridStyle}>
-          <section style={sectionStyle}>
-              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MFIcon name="sparkles" size={15} color={T.ai} />
-                  <span style={sectionTitleStyle}>IA</span>
-                </div>
+          <div style={tabContentStyle}>
+            {activeTab === 'ia' && (
+              <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="sparkles" size={15} color={T.ai} />
+                <span style={sectionTitleStyle}>IA</span>
+              </div>
+              <div style={statusRowStyle}>
                 <Tag variant={configured(config, 'anthropic_api_key') ? 'ok' : 'warn'}>
-                  {configured(config, 'anthropic_api_key') ? '✓' : '✗'}
+                  Anthropic {configured(config, 'anthropic_api_key') ? 'configurado' : 'pendente'}
                 </Tag>
               </div>
               <SecretField
@@ -510,18 +555,28 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 value={config.anthropic_tokens_per_hour}
                 onChange={(event) => setConfig((prev) => ({ ...prev, anthropic_tokens_per_hour: Number(event.target.value) }))}
               />
+              <SelectField
+                label="Idioma das saídas de IA"
+                value={config.output_language}
+                onChange={(value) => setConfig((prev) => ({ ...prev, output_language: value }))}
+                options={LANGUAGE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              />
             </section>
+          )}
 
-          <section style={sectionStyle}>
-              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MFIcon name="branch" size={15} color={T.accent} />
-                  <span style={sectionTitleStyle}>GitHub</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>Token {configured(config, 'github_token') ? '✓' : '✗'}</Tag>
-                  <Tag variant={config.github_pr_review_enabled ? 'ok' : 'default'}>Review {config.github_pr_review_enabled ? '✓' : '✗'}</Tag>
-                </div>
+          {activeTab === 'github' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="branch" size={15} color={T.accent} />
+                <span style={sectionTitleStyle}>GitHub</span>
+              </div>
+              <div style={statusRowStyle}>
+                <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>
+                  Token {configured(config, 'github_token') ? 'configurado' : 'pendente'}
+                </Tag>
+                <Tag variant={config.github_pr_review_enabled ? 'ok' : 'default'}>
+                  Review de PR {config.github_pr_review_enabled ? 'ativo' : 'inativo'}
+                </Tag>
               </div>
               <SecretField
                 name="github_token"
@@ -534,34 +589,37 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 <Toggle
                   checked={config.github_pr_review_enabled}
                   onChange={(checked) => setConfig((prev) => ({ ...prev, github_pr_review_enabled: checked }))}
-                  label="Revisão automática"
+                  label="Revisão automática de PRs"
                 />
               </div>
               <Input
-                label="Webhook URL"
+                label="Webhook base URL"
                 value={config.webhook_base_url ?? ''}
                 onChange={(event) => setConfig((prev) => ({ ...prev, webhook_base_url: event.target.value }))}
                 placeholder="https://idp.example.com"
               />
             </section>
+          )}
 
-          <section style={sectionStyle}>
-              <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MFIcon name="search" size={15} color={T.ok} />
-                  <span style={sectionTitleStyle}>Busca semântica</span>
-                </div>
+          {activeTab === 'search' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="search" size={15} color={T.ok} />
+                <span style={sectionTitleStyle}>Busca semântica</span>
+              </div>
+              <div style={statusRowStyle}>
                 <Tag variant={configured(config, 'voyage_api_key') ? 'ok' : 'warn'}>
-                  {configured(config, 'voyage_api_key') ? '✓' : '✗'}
+                  Voyage {configured(config, 'voyage_api_key') ? 'configurado' : 'pendente'}
                 </Tag>
+              </div>
+              <div style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.5, marginBottom: 14 }}>
+                Configure o provider usado pela busca semântica. A geração do índice é feita nas configurações de cada repositório.
               </div>
               <SelectField
                 label="Provider"
                 value={config.embeddings_provider}
                 onChange={(value) => setConfig((prev) => ({ ...prev, embeddings_provider: value }))}
                 options={[{ value: 'voyage', label: 'Voyage' }]}
-                disabled={true}
-                hint="Somente Voyage disponível"
               />
               <SecretField
                 name="voyage_api_key"
@@ -583,37 +641,70 @@ export function SettingsClient({ user, initialConfig }: SettingsClientProps) {
                 onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_dimensions: Number(event.target.value) }))}
               />
             </section>
+          )}
 
-          <section style={sectionStyle}>
-            <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <MFIcon name="branch" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>GitHub OAuth</span>
+          {activeTab === 'oauth' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="lock" size={15} color={T.ink3} />
+                <span style={sectionTitleStyle}>OAuth</span>
               </div>
-              <Tag variant={config.github_client_id_configured && configured(config, 'github_client_secret') ? 'ok' : 'warn'}>
-                {config.github_client_id_configured && configured(config, 'github_client_secret') ? '✓' : '✗'}
-              </Tag>
-            </div>
-            <Input label="Callback URL" value={config.github_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))} />
-            <SecretField name="github_client_id" value={secrets.github_client_id} isConfigured={configured(config, 'github_client_id')} onChange={(value) => setSecret('github_client_id', value)} onClear={() => clearSecret('github_client_id')} secret={false} />
-            <SecretField name="github_client_secret" value={secrets.github_client_secret} isConfigured={configured(config, 'github_client_secret')} onChange={(value) => setSecret('github_client_secret', value)} onClear={() => clearSecret('github_client_secret')} />
-          </section>
-
-          <section style={sectionStyle}>
-            <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <MFIcon name="git" size={15} color={T.faint} />
-                <span style={sectionTitleStyle}>GitLab OAuth</span>
+              <div style={statusRowStyle}>
+                <Tag variant={config.github_client_id_configured ? 'ok' : 'warn'}>GitHub client ID</Tag>
+                <Tag variant={configured(config, 'github_client_secret') ? 'ok' : 'warn'}>GitHub secret</Tag>
+                <Tag variant={config.gitlab_client_id_configured ? 'ok' : 'warn'}>GitLab client ID</Tag>
+                <Tag variant={configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>GitLab secret</Tag>
               </div>
-              <Tag variant={config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>
-                {config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? '✓' : '✗'}
-              </Tag>
-            </div>
-            <Input label="Callback URL" value={config.gitlab_callback_url ?? ''} onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))} />
-            <SecretField name="gitlab_client_id" value={secrets.gitlab_client_id} isConfigured={configured(config, 'gitlab_client_id')} onChange={(value) => setSecret('gitlab_client_id', value)} onClear={() => clearSecret('gitlab_client_id')} secret={false} />
-            <SecretField name="gitlab_client_secret" value={secrets.gitlab_client_secret} isConfigured={configured(config, 'gitlab_client_secret')} onChange={(value) => setSecret('gitlab_client_secret', value)} onClear={() => clearSecret('gitlab_client_secret')} />
-          </section>
+              <div style={oauthGridStyle}>
+                <div>
+                  <Input
+                    label="GitHub callback URL"
+                    value={config.github_callback_url ?? ''}
+                    onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))}
+                  />
+                  <SecretField
+                    name="github_client_id"
+                    value={secrets.github_client_id}
+                    isConfigured={configured(config, 'github_client_id')}
+                    onChange={(value) => setSecret('github_client_id', value)}
+                    onClear={() => clearSecret('github_client_id')}
+                    secret={false}
+                  />
+                  <SecretField
+                    name="github_client_secret"
+                    value={secrets.github_client_secret}
+                    isConfigured={configured(config, 'github_client_secret')}
+                    onChange={(value) => setSecret('github_client_secret', value)}
+                    onClear={() => clearSecret('github_client_secret')}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="GitLab callback URL"
+                    value={config.gitlab_callback_url ?? ''}
+                    onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))}
+                  />
+                  <SecretField
+                    name="gitlab_client_id"
+                    value={secrets.gitlab_client_id}
+                    isConfigured={configured(config, 'gitlab_client_id')}
+                    onChange={(value) => setSecret('gitlab_client_id', value)}
+                    onClear={() => clearSecret('gitlab_client_id')}
+                    secret={false}
+                  />
+                  <SecretField
+                    name="gitlab_client_secret"
+                    value={secrets.gitlab_client_secret}
+                    isConfigured={configured(config, 'gitlab_client_secret')}
+                    onChange={(value) => setSecret('gitlab_client_secret', value)}
+                    onClear={() => clearSecret('gitlab_client_secret')}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
         </div>
+      </div>
       </div>
     </AppShell>
   )
