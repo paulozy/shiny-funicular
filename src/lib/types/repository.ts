@@ -1,5 +1,6 @@
 export type RepoProvider = 'github' | 'gitlab' | 'gitea' | 'custom'
 export type SyncStatus = 'pending' | 'idle' | 'syncing' | 'synced' | 'error'
+export type RepositoryAnalysisStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
 
 export interface RepositoryMetadata {
   pr_count?: number
@@ -7,6 +8,22 @@ export interface RepositoryMetadata {
   test_coverage?: number
   languages?: Record<string, number>
   default_branch?: string
+  frameworks?: string[]
+  topics?: string[]
+  star_count?: number
+  fork_count?: number
+  branch_count?: number
+  commit_count?: number
+  contributors?: number
+  has_ci?: boolean
+  has_tests?: boolean
+}
+
+export interface RepositoryStats {
+  total_analyses: number
+  latest_quality_score: number
+  has_analysis: boolean
+  last_analyzed_at: string | null
 }
 
 export interface RepositoryResponse {
@@ -21,6 +38,9 @@ export interface RepositoryResponse {
   is_public?: boolean
   metadata?: RepositoryMetadata
   sync_status?: SyncStatus
+  analysis_status?: RepositoryAnalysisStatus | string | null
+  reviews_count?: number | null
+  stats?: RepositoryStats
   created_at: string
   updated_at: string
   organization_id: string
@@ -48,6 +68,9 @@ export interface BackendRepositoryResponse {
   is_private?: boolean
   metadata?: RepositoryMetadata
   sync_status?: SyncStatus
+  analysis_status?: RepositoryAnalysisStatus | string | null
+  reviews_count?: number | null
+  stats?: Partial<RepositoryStats> | null
   created_at: string
   updated_at: string
 }
