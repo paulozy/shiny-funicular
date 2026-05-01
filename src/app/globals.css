@@ -2,6 +2,70 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: light;
+  --color-bg: #fafaf7;
+  --color-surface: #fff;
+  --color-surface-alt: #f4f2ec;
+  --color-surface-hover: #f9f9f7;
+  --color-ink: #1a1a1a;
+  --color-ink-2: #3d3a35;
+  --color-ink-3: #6b6760;
+  --color-ink-inverse: #fff;
+  --color-faint: #a8a49d;
+  --color-border: #e6e2d8;
+  --color-border-strong: #d4cfc2;
+  --color-accent: #d97757;
+  --color-accent-hover: #c4633f;
+  --color-accent-bg: #fff4ec;
+  --color-ai: #7a4cc8;
+  --color-ai-bg: #f6f0ff;
+  --color-ai-border: #dccdf3;
+  --color-ok: #2e7d3e;
+  --color-ok-bg: #eaf5ec;
+  --color-ok-border: #c8e0cc;
+  --color-warn: #a87518;
+  --color-warn-bg: #fbf3df;
+  --color-warn-border: #e8d8a8;
+  --color-danger: #b8413b;
+  --color-danger-bg: #fbe8e4;
+  --color-danger-border: #e8c5c0;
+  --color-overlay: rgba(20, 18, 15, 0.32);
+  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0f1115;
+  --color-surface: #191c22;
+  --color-surface-alt: #22262d;
+  --color-surface-hover: #2a3038;
+  --color-ink: #f6f1e8;
+  --color-ink-2: #e1d8cb;
+  --color-ink-3: #c0b6a8;
+  --color-ink-inverse: #0f1115;
+  --color-faint: #958b7d;
+  --color-border: #373c45;
+  --color-border-strong: #545c68;
+  --color-accent: #ff9a6d;
+  --color-accent-hover: #ffad86;
+  --color-accent-bg: #3a251d;
+  --color-ai: #c4a7ff;
+  --color-ai-bg: #2b2140;
+  --color-ai-border: #655081;
+  --color-ok: #9fe0aa;
+  --color-ok-bg: #183422;
+  --color-ok-border: #3f6949;
+  --color-warn: #f0c96a;
+  --color-warn-bg: #3a2c11;
+  --color-warn-border: #735820;
+  --color-danger: #ff9d95;
+  --color-danger-bg: #40201e;
+  --color-danger-border: #7a3a36;
+  --color-overlay: rgba(0, 0, 0, 0.56);
+  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
 html {
   min-height: 100%;
   font-size: 13px;
@@ -14,13 +78,13 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: #fafaf7;
-  color: #1a1a1a;
+  background-color: var(--color-bg);
+  color: var(--color-ink);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
 }
 
 a {
-  color: #d97757;
+  color: var(--color-accent);
   text-decoration: none;
 }
 
