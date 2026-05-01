@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+async function updateConfig(request: NextRequest) {
   try {
     const token = await getAccessTokenCookie()
     if (!token) {
@@ -80,4 +80,12 @@ export async function PUT(request: NextRequest) {
       { status: statusCode }
     )
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  return updateConfig(request)
+}
+
+export async function PUT(request: NextRequest) {
+  return updateConfig(request)
 }

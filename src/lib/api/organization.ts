@@ -43,7 +43,7 @@ export async function backendUpdateOrganizationConfig(
   body: UpdateOrganizationConfigRequest
 ): Promise<OrganizationConfigResponse> {
   const response = await fetch(getApiUrl('/organizations/configs'), {
-    method: 'PUT',
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,

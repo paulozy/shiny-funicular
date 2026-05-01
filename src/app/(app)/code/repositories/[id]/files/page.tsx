@@ -2,10 +2,12 @@ import { CSSProperties } from 'react'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
+import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch } from '@/lib/search'
 import { AppShell } from '@/components/shell/AppShell'
 import { RepoSearchBox } from '@/components/search/RepoSearchBox'
+import { CoPensador } from '@/components/home/CoPensador'
 import { T } from '@/lib/tokens'
 
 interface FileStubPageProps {
@@ -33,7 +35,10 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
     redirect('/login')
   }
 
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
+  const [repos, orgConfig] = await Promise.all([
+    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
+    user.role === 'admin' ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
+  ])
   const repo = repos?.repositories.find((item) => item.id === id)
 
   if (!repo) {
@@ -63,8 +68,9 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
     <AppShell
       user={user}
       activeHub="code"
-      breadcrumb={['Code', repo.name, 'arquivo']}
+      breadcrumb={[{ label: 'Code', href: '/' }, { label: repo.name, href: `/code/repositories/${repo.id}` }, { label: 'arquivo' }]}
       searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} />}
+      aiPanel={repos ? <CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} /> : undefined}
     >
       <div style={pageStyle}>
         <div style={panelStyle}>
