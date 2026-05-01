@@ -31,6 +31,7 @@ export function buildSemanticSearchQuery(params: SemanticSearchParams): string {
   if (params.limit) search.set('limit', String(normalizeSearchLimit(params.limit)))
   if (params.branch?.trim()) search.set('branch', params.branch.trim())
   if (params.min_score !== undefined) search.set('min_score', String(normalizeMinScore(params.min_score)))
+  if (params.synthesize) search.set('synthesize', 'true')
   return search.toString()
 }
 

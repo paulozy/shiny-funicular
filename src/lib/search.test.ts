@@ -38,6 +38,15 @@ describe('search utilities', () => {
     ).toBe('q=token+refresh&limit=50&branch=main&min_score=0.6')
   })
 
+  it('adds synthesize only when requested', () => {
+    expect(
+      buildSemanticSearchQuery({
+        q: 'login',
+        synthesize: true,
+      })
+    ).toBe('q=login&synthesize=true')
+  })
+
   it('builds file stub links', () => {
     expect(
       buildFileStubHref('repo-1', {

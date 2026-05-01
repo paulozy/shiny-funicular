@@ -32,4 +32,32 @@ export interface SemanticSearchParams {
   limit?: number
   branch?: string
   min_score?: number
+  synthesize?: boolean
+}
+
+export interface SearchSynthesisDone {
+  cached?: boolean
+  tokens_used?: number
+  model?: string
+}
+
+export interface SearchSynthesisUnavailable {
+  reason: 'anthropic_not_configured' | 'synthesizer_not_wired' | string
+}
+
+export interface SearchSynthesisError {
+  reason: 'synthesis_start_failed' | 'synthesis_stream_failed' | string
+}
+
+export type SearchSynthesisStatus = 'idle' | 'streaming' | 'done' | 'cached' | 'unavailable' | 'error'
+
+export interface SearchInsight {
+  status: SearchSynthesisStatus
+  query: string
+  text: string
+  results?: SemanticSearchResult[]
+  reason?: string
+  cached?: boolean
+  tokensUsed?: number
+  model?: string
 }
