@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties, useCallback, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { UserInfo } from '@/lib/types/auth'
 import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
@@ -21,6 +22,7 @@ interface HomeClientProps {
 }
 
 export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
+  const router = useRouter()
   const [repos, setRepos] = useState<RepositoryListResponse | null>(initialRepos)
   const [showNewRepoModal, setShowNewRepoModal] = useState(false)
 
@@ -73,22 +75,30 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
   }
 
   const topRightContent = (
-    <Button variant="primary" size="md" onClick={handleShowNewRepoModal}>
-      <MFIcon name="plus" size={11} />
-      Novo repo
-    </Button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {user.role === 'admin' && (
+        <Button variant="default" size="md" onClick={() => router.push('/settings')}>
+          <MFIcon name="gear" size={12} />
+          Configurações
+        </Button>
+      )}
+      <Button variant="primary" size="md" onClick={handleShowNewRepoModal}>
+        <MFIcon name="plus" size={11} />
+        Novo repo
+      </Button>
+    </div>
   )
 
   return (
     <AppShell
       user={user}
       activeHub="code"
-      breadcrumb={['Code', isEmpty ? 'Onboarding' : 'todos os repositórios']}
+      breadcrumb={[{ label: 'Code', href: '/' }, { label: isEmpty ? 'Onboarding' : 'todos os repositórios' }]}
       topRight={topRightContent}
       aiPanel={!isEmpty && repos ? <CoPensador repos={repos} orgConfig={orgConfig} /> : undefined}
     >
       {isEmpty ? (
-        <OnboardingTutorial orgConfig={orgConfig} onImportRepo={handleShowNewRepoModal} />
+        <OnboardingTutorial orgConfig={orgConfig} canConfigure={user.role === 'admin'} onImportRepo={handleShowNewRepoModal} />
       ) : (
         <div style={contentStyle}>
           <div style={headerStyle}>
