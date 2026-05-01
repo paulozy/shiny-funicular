@@ -229,6 +229,19 @@ export function MFIcon({
           <circle cx="15" cy="10" r="1.4" fill={color} />
         </svg>
       )
+    case 'sun':
+      return (
+        <svg {...s} viewBox="0 0 20 20">
+          <circle {...p} cx="10" cy="10" r="3.5" />
+          <path {...p} d="M10 2V4M10 16V18M2 10H4M16 10H18M4.3 4.3L5.7 5.7M14.3 14.3L15.7 15.7M15.7 4.3L14.3 5.7M5.7 14.3L4.3 15.7" />
+        </svg>
+      )
+    case 'moon':
+      return (
+        <svg {...s} viewBox="0 0 20 20">
+          <path {...p} d="M15.5 13.5C14.3 14.6 12.7 15.2 11 15.2C7.6 15.2 4.8 12.4 4.8 9C4.8 6.9 5.9 5 7.5 3.9C7.3 4.6 7.2 5.3 7.2 6C7.2 9.5 10 12.3 13.5 12.3C14.2 12.3 14.9 12.2 15.5 12V13.5Z" />
+        </svg>
+      )
     case 'trophy':
       return (
         <svg {...s} viewBox="0 0 20 20">
