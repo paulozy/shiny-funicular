@@ -1,11 +1,15 @@
 export type RepoProvider = 'github' | 'gitlab' | 'gitea' | 'custom'
-export type SyncStatus = 'pending' | 'idle' | 'syncing' | 'synced' | 'error'
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 export type RepositoryAnalysisStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
+export type CoverageStatus = 'ok' | 'partial' | 'failed' | 'not_configured'
 
 export interface RepositoryMetadata {
   pr_count?: number
   issue_count?: number
   test_coverage?: number
+  tested_lines?: number
+  uncovered_lines?: number
+  coverage_status?: CoverageStatus
   languages?: Record<string, number>
   default_branch?: string
   frameworks?: string[]
@@ -24,6 +28,12 @@ export interface RepositoryStats {
   latest_quality_score: number
   has_analysis: boolean
   last_analyzed_at: string | null
+  // Coverage from the latest completed analysis. CoverageStatus is empty
+  // when no analysis has populated the metrics JSONB yet.
+  test_coverage?: number
+  tested_lines?: number
+  uncovered_lines?: number
+  coverage_status?: CoverageStatus | ''
 }
 
 export interface RepositoryResponse {
@@ -38,7 +48,10 @@ export interface RepositoryResponse {
   is_public?: boolean
   metadata?: RepositoryMetadata
   sync_status?: SyncStatus
+  sync_error?: string
+  last_synced_at?: string
   analysis_status?: RepositoryAnalysisStatus | string | null
+  analysis_error?: string
   reviews_count?: number | null
   stats?: RepositoryStats
   created_at: string
@@ -68,7 +81,10 @@ export interface BackendRepositoryResponse {
   is_private?: boolean
   metadata?: RepositoryMetadata
   sync_status?: SyncStatus
+  sync_error?: string
+  last_synced_at?: string
   analysis_status?: RepositoryAnalysisStatus | string | null
+  analysis_error?: string
   reviews_count?: number | null
   stats?: Partial<RepositoryStats> | null
   created_at: string

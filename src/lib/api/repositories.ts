@@ -7,6 +7,11 @@ import {
   RepositoryResponse,
   RepositoryStats,
 } from '@/lib/types/repository'
+import {
+  CoverageToken,
+  CoverageTokenWithSecret,
+  CreateCoverageTokenRequest,
+} from '@/lib/types/coverage'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
 
@@ -88,6 +93,10 @@ function normalizeRepositoryStats(stats?: Partial<RepositoryStats> | null): Repo
     latest_quality_score: Number(stats?.latest_quality_score || 0),
     has_analysis: Boolean(stats?.has_analysis),
     last_analyzed_at: stats?.last_analyzed_at || null,
+    test_coverage: stats?.test_coverage,
+    tested_lines: stats?.tested_lines,
+    uncovered_lines: stats?.uncovered_lines,
+    coverage_status: stats?.coverage_status,
   }
 }
 
@@ -105,11 +114,58 @@ export function normalizeRepository(repo: BackendRepositoryResponse): Repository
     is_public: repo.is_public,
     metadata: repo.metadata || {},
     sync_status: repo.sync_status,
+    sync_error: repo.sync_error,
+    last_synced_at: repo.last_synced_at,
     analysis_status: repo.analysis_status ?? null,
+    analysis_error: repo.analysis_error,
     reviews_count: repo.reviews_count ?? null,
     stats: normalizeRepositoryStats(repo.stats),
     created_at: repo.created_at,
     updated_at: repo.updated_at,
     organization_id: repo.organization_id,
   }
+}
+
+// ============ Coverage upload tokens ============
+
+export async function backendListCoverageTokens(
+  accessToken: string,
+  repoID: string
+): Promise<CoverageToken[]> {
+  const response = await fetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  return handleResponse<CoverageToken[]>(response)
+}
+
+export async function backendCreateCoverageToken(
+  accessToken: string,
+  repoID: string,
+  body: CreateCoverageTokenRequest
+): Promise<CoverageTokenWithSecret> {
+  const response = await fetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  return handleResponse<CoverageTokenWithSecret>(response)
+}
+
+export async function backendRevokeCoverageToken(
+  accessToken: string,
+  repoID: string,
+  tokenID: string
+): Promise<void> {
+  const response = await fetch(
+    getApiUrl(`/repositories/${repoID}/coverage/tokens/${tokenID}`),
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  )
+  await handleResponse<void>(response)
 }

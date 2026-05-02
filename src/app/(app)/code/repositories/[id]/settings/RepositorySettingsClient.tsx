@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { CoverageTokensSection } from '@/components/repository/CoverageTokensSection'
 
 interface RepositorySettingsClientProps {
   repo: RepositoryResponse
@@ -176,6 +177,7 @@ export function RepositorySettingsClient({
       </div>
 
       <div style={layoutStyle}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
             <MFIcon name="search" size={15} color={T.ok} />
@@ -221,6 +223,11 @@ export function RepositorySettingsClient({
             Gerar índice semântico
           </Button>
         </section>
+
+        <section style={sectionStyle}>
+          <CoverageTokensSection repo={repo} canManage={canConfigureOrganization} />
+        </section>
+        </div>
 
         <aside style={sectionStyle}>
           <div style={sectionHeaderStyle}>

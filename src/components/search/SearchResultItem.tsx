@@ -6,6 +6,7 @@ import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { SemanticSearchResult } from '@/lib/types/search'
 import { buildFileStubHref, formatSearchScore } from '@/lib/search'
+import { copyText as copyToClipboard } from '@/lib/clipboard'
 
 interface SearchResultItemProps {
   repoId: string
@@ -27,9 +28,10 @@ export function SearchResultItem({ repoId, result }: SearchResultItemProps) {
   const pathWithLines = `${result.file_path}:${linesLabel(result)}`
 
   const copyText = async (label: string, text: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopied(label)
-    window.setTimeout(() => setCopied(null), 1200)
+    if (await copyToClipboard(text)) {
+      setCopied(label)
+      window.setTimeout(() => setCopied(null), 1200)
+    }
   }
 
   const cardStyle: CSSProperties = {

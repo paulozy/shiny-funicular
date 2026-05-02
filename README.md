@@ -37,8 +37,15 @@ Construído com Next.js 15 (App Router), React 19 e TypeScript, seguindo o padr�
   - Sinaliza qualidade baixa, falta de cobertura, alertas e configuração incompleta.
 - **Visão do repositório**
   - Overview com metadados, status de análise e badges de provider.
+  - Badge de cobertura derivado do `coverage_status` da última análise (ok / parcial / falha / não medido).
+  - Banner de erro quando o sync inicial falhou — exibe a mensagem do backend e indica que a próxima inicialização do servidor reagenda.
   - Listagem de arquivos.
-  - Configurações por repositório.
+  - Configurações por repositório (busca semântica + tokens de upload de cobertura).
+- **Cobertura via CI**
+  - Tela de configurações do repositório permite gerar tokens `cov_*` revogáveis com escopo por repositório.
+  - O token é exibido **uma vez** logo após a criação, com botão de copiar e snippet pronto pro GitHub Actions já preenchido com o `IDP_REPOSITORY_ID`.
+  - CI do projeto usa o token via `POST /api/v1/repositories/:id/coverage` (formatos: Go / LCOV / Cobertura / JaCoCo).
+  - Tokens podem ser revogados a qualquer momento pela mesma tela.
 - **Busca semântica de código**
   - Omnibar dentro do contexto do repositório.
   - Resultados code‑first com snippet, score em %, branch e linha.

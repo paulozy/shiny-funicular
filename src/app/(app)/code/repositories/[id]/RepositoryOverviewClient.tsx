@@ -1,11 +1,19 @@
 'use client'
 
 import { MFIcon } from '@/components/icons/MFIcon'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
+import {
+  coverageStatusLabel,
+  coverageStatusVariant,
+  coverageWasMeasured,
+  syncStatusLabel,
+  syncStatusVariant,
+} from '@/lib/coverage'
 import { T } from '@/lib/tokens'
-import { RepositoryResponse } from '@/lib/types/repository'
+import { CoverageStatus, RepositoryResponse } from '@/lib/types/repository'
 import Link from 'next/link'
 import { CSSProperties } from 'react'
 
@@ -38,6 +46,27 @@ function metricTone(kind: string, value?: number): string {
   return T.ink
 }
 
+function pickCoverage(repo: RepositoryResponse): {
+  percentage?: number
+  status: CoverageStatus | '' | undefined
+} {
+  // Prefer the authoritative value from the latest analysis (`stats`); fall
+  // back to the legacy `metadata.test_coverage` populated by the sync. When
+  // we only have a number without an explicit status, we still treat it as
+  // measured so legacy data keeps rendering as a percentage.
+  const statsCoverage = repo.stats?.test_coverage
+  const statsStatus = repo.stats?.coverage_status
+  if (statsStatus === 'ok' || statsStatus === 'partial') {
+    return { percentage: statsCoverage, status: statsStatus }
+  }
+  const metaCoverage = repo.metadata?.test_coverage
+  const metaStatus = repo.metadata?.coverage_status
+  if (typeof metaCoverage === 'number' && metaCoverage > 0) {
+    return { percentage: metaCoverage, status: metaStatus ?? 'ok' }
+  }
+  return { percentage: metaCoverage, status: metaStatus ?? statsStatus ?? '' }
+}
+
 export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'
@@ -59,14 +88,20 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
     { label: 'Análises', value: stats.total_analyses, icon: 'doc', tone: T.ink },
   ]
 
+  const coverage = pickCoverage(repo)
+  const coverageMeasured = coverageWasMeasured(coverage.status)
+
   const qualitySupportMetrics = [
     { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: metricTone('prs', metadata.pr_count) },
     { label: 'Alertas', value: metadata.issue_count ?? 0, icon: 'shield', tone: metricTone('alerts', metadata.issue_count) },
     {
       label: 'Cobertura',
-      value: metadata.test_coverage !== undefined ? `${Math.round(metadata.test_coverage)}%` : '-',
+      value: coverageMeasured && coverage.percentage !== undefined
+        ? `${Math.round(coverage.percentage)}%`
+        : '—',
       icon: 'check',
-      tone: metricTone('coverage', metadata.test_coverage),
+      tone: coverageMeasured ? metricTone('coverage', coverage.percentage) : T.ink3,
+      coverageBadge: coverage.status as CoverageStatus | '' | undefined,
     },
     { label: 'Contribuidores', value: metadata.contributors ?? '-', icon: 'user', tone: T.ink },
   ]
@@ -249,6 +284,14 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
 
   return (
     <div style={pageStyle}>
+      {repo.sync_status === 'error' && repo.sync_error && (
+        <div style={{ marginBottom: 14 }}>
+          <Alert variant="danger">
+            <strong>Falha ao sincronizar:</strong> {repo.sync_error}. A sincronização será
+            tentada novamente automaticamente na próxima inicialização do servidor.
+          </Alert>
+        </div>
+      )}
       <div style={headerStyle}>
         <div style={iconBoxStyle}>
           <MFIcon name="branch" size={20} color={T.accent} />
@@ -258,7 +301,7 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
             <h1 style={titleStyle}>{repo.name}</h1>
             <Tag>{repo.provider}</Tag>
             <Tag variant={repo.is_private ? 'warn' : 'ok'}>{repo.is_private ? 'privado' : 'público'}</Tag>
-            <Tag>{repo.sync_status || 'idle'}</Tag>
+            <Tag variant={syncStatusVariant(repo.sync_status)}>{syncStatusLabel(repo.sync_status)}</Tag>
             <Tag variant={analysisStatusVariant(repo.analysis_status)}>{analysisStatusLabel(repo.analysis_status)}</Tag>
           </div>
           <div style={subtitleStyle}>
@@ -315,15 +358,23 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
       </div>
 
       <div style={{ ...metricGridStyle, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-        {qualitySupportMetrics.map((metric) => (
-          <div key={metric.label} style={cardStyle}>
-            <div style={metricLabelStyle}>
-              <MFIcon name={metric.icon} size={12} color={T.faint} />
-              {metric.label}
+        {qualitySupportMetrics.map((metric) => {
+          const badge = (metric as { coverageBadge?: CoverageStatus | '' | undefined }).coverageBadge
+          return (
+            <div key={metric.label} style={cardStyle}>
+              <div style={metricLabelStyle}>
+                <MFIcon name={metric.icon} size={12} color={T.faint} />
+                {metric.label}
+              </div>
+              <div style={{ ...metricValueStyle, color: metric.tone }}>{metric.value}</div>
+              {badge !== undefined && metric.label === 'Cobertura' && (
+                <div style={{ marginTop: 6 }}>
+                  <Tag variant={coverageStatusVariant(badge)}>{coverageStatusLabel(badge)}</Tag>
+                </div>
+              )}
             </div>
-            <div style={{ ...metricValueStyle, color: metric.tone }}>{metric.value}</div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div style={twoColumnStyle}>
