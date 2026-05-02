@@ -1,11 +1,10 @@
 'use client'
 
-import { normalizeAuthError, NormalizedError } from '@/lib/types/auth'
+import { normalizeAuthError } from '@/lib/types/auth'
 
-let isRefreshing = false
-let refreshPromise: Promise<void> | null = null
+let refreshPromise: Promise<boolean> | null = null
 
-class AuthError extends Error {
+export class AuthError extends Error {
   constructor(
     public code: string,
     message: string,
@@ -16,6 +15,29 @@ class AuthError extends Error {
   }
 }
 
+function refreshOnce(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/auth/refresh', { method: 'POST' })
+      return res.ok
+    } catch {
+      return false
+    }
+  })().finally(() => {
+    refreshPromise = null
+  })
+  return refreshPromise
+}
+
+async function failAuth(): Promise<never> {
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login'
+  }
+  throw new AuthError('session_expired', 'Sessão expirada', 401)
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
@@ -24,38 +46,13 @@ export async function apiFetch<T>(
   const res = await fetch(path, init)
 
   if (res.status === 401 && !_isRetry) {
-    if (!isRefreshing) {
-      isRefreshing = true
-      refreshPromise = fetch('/api/auth/refresh', { method: 'POST' }).then((r) => {
-        if (!r.ok) {
-          throw new Error('refresh_failed')
-        }
-      })
-    }
-
-    try {
-      if (refreshPromise) {
-        await refreshPromise
-      }
-      return apiFetch(path, init, true)
-    } catch {
-      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
-      throw new AuthError('session_expired', 'Sessão expirada')
-    } finally {
-      isRefreshing = false
-      refreshPromise = null
-    }
+    const ok = await refreshOnce()
+    if (!ok) return failAuth()
+    return apiFetch<T>(path, init, true)
   }
 
   if (res.status === 401 && _isRetry) {
-    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
-    throw new AuthError('session_expired', 'Sessão expirada')
+    return failAuth()
   }
 
   if (!res.ok) {
