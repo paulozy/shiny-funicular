@@ -7,6 +7,7 @@ import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch } from '@/lib/search'
 import { AppShell } from '@/components/shell/AppShell'
 import { RepoSearchBox } from '@/components/search/RepoSearchBox'
+import { RepoTabBar } from '@/components/shell/RepoTabBar'
 import { CoPensador } from '@/components/home/CoPensador'
 import { T } from '@/lib/tokens'
 
@@ -72,6 +73,7 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
       searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} />}
       aiPanel={repos ? <CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} /> : undefined}
     >
+      <RepoTabBar repoId={repo.id} activeTab="files" />
       <div style={pageStyle}>
         <div style={panelStyle}>
           <div

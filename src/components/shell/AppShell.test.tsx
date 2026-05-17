@@ -2,6 +2,20 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { AppShell } from './AppShell'
 import { UserInfo } from '@/lib/types/auth'
 
+// AppShell now embeds the CommandPalette, which relies on `useRouter` from
+// Next.js navigation. We mock it here so component tests can render without a
+// real router context.
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}))
+
+beforeAll(() => {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ repositories: [], total: 0, limit: 100, offset: 0 }),
+  }) as unknown as typeof fetch
+})
+
 const user: UserInfo = {
   id: 'user-1',
   email: 'user@example.com',
@@ -84,5 +98,79 @@ describe('AppShell sidebar', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /expandir co-pensador/i }))
     expect(screen.getByText('AI content')).toBeInTheDocument()
+  })
+
+  describe('collapsible sidebar', () => {
+    beforeEach(() => {
+      window.localStorage.clear()
+      delete document.documentElement.dataset.sidebarMode
+    })
+
+    it('starts expanded by default and toggles to collapsed via the toggle button', () => {
+      render(
+        <AppShell user={user} activeHub="code">
+          <div>content</div>
+        </AppShell>
+      )
+
+      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
+      expect(screen.getByRole('link', { name: 'idp.ai' })).toBeInTheDocument()
+
+      const toggle = screen.getByRole('button', { name: /recolher menu lateral/i })
+      fireEvent.click(toggle)
+
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
+      // When collapsed, the textual logo link is hidden — only the icons remain.
+      expect(screen.queryByRole('link', { name: 'idp.ai' })).not.toBeInTheDocument()
+      expect(window.localStorage.getItem('idp-sidebar-mode')).toBe('collapsed')
+    })
+
+    it('toggles via the Ctrl/Cmd+B keyboard shortcut', () => {
+      render(
+        <AppShell user={user} activeHub="code">
+          <div>content</div>
+        </AppShell>
+      )
+
+      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
+
+      fireEvent.keyDown(window, { key: 'b', ctrlKey: true })
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
+
+      fireEvent.keyDown(window, { key: 'b', ctrlKey: true })
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
+    })
+
+    it('respects the initial sidebar mode read from the document dataset', () => {
+      document.documentElement.dataset.sidebarMode = 'collapsed'
+
+      render(
+        <AppShell user={user} activeHub="code">
+          <div>content</div>
+        </AppShell>
+      )
+
+      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
+      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
+      // The expand toggle button is present (label flips to "expandir").
+      expect(screen.getByRole('button', { name: /expandir menu lateral/i })).toBeInTheDocument()
+    })
+
+    it('keeps hub icons accessible while collapsed via aria-label', () => {
+      document.documentElement.dataset.sidebarMode = 'collapsed'
+
+      render(
+        <AppShell user={user} activeHub="code">
+          <div>content</div>
+        </AppShell>
+      )
+
+      // Code hub is the only enabled hub today — its link still exposes the label.
+      expect(screen.getByRole('link', { name: 'Code' })).toBeInTheDocument()
+      // Disabled hubs keep their aria-label too, with "Em breve" suffix.
+      expect(screen.getByLabelText('Infra — Em breve')).toBeInTheDocument()
+    })
   })
 })

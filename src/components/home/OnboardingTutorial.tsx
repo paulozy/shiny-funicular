@@ -51,7 +51,7 @@ export function OnboardingTutorial({ orgConfig, canConfigure = false, onImportRe
     height: 32,
     borderRadius: '50%',
     background: T.accent,
-    color: '#fff',
+    color: T.inkInverse,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

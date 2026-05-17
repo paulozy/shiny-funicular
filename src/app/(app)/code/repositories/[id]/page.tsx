@@ -1,6 +1,7 @@
 import { CoPensador } from '@/components/home/CoPensador'
 import { RepoSearchBox } from '@/components/search/RepoSearchBox'
 import { AppShell } from '@/components/shell/AppShell'
+import { RepoTabBar } from '@/components/shell/RepoTabBar'
 import { backendGetMe } from '@/lib/api/auth'
 import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
@@ -47,6 +48,7 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
       searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} />}
       aiPanel={<CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} />}
     >
+      <RepoTabBar repoId={repo.id} activeTab="overview" />
       <RepositoryOverviewClient repo={repo} />
     </AppShell>
   )

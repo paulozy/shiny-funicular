@@ -6,6 +6,7 @@ import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
 import { SearchInsight, SearchSynthesisDone, SearchSynthesisError, SearchSynthesisUnavailable, SemanticSearchResponse } from '@/lib/types/search'
 import { AppShell } from '@/components/shell/AppShell'
+import { RepoTabBar } from '@/components/shell/RepoTabBar'
 import { CoPensador } from '@/components/home/CoPensador'
 import { SearchResultsClient } from '@/components/search/SearchResultsClient'
 
@@ -81,6 +82,7 @@ export function RepositorySearchExperience({
       breadcrumb={[{ label: 'Code', href: '/' }, { label: repo.name, href: `/code/repositories/${repo.id}` }, { label: 'busca' }]}
       aiPanel={<CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} searchInsight={searchInsight} />}
     >
+      <RepoTabBar repoId={repo.id} activeTab="search" />
       <SearchResultsClient
         repo={repo}
         initialQuery={initialQuery}

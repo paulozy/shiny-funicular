@@ -306,7 +306,7 @@ export function SearchResultsClient({
     border: 0,
     borderRadius: T.radius.button,
     background: T.ink,
-    color: '#fff',
+    color: T.inkInverse,
     font: `500 13px ${T.font}`,
     padding: '0 14px',
     cursor: loading || !queryInput.trim() ? 'not-allowed' : 'pointer',

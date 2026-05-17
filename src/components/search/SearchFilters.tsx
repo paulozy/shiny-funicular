@@ -71,7 +71,7 @@ export function SearchFilters({
     border: 0,
     borderRadius: T.radius.button,
     background: T.ink,
-    color: '#fff',
+    color: T.inkInverse,
     font: `500 12.5px ${T.font}`,
     padding: '0 12px',
     cursor: loading ? 'not-allowed' : 'pointer',

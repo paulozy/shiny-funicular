@@ -7,6 +7,7 @@ const push = jest.fn()
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push }),
+  usePathname: () => '/',
 }))
 
 jest.mock('@/components/home/CoPensador', () => ({
@@ -94,6 +95,27 @@ describe('HomeClient', () => {
     render(<HomeClient user={baseUser} initialRepos={repos} orgConfig={null} />)
 
     expect(screen.getByRole('link', { name: 'web' })).toHaveAttribute('href', '/code/repositories/repo-1')
+  })
+
+  it('renders the repository card with stretched-link structure so the whole card is clickable', () => {
+    render(<HomeClient user={baseUser} initialRepos={repos} orgConfig={null} />)
+
+    const repoLink = screen.getByRole('link', { name: 'web' })
+    expect(repoLink).toHaveClass('repo-card-link')
+
+    // The link must live inside an element with the `.repo-card` class so the
+    // `::after` overlay defined in globals.css covers the whole card surface.
+    const card = repoLink.closest('.repo-card')
+    expect(card).not.toBeNull()
+    expect(card).toHaveAttribute('class', expect.stringContaining('repo-card'))
+  })
+
+  it('clicking the repository actions menu does not navigate to the repository overview', () => {
+    render(<HomeClient user={baseUser} initialRepos={repos} orgConfig={null} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /abrir menu de web/i }))
+
+    expect(push).not.toHaveBeenCalledWith('/code/repositories/repo-1')
   })
 
   it('shows enriched analysis quality and empty analysis state in repository cards', () => {

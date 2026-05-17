@@ -32,9 +32,9 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
 
   const langColor = (provider: string) => {
     const colors: Record<string, string> = {
-      github: '#000',
-      gitlab: '#fb542b',
-      gitea: '#34495e',
+      github: T.providerGithub,
+      gitlab: T.providerGitlab,
+      gitea: T.providerGitea,
     }
     return colors[provider] || T.ink2
   }
@@ -80,7 +80,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
     appearance: 'none',
     border: `1px solid ${T.borderStrong}`,
     background: active ? T.ink : T.surface,
-    color: active ? '#fff' : T.ink,
+    color: active ? T.inkInverse : T.ink,
     padding: '6px 12px',
     borderRadius: T.radius.button,
     font: '500 12.5px ' + T.font,
@@ -202,6 +202,8 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    zIndex: 2,
   }
 
   const dropdownStyle: CSSProperties = {
@@ -286,10 +288,14 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
             const statusTone = analysisStatusTone(repo.analysis_status, T)
 
             return (
-              <div key={repo.id} style={cardStyle}>
+              <div key={repo.id} className="repo-card" style={cardStyle}>
                 <div style={cardHeaderStyle}>
                   <div style={{ ...langDotStyle, background: langColor(repo.provider) }} />
-                  <Link href={`/code/repositories/${repo.id}`} style={repoNameStyle}>
+                  <Link
+                    href={`/code/repositories/${repo.id}`}
+                    className="repo-card-link"
+                    style={repoNameStyle}
+                  >
                     {repo.name}
                   </Link>
                   <span style={tagStyle}>{repo.provider}</span>

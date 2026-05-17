@@ -7,6 +7,7 @@ import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/reposito
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
+import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { MetricStrip } from '@/components/home/MetricStrip'
 import { RepositoryGrid } from '@/components/home/RepositoryGrid'
 import { CoPensador } from '@/components/home/CoPensador'
@@ -100,7 +101,9 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
       {isEmpty ? (
         <OnboardingTutorial orgConfig={orgConfig} canConfigure={user.role === 'admin'} onImportRepo={handleShowNewRepoModal} />
       ) : (
-        <div style={contentStyle}>
+        <>
+          <CodeHubTabBar activeTab="repositories" />
+          <div style={contentStyle}>
           <div style={headerStyle}>
             <div>
               <div style={eyebrowStyle}>Code Hub · {repos?.total || 0} repos</div>
@@ -115,7 +118,8 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
               <RepositoryGrid repos={repos} showCreateModal={handleShowNewRepoModal} />
             </>
           )}
-        </div>
+          </div>
+        </>
       )}
 
       <NewRepoModal isOpen={showNewRepoModal} onClose={handleCloseModal} onSuccess={handleRepoCreated} />
