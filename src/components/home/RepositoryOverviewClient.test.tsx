@@ -2,6 +2,10 @@ import { render, screen } from '@testing-library/react'
 import { RepositoryOverviewClient } from '@/app/(app)/code/repositories/[id]/RepositoryOverviewClient'
 import { RepositoryResponse } from '@/lib/types/repository'
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}))
+
 const repo: RepositoryResponse = {
   id: 'repo-1',
   name: 'web',

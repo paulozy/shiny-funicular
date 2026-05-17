@@ -4,6 +4,7 @@ import { MFIcon } from '@/components/icons/MFIcon'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
+import { GenerateTemplateModal } from '@/components/templates/GenerateTemplateModal'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import {
   coverageStatusLabel,
@@ -15,7 +16,8 @@ import {
 import { T } from '@/lib/tokens'
 import { CoverageStatus, RepositoryResponse } from '@/lib/types/repository'
 import Link from 'next/link'
-import { CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
+import { CSSProperties, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
@@ -68,6 +70,8 @@ function pickCoverage(repo: RepositoryResponse): {
 }
 
 export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
+  const router = useRouter()
+  const [templateModalOpen, setTemplateModalOpen] = useState(false)
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'
   const stats = getRepositoryStats(repo)
@@ -319,6 +323,10 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
               Buscar no repositório
             </Button>
           </Link>
+          <Button variant="default" size="md" onClick={() => setTemplateModalOpen(true)}>
+            <MFIcon name="sparkles" size={13} />
+            Gerar template
+          </Button>
           <Link href={settingsHref} style={linkButtonStyle}>
             <Button variant="default" size="md">
               <MFIcon name="gear" size={13} />
@@ -335,6 +343,13 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
           )}
         </div>
       </div>
+
+      <GenerateTemplateModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        repoId={repo.id}
+        onSuccess={(response) => router.push(`/templates/${response.id}`)}
+      />
 
       <div style={analysisBannerStyle}>
         <MFIcon name={stats.has_analysis ? 'trophy' : 'database'} size={14} color="currentColor" />
