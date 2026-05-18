@@ -17,6 +17,7 @@
     "@xyflow/react": "^12.10.2",
     "cmdk": "^1.1.1",
     "next": "15.3.5",
+    "nextjs-toploader": "^3.9.17",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-markdown": "^10.1.0",

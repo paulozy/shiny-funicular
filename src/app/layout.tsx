@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import NextTopLoader from 'nextjs-toploader'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -30,7 +31,22 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {/*
+          Top progress bar visible on every route transition (client-side
+          `<Link>` clicks, router.push, F5). Color matches the accent token
+          but is hardcoded — the lib needs a literal value at mount time.
+        */}
+        <NextTopLoader
+          color="#d97757"
+          height={2}
+          showSpinner={false}
+          crawlSpeed={200}
+          easing="ease"
+          shadow={false}
+        />
+        {children}
+      </body>
     </html>
   )
 }
