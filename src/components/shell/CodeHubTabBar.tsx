@@ -19,10 +19,14 @@ export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps
       matchPrefix: '/templates',
       forceActive: activeTab === 'templates',
     },
-    // Documentation and Graph are still placeholders for the roadmap. They
-    // render as disabled tabs with the "Em breve" tooltip until their routes
-    // ship.
-    { label: 'Documentação' },
+    {
+      label: 'Documentação',
+      href: '/docs',
+      matchPrefix: '/docs',
+      forceActive: activeTab === 'docs',
+    },
+    // Graph is still a placeholder for the roadmap and renders as a disabled
+    // tab with the "Em breve" tooltip until its route ships.
     { label: 'Grafo' },
   ]
   return <TabBar items={items} ariaLabel="Seções do Code Hub" />

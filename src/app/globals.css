@@ -148,6 +148,76 @@ textarea {
 }
 
 /*
+ * Markdown body produced by react-markdown inside `<DocMarkdownViewer>`.
+ * Limits content width for readability and gives headings/code blocks a
+ * recognisable hierarchy.
+ */
+.doc-markdown {
+  max-width: 920px;
+}
+.doc-markdown h1,
+.doc-markdown h2,
+.doc-markdown h3,
+.doc-markdown h4 {
+  margin: 1.4em 0 0.6em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.doc-markdown h1 { font-size: 22px; }
+.doc-markdown h2 { font-size: 18px; }
+.doc-markdown h3 { font-size: 15px; }
+.doc-markdown h4 { font-size: 13.5px; color: var(--color-ink-2); }
+.doc-markdown p { margin: 0.6em 0; }
+.doc-markdown ul,
+.doc-markdown ol { padding-left: 1.4em; margin: 0.6em 0; }
+.doc-markdown li { margin: 0.25em 0; }
+.doc-markdown a { color: var(--color-accent); }
+.doc-markdown code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+}
+.doc-markdown pre {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  overflow: auto;
+}
+.doc-markdown pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+}
+.doc-markdown blockquote {
+  border-left: 3px solid var(--color-border-strong);
+  padding-left: 10px;
+  color: var(--color-ink-3);
+  margin: 0.8em 0;
+}
+.doc-markdown table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 12.5px;
+}
+.doc-markdown th,
+.doc-markdown td {
+  border: 1px solid var(--color-border);
+  padding: 6px 10px;
+  text-align: left;
+}
+.doc-markdown th { background: var(--color-surface-alt); }
+.doc-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 1.4em 0;
+}
+
+/*
  * Shiki produces a pair of themed <pre> blocks (light + dark) wrapped in a
  * single host. We toggle which one is visible based on the document theme.
  * Shiki tags each themed `<pre>` with `data-theme="<themeId>"` so we match on

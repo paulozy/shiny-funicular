@@ -9,6 +9,10 @@ const baseConfig = {
   roots: ['<rootDir>'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // ESM-only packages get manual mocks (Jest's default ts-jest transform
+    // can't parse ESM and the project doesn't configure transformIgnorePatterns).
+    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.tsx',
+    '^remark-gfm$': '<rootDir>/__mocks__/remark-gfm.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 }
