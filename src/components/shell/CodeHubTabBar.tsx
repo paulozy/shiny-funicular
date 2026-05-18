@@ -25,9 +25,12 @@ export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps
       matchPrefix: '/docs',
       forceActive: activeTab === 'docs',
     },
-    // Graph is still a placeholder for the roadmap and renders as a disabled
-    // tab with the "Em breve" tooltip until its route ships.
-    { label: 'Grafo' },
+    {
+      label: 'Grafo',
+      href: '/graph',
+      matchPrefix: '/graph',
+      forceActive: activeTab === 'graph',
+    },
   ]
   return <TabBar items={items} ariaLabel="Seções do Code Hub" />
 }

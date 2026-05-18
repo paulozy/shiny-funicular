@@ -6,7 +6,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 describe('CodeHubTabBar', () => {
-  it('renders Repositórios/Templates/Documentação as real links and Grafo as placeholder', () => {
+  it('renders all four Code Hub tabs as real links', () => {
     render(<CodeHubTabBar />)
 
     const reposTab = screen.getByRole('link', { name: 'Repositórios' })
@@ -15,10 +15,6 @@ describe('CodeHubTabBar', () => {
 
     expect(screen.getByRole('link', { name: 'Templates' })).toHaveAttribute('href', '/templates')
     expect(screen.getByRole('link', { name: 'Documentação' })).toHaveAttribute('href', '/docs')
-
-    // Grafo is still a placeholder.
-    const grafoTab = screen.getByText('Grafo')
-    expect(grafoTab).toHaveAttribute('aria-disabled', 'true')
-    expect(grafoTab).toHaveAttribute('title', 'Em breve')
+    expect(screen.getByRole('link', { name: 'Grafo' })).toHaveAttribute('href', '/graph')
   })
 })
