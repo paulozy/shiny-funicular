@@ -4,7 +4,10 @@ import {
   DocGenerationDetail,
   DocGenerationListResponse,
   DocGenerationStatus,
+  DocTemplate,
   GenerateDocsRequest,
+  GenerateOrgDocsRequest,
+  UpdateDocContentRequest,
 } from '@/lib/types/docs'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'
@@ -66,4 +69,53 @@ export async function backendGenerateDocs(
     body: JSON.stringify(body),
   })
   return handleResponse<DocGenerationAcceptedResponse>(response)
+}
+
+// ---- Org-scope endpoints ----
+
+export async function backendListOrgDocs(accessToken: string): Promise<DocGenerationListResponse> {
+  const response = await fetch(getApiUrl('/organizations/docs'), {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  return handleResponse<DocGenerationListResponse>(response)
+}
+
+export async function backendGenerateOrgDocs(
+  accessToken: string,
+  body: GenerateOrgDocsRequest
+): Promise<DocGenerationAcceptedResponse> {
+  const response = await fetch(getApiUrl('/organizations/docs/generate'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  return handleResponse<DocGenerationAcceptedResponse>(response)
+}
+
+export async function backendUpdateDocContent(
+  accessToken: string,
+  docId: string,
+  body: UpdateDocContentRequest
+): Promise<DocGenerationDetail> {
+  const response = await fetch(getApiUrl(`/docs/${docId}`), {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  return handleResponse<DocGenerationDetail>(response)
+}
+
+export async function backendListDocTemplates(accessToken: string): Promise<DocTemplate[]> {
+  const response = await fetch(getApiUrl('/docs/templates'), {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  return handleResponse<DocTemplate[]>(response)
 }

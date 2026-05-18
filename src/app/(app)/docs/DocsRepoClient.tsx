@@ -19,13 +19,14 @@ import {
 import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
 import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
+import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocGenerationCard } from '@/components/docs/DocGenerationCard'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { GenerateDocsModal } from '@/components/docs/GenerateDocsModal'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
 
-interface DocsClientProps {
+interface DocsRepoClientProps {
   user: UserInfo
   repos: RepositoryResponse[]
   initialSelectedRepoId: string | null
@@ -34,7 +35,7 @@ interface DocsClientProps {
 
 const POLL_INTERVAL_MS = 5000
 
-export function DocsClient({ user, repos, initialSelectedRepoId, initialDocs }: DocsClientProps) {
+export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs }: DocsRepoClientProps) {
   const router = useRouter()
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(initialSelectedRepoId)
   const [docs, setDocs] = useState<DocGenerationSummary[]>(initialDocs.items)
@@ -130,6 +131,8 @@ export function DocsClient({ user, repos, initialSelectedRepoId, initialDocs }: 
       // Optimistically add the new generation to the top of the list.
       const stub: DocGenerationSummary = {
         id: response.id,
+        organization_id: user.organization?.id ?? '',
+        scope: 'repo',
         repository_id: selectedRepoId!,
         status: response.status,
         types: [],
@@ -243,6 +246,7 @@ export function DocsClient({ user, repos, initialSelectedRepoId, initialDocs }: 
       }
     >
       <CodeHubTabBar activeTab="docs" />
+      <DocsScopeTabs active="repo" />
 
       <div style={headerStyle}>
         <span style={{ fontSize: 12.5, color: T.ink2 }}>Repositório:</span>
