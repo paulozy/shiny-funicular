@@ -1,38 +1,29 @@
 import { cookies } from 'next/headers'
 import { TokenResponse } from './types/auth'
-
-const COOKIE_ACCESS_TOKEN = 'access_token'
-const COOKIE_REFRESH_TOKEN = 'refresh_token'
-const COOKIE_LOGIN_TICKET = 'login_ticket'
-
-function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production'
-}
+import {
+  COOKIE_ACCESS_TOKEN,
+  COOKIE_LOGIN_TICKET,
+  COOKIE_REFRESH_TOKEN,
+  buildAuthCookieOptions,
+  isProductionEnv,
+} from './auth/edge-cookies'
 
 export async function setAuthCookies(
   response: TokenResponse
 ): Promise<void> {
   const cookieStore = await cookies()
 
-  const accessTokenMaxAge = response.expires_in
-  const refreshTokenMaxAge = response.refresh_expires_in
+  cookieStore.set(
+    COOKIE_ACCESS_TOKEN,
+    response.access_token,
+    buildAuthCookieOptions(response.expires_in)
+  )
 
-  const cookieOptions = {
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: isProduction(),
-    path: '/',
-  }
-
-  cookieStore.set(COOKIE_ACCESS_TOKEN, response.access_token, {
-    ...cookieOptions,
-    maxAge: accessTokenMaxAge,
-  })
-
-  cookieStore.set(COOKIE_REFRESH_TOKEN, response.refresh_token, {
-    ...cookieOptions,
-    maxAge: refreshTokenMaxAge,
-  })
+  cookieStore.set(
+    COOKIE_REFRESH_TOKEN,
+    response.refresh_token,
+    buildAuthCookieOptions(response.refresh_expires_in)
+  )
 }
 
 export async function clearAuthCookies(): Promise<void> {
@@ -46,7 +37,7 @@ export async function setLoginTicketCookie(ticket: string): Promise<void> {
   cookieStore.set(COOKIE_LOGIN_TICKET, ticket, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: isProduction(),
+    secure: isProductionEnv(),
     path: '/',
     maxAge: 300,
   })

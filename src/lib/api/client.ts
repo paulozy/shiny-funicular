@@ -2,7 +2,9 @@
 
 import { normalizeAuthError } from '@/lib/types/auth'
 
-let refreshPromise: Promise<boolean> | null = null
+export type RefreshOutcome = 'ok' | 'invalid_grant' | 'transient'
+
+let refreshPromise: Promise<RefreshOutcome> | null = null
 
 export class AuthError extends Error {
   constructor(
@@ -15,14 +17,19 @@ export class AuthError extends Error {
   }
 }
 
-function refreshOnce(): Promise<boolean> {
+function refreshOnce(): Promise<RefreshOutcome> {
   if (refreshPromise) return refreshPromise
-  refreshPromise = (async () => {
+  refreshPromise = (async (): Promise<RefreshOutcome> => {
     try {
       const res = await fetch('/api/auth/refresh', { method: 'POST' })
-      return res.ok
+      if (res.ok) return 'ok'
+      // 401 = backend says the refresh token is invalid (expired, revoked,
+      // family burned). Anything else (502/500/network) is transient — the
+      // refresh cookie is preserved server-side and the user can retry.
+      if (res.status === 401) return 'invalid_grant'
+      return 'transient'
     } catch {
-      return false
+      return 'transient'
     }
   })().finally(() => {
     refreshPromise = null
@@ -46,9 +53,16 @@ export async function apiFetch<T>(
   const res = await fetch(path, init)
 
   if (res.status === 401 && !_isRetry) {
-    const ok = await refreshOnce()
-    if (!ok) return failAuth()
-    return apiFetch<T>(path, init, true)
+    const outcome = await refreshOnce()
+    if (outcome === 'ok') {
+      return apiFetch<T>(path, init, true)
+    }
+    if (outcome === 'invalid_grant') {
+      return failAuth()
+    }
+    // Transient: do NOT log the user out — surface the error so the caller
+    // can retry (or display "tente novamente") without losing the session.
+    throw new AuthError('refresh_unavailable', 'Não foi possível renovar a sessão. Tente novamente.', 503)
   }
 
   if (res.status === 401 && _isRetry) {
@@ -64,7 +78,7 @@ export async function apiFetch<T>(
   }
 
   if (res.status === 204) {
-    return undefined as any
+    return undefined as T
   }
 
   return res.json()

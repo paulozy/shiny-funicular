@@ -100,6 +100,37 @@ describe('apiFetch refresh-token concurrency', () => {
     expect(calls.filter((c) => c === '/api/auth/logout').length).toBe(1)
   })
 
+  it('does NOT log the user out when the refresh endpoint returns a transient 502', async () => {
+    const calls: string[] = []
+    fetchMock.mockImplementation(async (url: string) => {
+      calls.push(url)
+      if (url === '/api/auth/refresh') return mockRes(502, { error: 'refresh_unavailable' })
+      if (url === '/api/auth/logout') return mockRes(200)
+      return mockRes(401, { error: 'unauthorized' })
+    })
+
+    await expect(apiFetch('/protected')).rejects.toBeInstanceOf(AuthError)
+
+    // The original request was attempted once, refresh once, no logout call.
+    expect(calls.filter((c) => c === '/protected').length).toBe(1)
+    expect(calls.filter((c) => c === '/api/auth/refresh').length).toBe(1)
+    expect(calls.filter((c) => c === '/api/auth/logout').length).toBe(0)
+  })
+
+  it('does NOT log the user out when the refresh fetch throws (network failure)', async () => {
+    const calls: string[] = []
+    fetchMock.mockImplementation(async (url: string) => {
+      calls.push(url)
+      if (url === '/api/auth/refresh') throw new TypeError('network error')
+      if (url === '/api/auth/logout') return mockRes(200)
+      return mockRes(401, { error: 'unauthorized' })
+    })
+
+    await expect(apiFetch('/protected')).rejects.toBeInstanceOf(AuthError)
+
+    expect(calls.filter((c) => c === '/api/auth/logout').length).toBe(0)
+  })
+
   it('clears the single-flight slot after a failed refresh so a later 401 retries the refresh', async () => {
     let refreshAttempts = 0
     fetchMock.mockImplementation(async (url: string) => {
