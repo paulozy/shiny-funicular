@@ -55,6 +55,11 @@ export function layoutWithDagre(
         x: dagreNode.x - nodeWidth / 2,
         y: dagreNode.y - nodeHeight / 2,
       },
+      // React Flow 12 reads `node.width`/`node.height` before the DOM is
+      // measured. Without these, `getNodeDimensions` returns 0×0 on the first
+      // paint, so the MiniMap draws empty rects and the layout briefly flashes.
+      width: nodeWidth,
+      height: nodeHeight,
       // Tell React Flow which edge anchor sides to use based on direction.
       targetPosition: direction === 'LR' ? 'left' : direction === 'RL' ? 'right' : direction === 'TB' ? 'top' : 'bottom',
       sourcePosition: direction === 'LR' ? 'right' : direction === 'RL' ? 'left' : direction === 'TB' ? 'bottom' : 'top',

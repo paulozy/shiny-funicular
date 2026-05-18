@@ -89,11 +89,14 @@ function InnerGraph({ nodes, edges, direction = 'LR', onNodeSelect, onEdgeSelect
     >
       <Background color={T.border} gap={20} />
       <MiniMap
-        nodeColor={() => T.surfaceHover}
-        nodeStrokeColor={() => T.border}
+        nodeColor={() => T.accent}
+        nodeStrokeColor={() => T.borderStrong}
+        nodeBorderRadius={4}
         maskColor={T.overlay}
+        bgColor={T.surface}
         pannable
         zoomable
+        style={{ background: T.surface }}
       />
       <Controls position="bottom-right" />
     </ReactFlow>

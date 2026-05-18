@@ -2,7 +2,7 @@ import type { Edge, Node } from '@xyflow/react'
 import { layoutWithDagre } from './dagre-layout'
 
 describe('layoutWithDagre', () => {
-  it('assigns x/y positions to every node', () => {
+  it('assigns x/y positions and dimensions to every node', () => {
     const nodes: Node[] = [
       { id: 'a', position: { x: 0, y: 0 }, data: {} },
       { id: 'b', position: { x: 0, y: 0 }, data: {} },
@@ -21,6 +21,10 @@ describe('layoutWithDagre', () => {
       expect(typeof node.position.y).toBe('number')
       expect(Number.isFinite(node.position.x)).toBe(true)
       expect(Number.isFinite(node.position.y)).toBe(true)
+      // React Flow 12 needs explicit dimensions before DOM measurement so the
+      // MiniMap can draw rects on the first paint (instead of 0×0 ghosts).
+      expect(node.width).toBe(200)
+      expect(node.height).toBe(60)
     }
   })
 
