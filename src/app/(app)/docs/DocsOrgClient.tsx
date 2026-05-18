@@ -19,6 +19,7 @@ import { AppShell } from '@/components/shell/AppShell'
 import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
+import { DocMarkdownEditor } from '@/components/docs/DocMarkdownEditor'
 import { OrgDocsTemplateModal } from '@/components/docs/OrgDocsTemplateModal'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -39,8 +40,55 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [activeType, setActiveType] = useState<DocType | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const canManage = user.organization?.role === 'admin'
+
+  // Reset edit mode whenever the user switches docs or types — saving
+  // mid-switch would otherwise leak the previous type's draft.
+  useEffect(() => {
+    setEditing(false)
+  }, [selectedDocId, activeType])
+
+  const handleSaveEdit = useCallback(
+    async (next: string) => {
+      if (!docDetail || !activeType) return
+      setSavingEdit(true)
+      try {
+        const updated = await apiFetch<DocGenerationDetail>(`/api/docs/${docDetail.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: { [activeType]: next } }),
+        })
+        setDocDetail(updated)
+        // The PATCH endpoint returns the new "head" row — point the selection
+        // at it and add it to the list (the old one is now superseded).
+        setDocs((prev) => [
+          {
+            id: updated.id,
+            organization_id: updated.organization_id,
+            scope: 'org',
+            template_id: updated.template_id,
+            status: updated.status,
+            types: updated.types,
+            tokens_used: updated.tokens_used,
+            created_at: updated.created_at,
+            updated_at: updated.updated_at,
+          },
+          ...prev.filter((d) => d.id !== docDetail.id),
+        ])
+        setSelectedDocId(updated.id)
+        setEditing(false)
+        router.replace(`/docs?scope=org&doc=${updated.id}`)
+      } catch {
+        /* leave the editor open so the user can retry */
+      } finally {
+        setSavingEdit(false)
+      }
+    },
+    [docDetail, activeType, router]
+  )
 
   // Whenever the selected doc changes, fetch its full detail (content blob).
   useEffect(() => {
@@ -226,6 +274,24 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
                   {DOC_TYPE_LABELS[type]}
                 </button>
               ))}
+              {canManage && activeType && !editing && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  style={{
+                    ...tabButtonStyle(false),
+                    marginLeft: 'auto',
+                    color: T.accent,
+                    fontWeight: 600,
+                    borderBottom: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <MFIcon name="doc" size={11} color={T.accent} /> Editar
+                </button>
+              )}
             </div>
           )}
 
@@ -263,6 +329,13 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
                 </div>
                 <div style={{ fontSize: 11.5 }}>Esta página atualiza automaticamente.</div>
               </div>
+            ) : editing && activeType ? (
+              <DocMarkdownEditor
+                initialContent={docDetail.content?.[activeType] ?? ''}
+                saving={savingEdit}
+                onSave={handleSaveEdit}
+                onCancel={() => setEditing(false)}
+              />
             ) : (
               <DocMarkdownViewer content={activeType ? docDetail.content?.[activeType] ?? '' : ''} />
             )}
