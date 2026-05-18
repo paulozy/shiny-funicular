@@ -22,13 +22,6 @@ export default function RootLayout({
       } catch (_) {
         document.documentElement.dataset.theme = 'light';
       }
-      try {
-        var sidebarStored = localStorage.getItem('idp-sidebar-mode');
-        document.documentElement.dataset.sidebarMode =
-          sidebarStored === 'collapsed' ? 'collapsed' : 'expanded';
-      } catch (_) {
-        document.documentElement.dataset.sidebarMode = 'expanded';
-      }
     })();
   `
 

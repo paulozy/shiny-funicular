@@ -11,6 +11,13 @@ export const COOKIE_ACCESS_TOKEN = 'access_token'
 export const COOKIE_REFRESH_TOKEN = 'refresh_token'
 export const COOKIE_LOGIN_TICKET = 'login_ticket'
 
+/**
+ * User preference cookie controlling whether the sidebar starts collapsed
+ * (`'collapsed'`) or expanded. Read by `(app)/layout.tsx` server-side so the
+ * markup matches between SSR and the first client render (no hydration mismatch).
+ */
+export const COOKIE_SIDEBAR_STATE = 'sidebar_state'
+
 export interface AuthCookieOptions {
   httpOnly: true
   sameSite: 'lax'

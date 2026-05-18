@@ -7,17 +7,7 @@ import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
 import { ThemeToggle } from '@/components/shell/ThemeToggle'
 import { CommandPalette, CommandPaletteAction } from '@/components/shell/CommandPalette'
-
-type SidebarMode = 'expanded' | 'collapsed'
-
-const SIDEBAR_STORAGE_KEY = 'idp-sidebar-mode'
-
-function readInitialSidebarMode(): SidebarMode {
-  if (typeof document === 'undefined') return 'expanded'
-  const fromDataset = document.documentElement.dataset.sidebarMode
-  if (fromDataset === 'collapsed' || fromDataset === 'expanded') return fromDataset
-  return 'expanded'
-}
+import { useSidebarPreference } from '@/components/shell/SidebarPreferenceProvider'
 
 export interface BreadcrumbItem {
   label: string
@@ -84,28 +74,14 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const [aiPanelMode, setAiPanelMode] = useState<'collapsed' | 'normal' | 'expanded'>('normal')
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>(() => readInitialSidebarMode())
+  const { mode: sidebarMode, setMode: setSidebarMode } = useSidebarPreference()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const normalizedBreadcrumb = breadcrumb.map((item) => (typeof item === 'string' ? { label: item } : item))
   const resolvedAiPanelWidth = aiPanelMode === 'collapsed' ? 52 : aiPanelMode === 'expanded' ? 420 : aiPanelWidth
   const sidebarCollapsed = sidebarMode === 'collapsed'
   const sidebarWidth = sidebarCollapsed ? 56 : 220
 
-  const applySidebarMode = (mode: SidebarMode) => {
-    setSidebarMode(mode)
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.sidebarMode = mode
-    }
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, mode)
-      } catch {
-        /* storage unavailable — silent */
-      }
-    }
-  }
-
-  const toggleSidebar = () => applySidebarMode(sidebarCollapsed ? 'expanded' : 'collapsed')
+  const toggleSidebar = () => setSidebarMode(sidebarCollapsed ? 'expanded' : 'collapsed')
 
   const toggleAiPanel = useCallback(() => {
     setAiPanelMode((current) => (current === 'collapsed' ? 'normal' : 'collapsed'))
@@ -337,8 +313,13 @@ export function AppShell({
 
   const contentStyle: CSSProperties = {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     overflow: 'auto',
     minWidth: 0,
+    // `minHeight: 0` lets flex children with `flex: 1` actually shrink/grow
+    // inside this container (React Flow needs a non-zero height to render).
+    minHeight: 0,
   }
 
   const aiPanelStyle: CSSProperties = {

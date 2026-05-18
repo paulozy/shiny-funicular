@@ -1,5 +1,10 @@
+import { ReactElement } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { AppShell } from './AppShell'
+import {
+  SidebarMode,
+  SidebarPreferenceProvider,
+} from './SidebarPreferenceProvider'
 import { UserInfo } from '@/lib/types/auth'
 
 // AppShell now embeds the CommandPalette, which relies on `useRouter` from
@@ -29,9 +34,25 @@ const user: UserInfo = {
   },
 }
 
+function renderShell(
+  ui: ReactElement,
+  options: { initialMode?: SidebarMode } = {}
+) {
+  const initialMode = options.initialMode ?? 'expanded'
+  return render(
+    <SidebarPreferenceProvider initialMode={initialMode}>{ui}</SidebarPreferenceProvider>
+  )
+}
+
+function clearSidebarCookie() {
+  // jsdom's `document.cookie` setter only adds/overwrites; setting an expired
+  // Max-Age effectively removes the cookie between tests.
+  document.cookie = 'sidebar_state=; Path=/; Max-Age=0'
+}
+
 describe('AppShell sidebar', () => {
   it('renders Code as the primary hub link and removes Início', () => {
-    render(
+    renderShell(
       <AppShell user={user} activeHub="code">
         <div>content</div>
       </AppShell>
@@ -43,7 +64,7 @@ describe('AppShell sidebar', () => {
   })
 
   it('keeps unavailable hubs disabled instead of linking to missing pages', () => {
-    render(
+    renderShell(
       <AppShell user={user} activeHub="code">
         <div>content</div>
       </AppShell>
@@ -55,7 +76,7 @@ describe('AppShell sidebar', () => {
   })
 
   it('links organization settings from the footer', () => {
-    render(
+    renderShell(
       <AppShell user={user} activeHub="settings">
         <div>content</div>
       </AppShell>
@@ -68,7 +89,7 @@ describe('AppShell sidebar', () => {
   })
 
   it('renders clickable breadcrumb ancestors and keeps the current item as text', () => {
-    render(
+    renderShell(
       <AppShell
         user={user}
         activeHub="code"
@@ -84,7 +105,7 @@ describe('AppShell sidebar', () => {
   })
 
   it('can collapse and expand the AI panel', () => {
-    render(
+    renderShell(
       <AppShell user={user} activeHub="code" aiPanel={<div>AI content</div>}>
         <div>content</div>
       </AppShell>
@@ -102,12 +123,11 @@ describe('AppShell sidebar', () => {
 
   describe('collapsible sidebar', () => {
     beforeEach(() => {
-      window.localStorage.clear()
-      delete document.documentElement.dataset.sidebarMode
+      clearSidebarCookie()
     })
 
-    it('starts expanded by default and toggles to collapsed via the toggle button', () => {
-      render(
+    it('starts expanded by default and toggles to collapsed via the toggle button (writing the cookie)', () => {
+      renderShell(
         <AppShell user={user} activeHub="code">
           <div>content</div>
         </AppShell>
@@ -123,11 +143,12 @@ describe('AppShell sidebar', () => {
       expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
       // When collapsed, the textual logo link is hidden — only the icons remain.
       expect(screen.queryByRole('link', { name: 'idp.ai' })).not.toBeInTheDocument()
-      expect(window.localStorage.getItem('idp-sidebar-mode')).toBe('collapsed')
+      // Sidebar preference persisted in the cookie (read by the server next time).
+      expect(document.cookie).toContain('sidebar_state=collapsed')
     })
 
     it('toggles via the Ctrl/Cmd+B keyboard shortcut', () => {
-      render(
+      renderShell(
         <AppShell user={user} activeHub="code">
           <div>content</div>
         </AppShell>
@@ -143,13 +164,12 @@ describe('AppShell sidebar', () => {
       expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
     })
 
-    it('respects the initial sidebar mode read from the document dataset', () => {
-      document.documentElement.dataset.sidebarMode = 'collapsed'
-
-      render(
+    it('respects the initial sidebar mode passed by the server layout', () => {
+      renderShell(
         <AppShell user={user} activeHub="code">
           <div>content</div>
-        </AppShell>
+        </AppShell>,
+        { initialMode: 'collapsed' }
       )
 
       const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
@@ -159,12 +179,11 @@ describe('AppShell sidebar', () => {
     })
 
     it('keeps hub icons accessible while collapsed via aria-label', () => {
-      document.documentElement.dataset.sidebarMode = 'collapsed'
-
-      render(
+      renderShell(
         <AppShell user={user} activeHub="code">
           <div>content</div>
-        </AppShell>
+        </AppShell>,
+        { initialMode: 'collapsed' }
       )
 
       // Code hub is the only enabled hub today — its link still exposes the label.
