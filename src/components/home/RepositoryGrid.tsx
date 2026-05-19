@@ -7,6 +7,7 @@ import { RepositoryListResponse } from '@/lib/types/repository'
 import { analysisStatusLabel, analysisStatusTone, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
 
 interface RepositoryGridProps {
   repos: RepositoryListResponse
@@ -374,6 +375,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                     <MFIcon name={repo.analysis_status === 'failed' ? 'x' : stats.has_analysis ? 'check' : 'database'} size={11} color="currentColor" />
                     {stats.has_analysis ? analysisStatusLabel(repo.analysis_status) : 'Analisar repo'}
                   </span>
+                  <EmbeddingsStatusBadge state={repo.embeddings_state} size="compact" />
                 </div>
                 <div style={footerStyle}>
                   <span style={mutedMetricStyle}>

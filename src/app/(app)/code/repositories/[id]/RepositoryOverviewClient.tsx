@@ -5,6 +5,8 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
 import { GenerateTemplateModal } from '@/components/templates/GenerateTemplateModal'
+import { EmbeddingsActionButton } from '@/components/embeddings/EmbeddingsActionButton'
+import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import {
   coverageStatusLabel,
@@ -14,10 +16,11 @@ import {
   syncStatusVariant,
 } from '@/lib/coverage'
 import { T } from '@/lib/tokens'
-import { CoverageStatus, RepositoryResponse } from '@/lib/types/repository'
+import { CoverageStatus, EmbeddingsState, RepositoryResponse, isTerminalEmbeddingsStatus } from '@/lib/types/repository'
+import { apiFetch } from '@/lib/api/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CSSProperties, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
@@ -72,6 +75,44 @@ function pickCoverage(repo: RepositoryResponse): {
 export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
   const router = useRouter()
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
+  // Local mirror of the embeddings state — the poller updates this without
+  // forcing a full server refetch of the overview.
+  const [embeddingsState, setEmbeddingsState] = useState<EmbeddingsState | undefined>(repo.embeddings_state)
+
+  const triggerEmbeddings = useCallback(async () => {
+    try {
+      await apiFetch(`/api/repositories/${repo.id}/embeddings`, { method: 'POST' })
+      // Optimistically flip to `pending` so the badge updates without waiting
+      // for the next poll. The server-side state will overwrite this in ~5s.
+      setEmbeddingsState((prev) => ({
+        status: 'pending',
+        count: prev?.count ?? 0,
+        indexed_at: prev?.indexed_at,
+        provider_configured: prev?.provider_configured ?? true,
+      }))
+    } catch {
+      // apiFetch surfaces a toast/error already; leave the badge as-is.
+    }
+  }, [repo.id])
+
+  // Poll while the embedding pipeline is mid-flight. The repo endpoint
+  // returns the full state on each call so we just mirror it locally.
+  useEffect(() => {
+    if (!embeddingsState) return
+    if (isTerminalEmbeddingsStatus(embeddingsState.status)) return
+
+    const handle = setInterval(async () => {
+      try {
+        const next = await apiFetch<RepositoryResponse>(`/api/repositories/${repo.id}`, { method: 'GET' })
+        if (next.embeddings_state) {
+          setEmbeddingsState(next.embeddings_state)
+        }
+      } catch {
+        /* swallow — next tick retries */
+      }
+    }, 5000)
+    return () => clearInterval(handle)
+  }, [repo.id, embeddingsState])
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'
   const stats = getRepositoryStats(repo)
@@ -307,6 +348,7 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
             <Tag variant={repo.is_private ? 'warn' : 'ok'}>{repo.is_private ? 'privado' : 'público'}</Tag>
             <Tag variant={syncStatusVariant(repo.sync_status)}>{syncStatusLabel(repo.sync_status)}</Tag>
             <Tag variant={analysisStatusVariant(repo.analysis_status)}>{analysisStatusLabel(repo.analysis_status)}</Tag>
+            <EmbeddingsStatusBadge state={embeddingsState} />
           </div>
           <div style={subtitleStyle}>
             <span style={{ fontFamily: T.mono }}>{repo.full_name}</span>
@@ -323,6 +365,7 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
               Buscar no repositório
             </Button>
           </Link>
+          <EmbeddingsActionButton state={embeddingsState} onTrigger={triggerEmbeddings} size="md" />
           <Button variant="default" size="md" onClick={() => setTemplateModalOpen(true)}>
             <MFIcon name="sparkles" size={13} />
             Gerar template

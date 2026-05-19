@@ -195,6 +195,27 @@ textarea {
 }
 
 /*
+ * Subtle pulse used on the embeddings status badge while a job is `pending`
+ * or `indexing`. Just opacity — no color change so the badge tone (accent /
+ * ink3) stays meaningful.
+ */
+.embeddings-pulse-dot {
+  animation: embeddings-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes embeddings-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .embeddings-pulse-dot {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/*
  * Markdown body produced by react-markdown inside `<DocMarkdownViewer>`.
  * Limits content width for readability and gives headings/code blocks a
  * recognisable hierarchy.
