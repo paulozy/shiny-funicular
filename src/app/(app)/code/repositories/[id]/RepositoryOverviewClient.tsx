@@ -137,8 +137,8 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
   const coverageMeasured = coverageWasMeasured(coverage.status)
 
   const qualitySupportMetrics = [
-    { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: metricTone('prs', metadata.pr_count) },
-    { label: 'Alertas', value: metadata.issue_count ?? 0, icon: 'shield', tone: metricTone('alerts', metadata.issue_count) },
+    { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: metricTone('prs', metadata.pr_count), href: `/code/repositories/${repo.id}/pull-requests` },
+    { label: 'Alertas', value: metadata.issue_count ?? 0, icon: 'shield', tone: metricTone('alerts', metadata.issue_count), href: `/code/repositories/${repo.id}/issues` },
     {
       label: 'Cobertura',
       value: coverageMeasured && coverage.percentage !== undefined
@@ -418,8 +418,9 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
       <div style={{ ...metricGridStyle, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
         {qualitySupportMetrics.map((metric) => {
           const badge = (metric as { coverageBadge?: CoverageStatus | '' | undefined }).coverageBadge
-          return (
-            <div key={metric.label} style={cardStyle}>
+          const href = (metric as { href?: string }).href
+          const inner = (
+            <>
               <div style={metricLabelStyle}>
                 <MFIcon name={metric.icon} size={12} color={T.faint} />
                 {metric.label}
@@ -430,6 +431,23 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
                   <Tag variant={coverageStatusVariant(badge)}>{coverageStatusLabel(badge)}</Tag>
                 </div>
               )}
+            </>
+          )
+          if (href) {
+            return (
+              <Link
+                key={metric.label}
+                href={href}
+                style={{ ...cardStyle, textDecoration: 'none', color: 'inherit' }}
+                aria-label={`Ver ${metric.label.toLowerCase()}`}
+              >
+                {inner}
+              </Link>
+            )
+          }
+          return (
+            <div key={metric.label} style={cardStyle}>
+              {inner}
             </div>
           )
         })}
