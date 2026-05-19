@@ -22,7 +22,10 @@ const countFormatter = new Intl.NumberFormat('pt-BR', {
 })
 
 function visualForStatus(status: EmbeddingsStatus, count: number, providerConfigured: boolean): Visual {
-  if (!providerConfigured && status === 'idle') {
+  // Legacy payloads cached in Redis during the rolling deploy can still carry
+  // status="" — fall back to "idle" so the switch hits the right branch.
+  const normalized: EmbeddingsStatus = status || 'idle'
+  if (!providerConfigured && normalized === 'idle') {
     return {
       label: 'Sem provedor',
       tone: T.faint,
@@ -31,7 +34,7 @@ function visualForStatus(status: EmbeddingsStatus, count: number, providerConfig
     }
   }
 
-  switch (status) {
+  switch (normalized) {
     case 'indexed':
       return {
         label: `Indexado · ${countFormatter.format(count)}`,
