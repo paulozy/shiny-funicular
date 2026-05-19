@@ -82,8 +82,10 @@ export function IssueList({ issues, repoId }: IssueListProps) {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    gap: 8,
+    padding: '4px 0 18px',
+    marginBottom: 6,
+    borderBottom: `1px solid ${T.border}`,
   }
 
   const filterButtonStyle = (active: boolean, severity: SeverityLevel): CSSProperties => {
@@ -98,19 +100,22 @@ export function IssueList({ issues, repoId }: IssueListProps) {
       border: `1px solid ${active ? accent : T.border}`,
       background: active ? T.surface : T.surfaceAlt,
       color: active ? T.ink : T.ink3,
-      padding: '6px 11px',
+      padding: '7px 12px',
       borderRadius: T.radius.button,
-      font: '500 12.5px ' + T.font,
+      font: (active ? '600 ' : '500 ') + '12.5px ' + T.font,
       cursor: 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 6,
+      gap: 8,
+      transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
     }
   }
 
   const searchStyle: CSSProperties = {
     flex: 1,
-    minWidth: 200,
+    minWidth: 240,
+    maxWidth: 320,
+    marginLeft: 'auto',
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.input,
     background: T.surface,
@@ -121,18 +126,17 @@ export function IssueList({ issues, repoId }: IssueListProps) {
   }
 
   const groupHeaderStyle: CSSProperties = {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 600,
-    color: T.ink3,
-    margin: '14px 0 8px',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    color: T.ink2,
+    margin: '22px 0 10px',
+    letterSpacing: 0.2,
   }
 
   const listStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
+    gap: 12,
   }
 
   const emptyStyle: CSSProperties = {

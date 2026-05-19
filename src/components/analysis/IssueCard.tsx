@@ -18,24 +18,18 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
     backgroundColor: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: '14px 16px',
+    padding: '18px 20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 12,
+    boxShadow: '0 1px 0 rgba(0,0,0,.03)',
   }
 
-  const headerStyle: CSSProperties = {
+  const metaRowStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flexWrap: 'wrap',
-  }
-
-  const titleStyle: CSSProperties = {
-    fontSize: 14,
-    fontWeight: 600,
-    color: T.ink,
-    margin: 0,
   }
 
   const categoryStyle: CSSProperties = {
@@ -44,8 +38,18 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
     border: `1px solid ${T.border}`,
     background: T.surfaceAlt,
     borderRadius: T.radius.tag,
-    padding: '1px 7px',
+    padding: '1px 8px',
     fontWeight: 500,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  }
+
+  const titleStyle: CSSProperties = {
+    fontSize: 15,
+    fontWeight: 600,
+    color: T.ink,
+    margin: 0,
+    lineHeight: 1.4,
   }
 
   const locationStyle: CSSProperties = {
@@ -53,13 +57,19 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
     fontSize: 12,
     color: T.ink2,
     textDecoration: 'none',
+    background: T.surfaceAlt,
+    border: `1px solid ${T.border}`,
+    borderRadius: 4,
+    padding: '3px 8px',
+    alignSelf: 'flex-start',
   }
 
   const descriptionStyle: CSSProperties = {
     fontSize: 13,
     color: T.ink2,
-    lineHeight: 1.55,
+    lineHeight: 1.6,
     whiteSpace: 'pre-wrap',
+    margin: 0,
   }
 
   const suggestionToggleStyle: CSSProperties = {
@@ -68,28 +78,30 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
     borderRadius: T.radius.button,
     background: T.surface,
     color: T.ink2,
-    padding: '4px 9px',
+    padding: '5px 10px',
     font: '500 12px ' + T.font,
     cursor: 'pointer',
     alignSelf: 'flex-start',
+    transition: 'background 120ms ease, border-color 120ms ease',
   }
 
   const suggestionStyle: CSSProperties = {
     background: T.surfaceAlt,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: '10px 12px',
+    padding: '12px 14px',
     fontSize: 12.5,
     color: T.ink,
-    lineHeight: 1.55,
+    lineHeight: 1.6,
     whiteSpace: 'pre-wrap',
   }
 
   const footerStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 2,
+    gap: 16,
+    paddingTop: 10,
+    borderTop: `1px dashed ${T.border}`,
     fontSize: 11,
     color: T.faint,
   }
@@ -108,11 +120,12 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
 
   return (
     <article style={cardStyle} aria-label={`Alerta: ${issue.title}`}>
-      <div style={headerStyle}>
+      <div style={metaRowStyle}>
         <SeverityBadge severity={issue.severity} />
         {issue.category && <span style={categoryStyle}>{issue.category}</span>}
-        <h3 style={titleStyle}>{issue.title}</h3>
       </div>
+
+      <h3 style={titleStyle}>{issue.title}</h3>
 
       {filesHref ? (
         <Link href={filesHref} style={locationStyle}>

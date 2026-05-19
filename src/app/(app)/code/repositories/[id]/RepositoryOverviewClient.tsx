@@ -438,10 +438,25 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
               <Link
                 key={metric.label}
                 href={href}
-                style={{ ...cardStyle, textDecoration: 'none', color: 'inherit' }}
+                className="metric-link"
+                style={{ ...cardStyle, position: 'relative' }}
                 aria-label={`Ver ${metric.label.toLowerCase()}`}
               >
                 {inner}
+                <span
+                  className="metric-link__chevron"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    color: T.faint,
+                  }}
+                >
+                  <MFIcon name="arrow-right" size={13} color="currentColor" />
+                </span>
               </Link>
             )
           }

@@ -15,17 +15,18 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
     backgroundColor: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: '13px 15px',
+    padding: '16px 18px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 10,
+    boxShadow: '0 1px 0 rgba(0,0,0,.03)',
   }
 
   const headerStyle: CSSProperties = {
     display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    gap: 10,
+    minWidth: 0,
   }
 
   const numberStyle: CSSProperties = {
@@ -33,27 +34,37 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
     fontSize: 12.5,
     color: T.faint,
     fontWeight: 500,
+    flexShrink: 0,
   }
 
   const titleStyle: CSSProperties = {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: 600,
     color: T.ink,
     textDecoration: 'none',
     margin: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    minWidth: 0,
+    flex: 1,
+    lineHeight: 1.4,
   }
 
   const tagStyle: CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 4,
-    padding: '1px 7px',
+    padding: '2px 8px',
     borderRadius: T.radius.tag,
     border: `1px solid ${T.border}`,
     background: T.surfaceAlt,
-    fontSize: 11,
+    fontSize: 10.5,
     color: T.ink2,
-    fontWeight: 500,
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    flexShrink: 0,
   }
 
   const draftTagStyle: CSSProperties = {
@@ -66,30 +77,42 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
   const branchesStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    fontSize: 12,
+    color: T.ink3,
+    flexWrap: 'wrap',
+  }
+
+  const branchPillStyle: CSSProperties = {
     fontFamily: T.mono,
     fontSize: 11.5,
     color: T.ink2,
-    flexWrap: 'wrap',
+    background: T.surfaceAlt,
+    border: `1px solid ${T.border}`,
+    borderRadius: 4,
+    padding: '2px 7px',
   }
 
   const metricsStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 14,
+    gap: 18,
     fontSize: 11.5,
     color: T.ink3,
     flexWrap: 'wrap',
+    paddingTop: 10,
+    borderTop: `1px dashed ${T.border}`,
   }
 
   const analysisRowStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    paddingTop: 8,
+    gap: 12,
+    paddingTop: 10,
     borderTop: `1px dashed ${T.border}`,
     fontSize: 12,
     color: T.ink2,
+    flexWrap: 'wrap',
   }
 
   const criticalCount = analysis?.critical_count ?? 0
@@ -105,27 +128,31 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
           target="_blank"
           rel="noopener noreferrer"
           style={titleStyle}
+          title={pr.title}
         >
           {pr.title}
         </a>
-        {pr.draft && <span style={draftTagStyle}>Draft</span>}
-        {!pr.draft && <span style={tagStyle}>Open</span>}
+        {pr.draft ? (
+          <span style={draftTagStyle}>Draft</span>
+        ) : (
+          <span style={tagStyle}>Open</span>
+        )}
       </div>
 
       <div style={branchesStyle}>
-        <span>{pr.author_login}</span>
+        <span>por {pr.author_login}</span>
         <span style={{ color: T.faint }}>·</span>
-        <span>
-          {pr.head_branch} → {pr.base_branch}
-        </span>
+        <span style={branchPillStyle}>{pr.head_branch}</span>
+        <span style={{ color: T.faint }}>→</span>
+        <span style={branchPillStyle}>{pr.base_branch}</span>
       </div>
 
       <div style={metricsStyle}>
-        <span style={{ color: T.ok }}>+{pr.additions_count}</span>
-        <span style={{ color: T.danger }}>-{pr.deletions_count}</span>
+        <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count}</span>
+        <span style={{ color: T.danger, fontWeight: 600 }}>-{pr.deletions_count}</span>
         <span>{pr.changed_files} arquivos</span>
         <span>{pr.commits_count} commits</span>
-        <span style={{ color: T.faint }}>
+        <span style={{ color: T.faint, marginLeft: 'auto' }}>
           atualizado{' '}
           {new Date(pr.updated_at).toLocaleString('pt-BR', {
             month: 'short',
@@ -138,7 +165,7 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
 
       {analysis && (
         <div style={analysisRowStyle}>
-          <span>Análise da PR:</span>
+          <span style={{ color: T.ink3, fontWeight: 600 }}>Análise da PR:</span>
           {criticalCount > 0 && (
             <span style={{ color: T.danger, fontWeight: 600 }}>
               {criticalCount} críticos
