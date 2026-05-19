@@ -12,35 +12,41 @@ interface IssuesClientProps {
 }
 
 export function IssuesClient({ analysis, repo }: IssuesClientProps) {
+  const pageStyle: CSSProperties = {
+    padding: '24px 28px 32px',
+  }
+
   const headerStyle: CSSProperties = {
-    marginBottom: 14,
+    marginBottom: 22,
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    gap: 8,
   }
 
   const titleStyle: CSSProperties = {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 600,
     color: T.ink,
     margin: 0,
+    letterSpacing: '-0.01em',
   }
 
   const subtitleStyle: CSSProperties = {
-    fontSize: 12,
-    color: T.faint,
+    fontSize: 12.5,
+    color: T.ink3,
   }
 
   const metaRowStyle: CSSProperties = {
     display: 'flex',
-    gap: 12,
+    gap: 14,
     fontSize: 11.5,
-    color: T.ink3,
+    color: T.faint,
     flexWrap: 'wrap',
+    marginTop: 2,
   }
 
   const emptyStyle: CSSProperties = {
-    padding: 32,
+    padding: 40,
     textAlign: 'center',
     color: T.faint,
     fontSize: 13,
@@ -51,7 +57,7 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
 
   if (!analysis) {
     return (
-      <div style={{ padding: '16px 0' }}>
+      <div style={pageStyle}>
         <div style={headerStyle}>
           <h1 style={titleStyle}>Alertas de {repo.name}</h1>
         </div>
@@ -64,7 +70,7 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
   }
 
   return (
-    <div style={{ padding: '16px 0' }}>
+    <div style={pageStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>Alertas de {repo.name}</h1>
         <span style={subtitleStyle}>
@@ -96,11 +102,11 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
             background: T.surfaceAlt,
             border: `1px solid ${T.border}`,
             borderRadius: T.radius.card,
-            padding: '12px 14px',
+            padding: '14px 16px',
             fontSize: 13,
             color: T.ink2,
-            lineHeight: 1.6,
-            marginBottom: 14,
+            lineHeight: 1.65,
+            marginBottom: 22,
             whiteSpace: 'pre-wrap',
           }}
         >

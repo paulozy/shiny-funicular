@@ -51,5 +51,5 @@ export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
       forceActive: activeTab === 'settings',
     },
   ]
-  return <TabBar items={items} ariaLabel="Seções do repositório" />
+  return <TabBar items={items} ariaLabel="Seções do repositório" variant="prominent" />
 }
