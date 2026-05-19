@@ -7,6 +7,10 @@ import { Tag } from '@/components/ui/Tag'
 import { GenerateTemplateModal } from '@/components/templates/GenerateTemplateModal'
 import { EmbeddingsActionButton } from '@/components/embeddings/EmbeddingsActionButton'
 import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
+import { CriticalIssuesCard } from '@/components/repository/CriticalIssuesCard'
+import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
+import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
+import { CodeAnalysis } from '@/lib/types/analysis'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import {
   coverageStatusLabel,
@@ -24,6 +28,7 @@ import { CSSProperties, useCallback, useEffect, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
+  latestAnalysis: CodeAnalysis | null
 }
 
 function formatDate(value: string): string {
@@ -72,7 +77,7 @@ function pickCoverage(repo: RepositoryResponse): {
   return { percentage: metaCoverage, status: metaStatus ?? statsStatus ?? '' }
 }
 
-export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
+export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOverviewClientProps) {
   const router = useRouter()
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
   // Local mirror of the embeddings state — the poller updates this without
@@ -468,34 +473,24 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
         })}
       </div>
 
-      <div style={twoColumnStyle}>
-        <section style={cardStyle}>
-          <div style={sectionHeaderStyle}>
-            <MFIcon name="code" size={14} color={T.accent} />
-            <span style={sectionTitleStyle}>Linguagens</span>
-          </div>
-          {languageEntries.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: T.faint }}>Sem linguagens detectadas.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {languageEntries.map(([name, value]) => {
-                const percent = languageTotal > 0 ? Math.round((value / languageTotal) * 100) : 0
-                return (
-                  <div key={name}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
-                      <span>{name}</span>
-                      <span style={{ color: T.faint }}>{percent}%</span>
-                    </div>
-                    <div style={{ height: 7, borderRadius: 999, background: T.surfaceAlt, overflow: 'hidden' }}>
-                      <div style={{ width: `${percent}%`, height: '100%', background: T.accent }} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
+      <div style={{ ...twoColumnStyle, gridTemplateColumns: '1fr 1fr' }}>
+        <ProjectStackCard
+          languages={metadata.languages}
+          frameworks={metadata.frameworks}
+          topics={metadata.topics}
+        />
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <CriticalIssuesCard analysis={latestAnalysis} repoId={repo.id} />
+          <RepoHealthCard
+            repo={repo}
+            embeddingsState={embeddingsState}
+            coverage={coverage}
+          />
+        </div>
+      </div>
+
+      <div style={twoColumnStyle}>
         <section style={cardStyle}>
           <div style={sectionHeaderStyle}>
             <MFIcon name="flag" size={14} color={T.accent} />
@@ -515,23 +510,6 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
             <span style={{ color: T.faint }}>Testes</span>
             <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>{metadata.has_tests ? 'Detectados' : 'Não detectados'}</Tag>
           </div>
-        </section>
-      </div>
-
-      <div style={twoColumnStyle}>
-        <section style={cardStyle}>
-          <div style={sectionHeaderStyle}>
-            <MFIcon name="box" size={14} color={T.accent} />
-            <span style={sectionTitleStyle}>Frameworks e tópicos</span>
-          </div>
-          {metadata.frameworks?.length || metadata.topics?.length ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {metadata.frameworks?.map((item) => <Tag key={`fw-${item}`} variant="accent">{item}</Tag>)}
-              {metadata.topics?.map((item) => <Tag key={`topic-${item}`}>{item}</Tag>)}
-            </div>
-          ) : (
-            <div style={{ fontSize: 12.5, color: T.faint }}>Sem frameworks ou tópicos detectados.</div>
-          )}
         </section>
 
         <section style={cardStyle}>

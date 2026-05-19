@@ -2,10 +2,12 @@ import { CoPensador } from '@/components/home/CoPensador'
 import { RepoSearchBox } from '@/components/search/RepoSearchBox'
 import { AppShell } from '@/components/shell/AppShell'
 import { RepoTabBar } from '@/components/shell/RepoTabBar'
+import { backendListAnalyses } from '@/lib/api/analysis'
 import { backendGetMe } from '@/lib/api/auth'
 import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch } from '@/lib/search'
+import { CodeAnalysis } from '@/lib/types/analysis'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { RepositoryOverviewClient } from './RepositoryOverviewClient'
@@ -28,9 +30,10 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
     redirect('/login')
   }
 
-  const [repos, orgConfig] = await Promise.all([
+  const [repos, orgConfig, analysesResponse] = await Promise.all([
     backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
     user.role === 'admin' ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
+    backendListAnalyses(accessToken, id, { limit: 5, offset: 0 }).catch(() => null),
   ])
   const repo = repos?.repositories.find((item) => item.id === id)
 
@@ -39,6 +42,14 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
   }
 
   const branch = getDefaultSearchBranch(repo)
+
+  // Most recent completed code_review analysis powers the "Alertas críticos"
+  // widget on the overview. Backend returns analyses DESC by created_at, so
+  // the first match is the latest.
+  const latestAnalysis: CodeAnalysis | null =
+    analysesResponse?.analyses.find(
+      (a) => a.type === 'code_review' && a.status === 'completed'
+    ) ?? null
 
   return (
     <AppShell
@@ -49,7 +60,7 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
       aiPanel={<CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} />}
     >
       <RepoTabBar repoId={repo.id} activeTab="overview" />
-      <RepositoryOverviewClient repo={repo} />
+      <RepositoryOverviewClient repo={repo} latestAnalysis={latestAnalysis} />
     </AppShell>
   )
 }
