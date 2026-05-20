@@ -9,7 +9,7 @@ interface RepoTabBarProps {
    * for nested routes (e.g. `/code/repositories/:id/files?path=...`) where the
    * pathname still points at `/files`.
    */
-  activeTab?: 'overview' | 'files' | 'search' | 'settings'
+  activeTab?: 'overview' | 'files' | 'search' | 'issues' | 'pull-requests' | 'settings'
 }
 
 export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
@@ -27,6 +27,18 @@ export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
       forceActive: activeTab === 'files',
     },
     {
+      label: 'Alertas',
+      href: `${base}/issues`,
+      matchPrefix: `${base}/issues`,
+      forceActive: activeTab === 'issues',
+    },
+    {
+      label: 'Pull Requests',
+      href: `${base}/pull-requests`,
+      matchPrefix: `${base}/pull-requests`,
+      forceActive: activeTab === 'pull-requests',
+    },
+    {
       label: 'Buscar',
       href: `${base}/search`,
       matchPrefix: `${base}/search`,
@@ -39,5 +51,5 @@ export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
       forceActive: activeTab === 'settings',
     },
   ]
-  return <TabBar items={items} ariaLabel="Seções do repositório" />
+  return <TabBar items={items} ariaLabel="Seções do repositório" variant="prominent" />
 }
