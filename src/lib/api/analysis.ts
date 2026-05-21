@@ -1,5 +1,6 @@
 import { AnalysisListResponse } from '@/lib/types/analysis'
-import { getApiUrl, handleResponse } from './_shared'
+import { AnalysisListResponseSchema } from '@/lib/types/analysis.schema'
+import { getApiUrl, handleResponse, parseOrThrow } from './_shared'
 
 export async function backendListAnalyses(
   accessToken: string,
@@ -17,5 +18,9 @@ export async function backendListAnalyses(
     },
   })
 
-  return handleResponse<AnalysisListResponse>(response)
+  const payload = await handleResponse<unknown>(response)
+  return parseOrThrow(AnalysisListResponseSchema, payload, {
+    endpoint: 'GET /repositories/:id/analyses',
+    repository_id: repoId,
+  })
 }

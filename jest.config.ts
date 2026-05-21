@@ -13,6 +13,11 @@ const baseConfig = {
     // can't parse ESM and the project doesn't configure transformIgnorePatterns).
     '^react-markdown$': '<rootDir>/__mocks__/react-markdown.tsx',
     '^remark-gfm$': '<rootDir>/__mocks__/remark-gfm.ts',
+    // `server-only` throws unconditionally when imported outside a React Server
+    // Components context. Under Jest there's no react-server condition, so we
+    // mock it out — the build-time guarantee against client bundling still
+    // holds via the real package in the production build.
+    '^server-only$': '<rootDir>/__mocks__/server-only.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 }

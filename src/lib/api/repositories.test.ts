@@ -1,4 +1,5 @@
-import { normalizeRepositoryList } from './repositories'
+import { backendGetRepositories, normalizeRepositoryList } from './repositories'
+import { BackendError } from './_shared'
 
 describe('repository api normalization', () => {
   it('normalizes backend items/type/is_public into frontend repositories/provider/is_private', () => {
@@ -81,5 +82,56 @@ describe('repository api normalization', () => {
         last_analyzed_at: null,
       },
     })
+  })
+})
+
+describe('backendGetRepositories schema validation', () => {
+  afterEach(() => {
+    delete (global as { fetch?: typeof fetch }).fetch
+    jest.restoreAllMocks()
+  })
+
+  it('throws BackendError(502) when the wire shape does not match', async () => {
+    ;(global as { fetch?: typeof fetch }).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      // Wrong: `total` arrives as a string. The raw schema rejects it before
+      // the normalizer gets a chance to silently coerce.
+      json: async () => ({ items: [], total: 'oops', limit: 20, offset: 0 }),
+    } as Response)
+
+    await expect(backendGetRepositories('token')).rejects.toMatchObject({
+      name: 'BackendError',
+      statusCode: 502,
+    })
+  })
+
+  it('accepts a valid wire response and returns normalized repositories', async () => {
+    ;(global as { fetch?: typeof fetch }).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        items: [
+          {
+            id: 'r-1',
+            name: 'api',
+            url: 'https://github.com/org/api',
+            type: 'github',
+            organization_id: 'org-1',
+            is_public: true,
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-02T00:00:00Z',
+          },
+        ],
+        total: 1,
+        limit: 20,
+        offset: 0,
+      }),
+    } as Response)
+
+    const result = await backendGetRepositories('token')
+    expect(result.repositories).toHaveLength(1)
+    expect(result.repositories[0].provider).toBe('github')
+    expect(BackendError.name).toBe('BackendError') // keeps the import alive for tests
   })
 })
