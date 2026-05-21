@@ -2,13 +2,8 @@ import { CSSProperties } from 'react'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
-import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch } from '@/lib/search'
-import { AppShell } from '@/components/shell/AppShell'
-import { RepoSearchBox } from '@/components/search/RepoSearchBox'
-import { RepoTabBar } from '@/components/shell/RepoTabBar'
-import { CoPensador } from '@/components/home/CoPensador'
 import { T } from '@/lib/tokens'
 
 interface FileStubPageProps {
@@ -36,12 +31,8 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
     redirect('/login')
   }
 
-  const [repos, orgConfig] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
-    user.role === 'admin' ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
-  ])
+  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
   const repo = repos?.repositories.find((item) => item.id === id)
-
   if (!repo) {
     notFound()
   }
@@ -66,35 +57,26 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
   }
 
   return (
-    <AppShell
-      user={user}
-      activeHub="code"
-      breadcrumb={[{ label: 'Code', href: '/' }, { label: repo.name, href: `/code/repositories/${repo.id}` }, { label: 'arquivo' }]}
-      searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} />}
-      aiPanel={repos ? <CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} /> : undefined}
-    >
-      <RepoTabBar repoId={repo.id} activeTab="files" />
-      <div style={pageStyle}>
-        <div style={panelStyle}>
-          <div
-            style={{
-              fontSize: 10.5,
-              fontWeight: 600,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: T.faint,
-              marginBottom: 6,
-            }}
-          >
-            Visualizador de arquivo em breve
-          </div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{path}</h1>
-          <div style={{ marginTop: 10, fontSize: 13, color: T.ink3 }}>
-            Branch <span style={{ fontFamily: T.mono }}>{branch}</span> · linhas{' '}
-            <span style={{ fontFamily: T.mono }}>{lines}</span>
-          </div>
+    <div style={pageStyle}>
+      <div style={panelStyle}>
+        <div
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: T.faint,
+            marginBottom: 6,
+          }}
+        >
+          Visualizador de arquivo em breve
+        </div>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{path}</h1>
+        <div style={{ marginTop: 10, fontSize: 13, color: T.ink3 }}>
+          Branch <span style={{ fontFamily: T.mono }}>{branch}</span> · linhas{' '}
+          <span style={{ fontFamily: T.mono }}>{lines}</span>
         </div>
       </div>
-    </AppShell>
+    </div>
   )
 }

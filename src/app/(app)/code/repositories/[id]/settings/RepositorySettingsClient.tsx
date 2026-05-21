@@ -12,6 +12,8 @@ import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { CoverageTokensSection } from '@/components/repository/CoverageTokensSection'
+import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
+import { embeddingsActionShape } from '@/components/embeddings/EmbeddingsActionButton'
 
 interface RepositorySettingsClientProps {
   repo: RepositoryResponse
@@ -185,6 +187,7 @@ export function RepositorySettingsClient({
           </div>
 
           <div style={statusRowStyle}>
+            <EmbeddingsStatusBadge state={repo.embeddings_state} />
             <Tag variant={!providerStatusKnown ? 'default' : providerConfigured ? 'ok' : 'warn'}>
               Voyage {!providerStatusKnown ? 'configurado pela organização' : providerConfigured ? 'configurado' : 'pendente'}
             </Tag>
@@ -193,7 +196,9 @@ export function RepositorySettingsClient({
           </div>
 
           <div style={descriptionStyle}>
-            Gere o índice semântico para a branch escolhida. A configuração de provider e chave fica nas configurações da organização.
+            {repo.embeddings_state?.status === 'indexed'
+              ? 'Este repositório já está indexado. Reindexe para incorporar mudanças recentes em outra branch.'
+              : 'Gere o índice semântico para a branch escolhida. A configuração de provider e chave fica nas configurações da organização.'}
           </div>
 
           {message && <Alert variant={message.variant}>{message.text}</Alert>}
@@ -212,16 +217,25 @@ export function RepositorySettingsClient({
             hint="A indexação substitui os embeddings anteriores para o mesmo repositório, provider, modelo, dimensão e branch."
           />
 
-          <Button
-            variant="primary"
-            size="md"
-            loading={loading}
-            onClick={generateEmbeddings}
-            disabled={loading || !branch.trim()}
-          >
-            <MFIcon name="database" size={13} />
-            Gerar índice semântico
-          </Button>
+          {(() => {
+            // Drive the button label/variant from the same state machine the
+            // header CTA uses (single source of truth). Falls back to the
+            // generic providerConfigured signal when the repo predates the
+            // embeddings_state field on the backend.
+            const shape = embeddingsActionShape(repo.embeddings_state, providerConfigured)
+            return (
+              <Button
+                variant={shape.variant}
+                size="md"
+                loading={loading}
+                onClick={generateEmbeddings}
+                disabled={loading || !branch.trim() || shape.disabled}
+              >
+                <MFIcon name={shape.icon} size={13} />
+                {shape.label}
+              </Button>
+            )
+          })()}
         </section>
 
         <section style={sectionStyle}>

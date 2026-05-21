@@ -10,6 +10,7 @@ import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusB
 import { CriticalIssuesCard } from '@/components/repository/CriticalIssuesCard'
 import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
+import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { CodeAnalysis } from '@/lib/types/analysis'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import {
@@ -83,6 +84,8 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
   // Local mirror of the embeddings state — the poller updates this without
   // forcing a full server refetch of the overview.
   const [embeddingsState, setEmbeddingsState] = useState<EmbeddingsState | undefined>(repo.embeddings_state)
+
+  usePublishScope({ kind: 'repo-overview', repoId: repo.id }, [repo.id])
 
   const triggerEmbeddings = useCallback(async () => {
     try {
@@ -201,14 +204,24 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
         icon: 'check',
       }]
       : []),
-    {
-      title: 'Gerar índice semântico',
-      description: 'Atualize embeddings para melhorar a busca por intenção neste repositório.',
-      href: settingsHref,
-      label: 'Configurações',
-      icon: 'database',
-    },
+    ...(embeddingsState && !['indexed', 'indexing', 'pending'].includes(embeddingsState.status)
+      ? [{
+        title: 'Gerar índice semântico',
+        description: 'Atualize embeddings para melhorar a busca por intenção neste repositório.',
+        href: settingsHref,
+        label: 'Configurações',
+        icon: 'database',
+      }]
+      : []),
   ].slice(0, 3)
+
+  // Header CTA is only meaningful when the user actually has to do something
+  // (idle/stale/failed). When the index is healthy or in progress, the
+  // EmbeddingsStatusBadge already communicates the state — the button just
+  // adds noise.
+  const embeddingsNeedsAction =
+    !embeddingsState ||
+    ['idle', 'stale', 'failed'].includes(embeddingsState.status)
 
   const pageStyle: CSSProperties = {
     padding: '20px 24px 28px',
@@ -370,7 +383,9 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
               Buscar no repositório
             </Button>
           </Link>
-          <EmbeddingsActionButton state={embeddingsState} onTrigger={triggerEmbeddings} size="md" />
+          {embeddingsNeedsAction && (
+            <EmbeddingsActionButton state={embeddingsState} onTrigger={triggerEmbeddings} size="md" />
+          )}
           <Button variant="default" size="md" onClick={() => setTemplateModalOpen(true)}>
             <MFIcon name="sparkles" size={13} />
             Gerar template
