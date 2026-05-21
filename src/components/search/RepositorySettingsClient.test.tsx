@@ -48,9 +48,11 @@ describe('RepositorySettingsClient', () => {
   it('queues embeddings generation for the selected branch', async () => {
     ;(apiFetch as jest.Mock).mockResolvedValue({ status: 'queued' })
 
+    // No embeddings_state on the repo → button label is "Indexar código"
+    // (provider configured, idle state).
     render(<RepositorySettingsClient repo={repo} orgConfig={orgConfig} canConfigureOrganization={true} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /gerar índice semântico/i }))
+    fireEvent.click(screen.getByRole('button', { name: /indexar código/i }))
 
     await waitFor(() => {
       expect(apiFetch).toHaveBeenCalledWith('/api/repositories/repo-1/embeddings', {
@@ -62,13 +64,31 @@ describe('RepositorySettingsClient', () => {
     expect(await screen.findByText(/indexação na fila/i)).toBeInTheDocument()
   })
 
-  it('shows unavailable provider guidance', async () => {
-    ;(apiFetch as jest.Mock).mockRejectedValue({ code: 'embeddings_unavailable' })
+  it('shows the "Atualizar referências" label when already indexed', () => {
+    const indexedRepo: RepositoryResponse = {
+      ...repo,
+      embeddings_state: { status: 'indexed', count: 1234, provider_configured: true },
+    }
+    render(<RepositorySettingsClient repo={indexedRepo} orgConfig={orgConfig} canConfigureOrganization={true} />)
 
-    render(<RepositorySettingsClient repo={repo} orgConfig={{ ...orgConfig, voyage_api_key_configured: false }} canConfigureOrganization={true} />)
+    expect(screen.getByRole('button', { name: /atualizar referências/i })).toBeInTheDocument()
+    expect(screen.getByText(/já está indexado/i)).toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: /gerar índice semântico/i }))
+  it('disables the action and shows the warning when the provider is unconfigured', () => {
+    render(
+      <RepositorySettingsClient
+        repo={repo}
+        orgConfig={{ ...orgConfig, voyage_api_key_configured: false }}
+        canConfigureOrganization={true}
+      />
+    )
 
-    expect(await screen.findByText(/provider de embeddings não configurado/i)).toBeInTheDocument()
+    // The button uses the shared embeddings shape — when the provider is not
+    // configured the label switches to "Provedor não configurado" and the
+    // button is disabled. The inline Alert sends the user to org settings.
+    const button = screen.getByRole('button', { name: /provedor não configurado/i })
+    expect(button).toBeDisabled()
+    expect(screen.getByText(/Configure a Voyage API key/i)).toBeInTheDocument()
   })
 })

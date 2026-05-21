@@ -1,37 +1,37 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { UserInfo } from '@/lib/types/auth'
-import { OrganizationConfigResponse } from '@/lib/types/organization'
-import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
+import { RepositoryResponse } from '@/lib/types/repository'
 import { SearchInsight, SearchSynthesisDone, SearchSynthesisError, SearchSynthesisUnavailable, SemanticSearchResponse } from '@/lib/types/search'
-import { AppShell } from '@/components/shell/AppShell'
-import { RepoTabBar } from '@/components/shell/RepoTabBar'
-import { CoPensador } from '@/components/home/CoPensador'
 import { SearchResultsClient } from '@/components/search/SearchResultsClient'
 
 interface RepositorySearchExperienceProps {
-  user: UserInfo
   repo: RepositoryResponse
-  repos: RepositoryListResponse
-  orgConfig: OrganizationConfigResponse | null
   initialQuery: string
   initialBranch: string
   initialLimit: number
   initialMinScore: number
 }
 
+/**
+ * Self-contained search UI for the per-repo `search` route. The persistent
+ * AppShell + RepoTabBar live in `app/(app)/code/repositories/[id]/layout.tsx`
+ * — this component renders only the page-specific content.
+ *
+ * Note: this experience used to inject `searchInsight` into the CoPensador
+ * panel via AppShell prop. With the shell moved to the layout, the insight
+ * state stays local to this component (the CoPensador in the layout shows
+ * the default state). Re-introducing the cross-component wire is possible
+ * via a Context Provider but is deferred.
+ */
 export function RepositorySearchExperience({
-  user,
   repo,
-  repos,
-  orgConfig,
   initialQuery,
   initialBranch,
   initialLimit,
   initialMinScore,
 }: RepositorySearchExperienceProps) {
-  const [searchInsight, setSearchInsight] = useState<SearchInsight | null>(null)
+  const [, setSearchInsight] = useState<SearchInsight | null>(null)
 
   const startInsight = useCallback((query: string) => {
     setSearchInsight({
@@ -76,27 +76,19 @@ export function RepositorySearchExperience({
   }, [])
 
   return (
-    <AppShell
-      user={user}
-      activeHub="code"
-      breadcrumb={[{ label: 'Code', href: '/' }, { label: repo.name, href: `/code/repositories/${repo.id}` }, { label: 'busca' }]}
-      aiPanel={<CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} searchInsight={searchInsight} />}
-    >
-      <RepoTabBar repoId={repo.id} activeTab="search" />
-      <SearchResultsClient
-        repo={repo}
-        initialQuery={initialQuery}
-        initialBranch={initialBranch}
-        initialLimit={initialLimit}
-        initialMinScore={initialMinScore}
-        onSynthesisStart={startInsight}
-        onSearchResults={setSearchResults}
-        onSynthesisDelta={appendInsight}
-        onSynthesisComplete={setCachedInsight}
-        onSynthesisUnavailable={setUnavailableInsight}
-        onSynthesisError={setErrorInsight}
-        onSynthesisDone={finishInsight}
-      />
-    </AppShell>
+    <SearchResultsClient
+      repo={repo}
+      initialQuery={initialQuery}
+      initialBranch={initialBranch}
+      initialLimit={initialLimit}
+      initialMinScore={initialMinScore}
+      onSynthesisStart={startInsight}
+      onSearchResults={setSearchResults}
+      onSynthesisDelta={appendInsight}
+      onSynthesisComplete={setCachedInsight}
+      onSynthesisUnavailable={setUnavailableInsight}
+      onSynthesisError={setErrorInsight}
+      onSynthesisDone={finishInsight}
+    />
   )
 }

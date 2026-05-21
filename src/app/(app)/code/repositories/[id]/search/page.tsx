@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
-import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { getDefaultSearchBranch, normalizeMinScore, normalizeSearchLimit } from '@/lib/search'
 import { RepositorySearchExperience } from './RepositorySearchExperience'
@@ -31,12 +30,8 @@ export default async function RepositorySearchPage({ params, searchParams }: Sea
     redirect('/login')
   }
 
-  const [repos, orgConfig] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
-    user.role === 'admin' ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
-  ])
+  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
   const repo = repos?.repositories.find((item) => item.id === id)
-
   if (!repo) {
     notFound()
   }
@@ -44,16 +39,9 @@ export default async function RepositorySearchPage({ params, searchParams }: Sea
   const branch = queryParams.branch || getDefaultSearchBranch(repo)
   const q = queryParams.q || ''
 
-  if (!repos) {
-    notFound()
-  }
-
   return (
     <RepositorySearchExperience
-      user={user}
       repo={repo}
-      repos={repos}
-      orgConfig={orgConfig}
       initialQuery={q}
       initialBranch={branch}
       initialLimit={normalizeSearchLimit(queryParams.limit)}

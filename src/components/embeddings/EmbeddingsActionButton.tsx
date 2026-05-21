@@ -20,12 +20,16 @@ interface EmbeddingsActionButtonProps {
   size?: 'sm' | 'md'
 }
 
-interface ButtonShape {
+export interface ButtonShape {
   label: string
   variant: 'primary' | 'default'
   icon: string
   disabled?: boolean
   showAlert?: boolean
+}
+
+export function embeddingsActionShape(state: EmbeddingsState | undefined, fallbackProviderOK: boolean): ButtonShape {
+  return buttonShape(state, fallbackProviderOK)
 }
 
 function buttonShape(state: EmbeddingsState | undefined, fallbackProviderOK: boolean): ButtonShape {
