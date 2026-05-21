@@ -1,0 +1,31 @@
+name: Audit
+
+on:
+  schedule:
+    # Mondays 06:00 UTC. Failure surfaces as a job annotation; it does not
+    # block PRs (intentionally — a transitive CVE shouldn't gate unrelated
+    # work). Use this job as a heartbeat to prompt a dependency review.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm audit (high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production deps
+        run: npm audit --audit-level=high --omit=dev

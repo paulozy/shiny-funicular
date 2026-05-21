@@ -66,7 +66,7 @@ describe('CopyFixPromptButton', () => {
     render(<CopyFixPromptButton repo={repo} issues={issues} analysisCreatedAt={null} />)
     fireEvent.click(screen.getByRole('button', { name: /ver prompt/i }))
 
-    const dialog = screen.getByRole('dialog', { name: /pré-visualização do prompt/i })
+    const dialog = screen.getByRole('dialog', { name: /prompt de fix/i })
     expect(dialog).toBeInTheDocument()
     expect(dialog.textContent).toContain('# Code Review Fixes — org/app')
 

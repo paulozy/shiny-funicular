@@ -1,6 +1,6 @@
 'use client'
 
-import { CSSProperties, useCallback, useEffect, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { T } from '@/lib/tokens'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -126,36 +126,43 @@ interface PromptPreviewModalProps {
 }
 
 function PromptPreviewModal({ text, onClose, onCopy }: PromptPreviewModalProps) {
-  // Close on Escape — matches the rest of the app's modal ergonomics.
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  // Open as a modal so the browser gives us focus management, ESC handling,
+  // and an inert background for free. The matching .close() in the cleanup
+  // ensures we don't leave a stale open <dialog> if the parent re-renders.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const dialog = dialogRef.current
+    if (!dialog || dialog.open) return
+    dialog.showModal()
+    return () => {
+      if (dialog.open) dialog.close()
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [])
 
-  const overlayStyle: CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    background: T.overlay,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-    padding: 24,
-  }
+  const handleClose = useCallback(() => {
+    dialogRef.current?.close()
+  }, [])
 
-  const modalStyle: CSSProperties = {
+  // Strip the user-agent default styling so our inline styles can take over.
+  // Browsers center <dialog open> automatically via inset:auto + margin:auto,
+  // so we skip the manual flex overlay.
+  const dialogStyle: CSSProperties = {
     background: T.surface,
+    color: T.ink,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
     maxWidth: 820,
-    width: '100%',
+    width: 'calc(100% - 48px)',
     maxHeight: '80vh',
+    padding: 0,
+    boxShadow: '0 24px 60px rgba(0,0,0,.28)',
+  }
+
+  const innerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    boxShadow: '0 24px 60px rgba(0,0,0,.28)',
+    maxHeight: 'inherit',
   }
 
   const headerStyle: CSSProperties = {
@@ -201,16 +208,22 @@ function PromptPreviewModal({ text, onClose, onCopy }: PromptPreviewModalProps) 
   }
 
   return (
-    <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Pré-visualização do prompt" onClick={onClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+    <dialog
+      ref={dialogRef}
+      style={dialogStyle}
+      onClose={onClose}
+      aria-labelledby="prompt-modal-title"
+      aria-describedby="prompt-modal-body"
+    >
+      <div style={innerStyle}>
         <div style={headerStyle}>
           <MFIcon name="sparkles" size={14} color={T.accent} />
-          <h2 style={titleStyle}>Prompt de fix</h2>
+          <h2 id="prompt-modal-title" style={titleStyle}>Prompt de fix</h2>
         </div>
-        <pre style={preStyle}>{text}</pre>
+        <pre id="prompt-modal-body" style={preStyle}>{text}</pre>
         <div style={footerStyle}>
           <span style={charCountStyle}>{text.length.toLocaleString('pt-BR')} caracteres</span>
-          <Button variant="default" size="md" onClick={onClose}>
+          <Button variant="default" size="md" onClick={handleClose} autoFocus>
             Fechar
           </Button>
           <Button variant="primary" size="md" onClick={onCopy}>
@@ -219,6 +232,6 @@ function PromptPreviewModal({ text, onClose, onCopy }: PromptPreviewModalProps) 
           </Button>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }

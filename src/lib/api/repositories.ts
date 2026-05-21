@@ -7,6 +7,8 @@ import {
   RepositoryResponse,
   RepositoryStats,
 } from '@/lib/types/repository'
+import { BackendRepositoryListResponseSchema } from '@/lib/types/repository.schema'
+import { parseOrThrow } from './_shared'
 import {
   CoverageToken,
   CoverageTokenWithSecret,
@@ -52,7 +54,10 @@ export async function backendGetRepositories(
     },
   })
 
-  const body = await handleResponse<BackendRepositoryListResponse>(response)
+  const raw = await handleResponse<unknown>(response)
+  const body = parseOrThrow(BackendRepositoryListResponseSchema, raw, {
+    endpoint: 'GET /repositories',
+  })
   return normalizeRepositoryList(body)
 }
 
