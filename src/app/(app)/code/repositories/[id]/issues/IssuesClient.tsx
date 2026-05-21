@@ -2,6 +2,7 @@
 
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
+import { CopyFixPromptButton } from '@/components/analysis/CopyFixPromptButton'
 import { IssueList } from '@/components/analysis/IssueList'
 import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { CodeAnalysis } from '@/lib/types/analysis'
@@ -77,21 +78,32 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
   return (
     <div style={pageStyle}>
       <div style={headerStyle}>
-        <h1 style={titleStyle}>Alertas de {repo.name}</h1>
-        <span style={subtitleStyle}>
-          {analysis.issue_count} alertas na análise mais recente
-          {analysis.created_at && (
-            <>
-              {' · '}
-              {new Date(analysis.created_at).toLocaleString('pt-BR', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <h1 style={titleStyle}>Alertas de {repo.name}</h1>
+            <span style={subtitleStyle}>
+              {analysis.issue_count} alertas na análise mais recente
+              {analysis.created_at && (
+                <>
+                  {' · '}
+                  {new Date(analysis.created_at).toLocaleString('pt-BR', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </>
+              )}
+            </span>
+          </div>
+          {analysis.issues.length > 0 && (
+            <CopyFixPromptButton
+              repo={repo}
+              issues={analysis.issues}
+              analysisCreatedAt={analysis.created_at}
+            />
           )}
-        </span>
+        </div>
         <div style={metaRowStyle}>
           {analysis.ai_model && <span>Modelo: {analysis.ai_model}</span>}
           {analysis.tokens_used > 0 && <span>{analysis.tokens_used} tokens</span>}
@@ -119,7 +131,7 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
         </p>
       )}
 
-      <IssueList issues={analysis.issues} repoId={repo.id} />
+      <IssueList issues={analysis.issues} repo={repo} analysisCreatedAt={analysis.created_at} />
     </div>
   )
 }

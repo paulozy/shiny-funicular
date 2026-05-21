@@ -1,18 +1,40 @@
 'use client'
 
-import { CSSProperties, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
+import { buildSingleIssuePrompt } from '@/lib/fix-prompt'
 import { CodeIssue } from '@/lib/types/analysis'
+import { RepositoryResponse } from '@/lib/types/repository'
 import { SeverityBadge } from './SeverityBadge'
 
 interface IssueCardProps {
   issue: CodeIssue
-  repoId: string
+  repo: RepositoryResponse
+  analysisCreatedAt?: string | null
 }
 
-export function IssueCard({ issue, repoId }: IssueCardProps) {
+export function IssueCard({ issue, repo, analysisCreatedAt }: IssueCardProps) {
   const [showSuggestion, setShowSuggestion] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
+
+  useEffect(() => {
+    if (copyState === 'idle') return
+    const id = setTimeout(() => setCopyState('idle'), 1500)
+    return () => clearTimeout(id)
+  }, [copyState])
+
+  const handleSingleCopy = useCallback(async () => {
+    try {
+      const result = buildSingleIssuePrompt(repo, issue, analysisCreatedAt)
+      await navigator.clipboard.writeText(result.text)
+      setCopyState('copied')
+    } catch {
+      setCopyState('error')
+    }
+  }, [repo, issue, analysisCreatedAt])
+
+  const repoId = repo.id
 
   const cardStyle: CSSProperties = {
     backgroundColor: T.surface,
@@ -118,11 +140,44 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
 
   const confidencePercent = Math.round((issue.confidence ?? 0) * 100)
 
+  const copyBtnStyle: CSSProperties = {
+    appearance: 'none',
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.button,
+    background: T.surfaceAlt,
+    color: T.ink3,
+    padding: '4px 6px',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    font: '500 11px ' + T.font,
+    marginLeft: 'auto',
+    position: 'relative',
+  }
+
+  const copyBtnLabel =
+    copyState === 'copied'
+      ? 'Copiado!'
+      : copyState === 'error'
+        ? 'Falhou — copie manualmente'
+        : 'Copiar prompt de fix'
+
   return (
     <article style={cardStyle} aria-label={`Alerta: ${issue.title}`}>
       <div style={metaRowStyle}>
         <SeverityBadge severity={issue.severity} />
         {issue.category && <span style={categoryStyle}>{issue.category}</span>}
+        <button
+          type="button"
+          onClick={handleSingleCopy}
+          style={copyBtnStyle}
+          aria-label={copyBtnLabel}
+          title={copyBtnLabel}
+        >
+          <CopyGlyph />
+          {copyState === 'copied' ? 'Copiado' : 'Prompt'}
+        </button>
       </div>
 
       <h3 style={titleStyle}>{issue.title}</h3>
@@ -158,5 +213,16 @@ export function IssueCard({ issue, repoId }: IssueCardProps) {
         {issue.owasp_category && <span>{issue.owasp_category}</span>}
       </div>
     </article>
+  )
+}
+
+// Inline SVG so we don't depend on MFIcon (which doesn't ship a `copy`
+// glyph). Two overlapping rounded squares — the universal "copy" affordance.
+function CopyGlyph() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+      <rect x="5" y="5" width="9" height="9" rx="1.5" />
+      <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" />
+    </svg>
   )
 }
