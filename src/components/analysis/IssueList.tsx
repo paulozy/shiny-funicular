@@ -2,6 +2,7 @@
 
 import { CSSProperties, useMemo, useState } from 'react'
 import { T } from '@/lib/tokens'
+import { stableKey } from '@/lib/stable-key'
 import { CodeIssue, SeverityLevel } from '@/lib/types/analysis'
 import { IssueCard } from './IssueCard'
 
@@ -195,7 +196,7 @@ export function IssueList({ issues, repoId }: IssueListProps) {
               <div style={listStyle}>
                 {items.map((issue, idx) => (
                   <IssueCard
-                    key={issue.id ?? `${severity}-${idx}`}
+                    key={stableKey([issue.id, severity, issue.title, issue.file, issue.line], idx)}
                     issue={issue}
                     repoId={repoId}
                   />

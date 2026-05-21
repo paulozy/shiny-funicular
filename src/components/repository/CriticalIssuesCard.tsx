@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { SeverityBadge } from '@/components/analysis/SeverityBadge'
+import { stableKey } from '@/lib/stable-key'
 import { CodeAnalysis, CodeIssue, SeverityLevel } from '@/lib/types/analysis'
 
 interface CriticalIssuesCardProps {
@@ -156,7 +157,7 @@ export function CriticalIssuesCard({ analysis, repoId }: CriticalIssuesCardProps
       ) : (
         <ul style={listStyle}>
           {critical.map((issue, idx) => (
-            <li key={issue.id ?? `${issue.title}-${idx}`}>
+            <li key={stableKey([issue.id, issue.title, issue.file, issue.line], idx)}>
               <Link href={issuesHref} style={itemStyle}>
                 <div style={itemTitleRowStyle}>
                   <SeverityBadge severity={issue.severity} size="compact" />

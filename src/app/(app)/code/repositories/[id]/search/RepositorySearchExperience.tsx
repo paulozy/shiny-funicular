@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { RepositoryResponse } from '@/lib/types/repository'
 import { SearchInsight, SearchSynthesisDone, SearchSynthesisError, SearchSynthesisUnavailable, SemanticSearchResponse } from '@/lib/types/search'
 import { SearchResultsClient } from '@/components/search/SearchResultsClient'
+import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 
 interface RepositorySearchExperienceProps {
   repo: RepositoryResponse
@@ -15,14 +16,11 @@ interface RepositorySearchExperienceProps {
 
 /**
  * Self-contained search UI for the per-repo `search` route. The persistent
- * AppShell + RepoTabBar live in `app/(app)/code/repositories/[id]/layout.tsx`
- * — this component renders only the page-specific content.
+ * AppShell + RepoTabBar live in `app/(app)/code/repositories/[id]/layout.tsx`.
  *
- * Note: this experience used to inject `searchInsight` into the CoPensador
- * panel via AppShell prop. With the shell moved to the layout, the insight
- * state stays local to this component (the CoPensador in the layout shows
- * the default state). Re-introducing the cross-component wire is possible
- * via a Context Provider but is deferred.
+ * The streaming `searchInsight` is published into the `CoPensadorScope`
+ * context so the side panel (`<CoPensador>` in the layout) can render the
+ * synthesis card without prop drilling through the layout boundary.
  */
 export function RepositorySearchExperience({
   repo,
@@ -31,7 +29,12 @@ export function RepositorySearchExperience({
   initialLimit,
   initialMinScore,
 }: RepositorySearchExperienceProps) {
-  const [, setSearchInsight] = useState<SearchInsight | null>(null)
+  const [searchInsight, setSearchInsight] = useState<SearchInsight | null>(null)
+
+  usePublishScope(
+    { kind: 'repo-search', repoId: repo.id, query: initialQuery, insight: searchInsight },
+    [repo.id, initialQuery, searchInsight]
+  )
 
   const startInsight = useCallback((query: string) => {
     setSearchInsight({

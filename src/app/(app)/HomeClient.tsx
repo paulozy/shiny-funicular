@@ -11,6 +11,7 @@ import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { MetricStrip } from '@/components/home/MetricStrip'
 import { RepositoryGrid } from '@/components/home/RepositoryGrid'
 import { CoPensador } from '@/components/home/CoPensador'
+import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { NewRepoModal } from '@/components/home/NewRepoModal'
 import { OnboardingTutorial } from '@/components/home/OnboardingTutorial'
 import { Button } from '@/components/ui/Button'
@@ -26,6 +27,9 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
   const router = useRouter()
   const [repos, setRepos] = useState<RepositoryListResponse | null>(initialRepos)
   const [showNewRepoModal, setShowNewRepoModal] = useState(false)
+
+  // Tell the CoPensador it's looking at org-level context (cross-repo insights).
+  usePublishScope({ kind: 'org' }, [])
 
   const handleRepoCreated = useCallback((newRepo: RepositoryResponse) => {
     setRepos((prev) => {

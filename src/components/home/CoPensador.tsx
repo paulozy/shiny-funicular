@@ -8,6 +8,7 @@ import { getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
 import { SearchSynthesisCard } from '@/components/home/SearchSynthesisCard'
+import { useCoPensadorScope } from '@/components/shell/CoPensadorScopeProvider'
 
 interface CoPensadorProps {
   repos: RepositoryListResponse
@@ -24,6 +25,13 @@ interface CoPCard {
 }
 
 export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoPensadorProps) {
+  // The CoPensador lives in the persistent app layout, but the relevant
+  // context (search query insight, route-specific framing) is published from
+  // the leaf client components via `usePublishScope`. Reading the scope here
+  // lets the panel render route-aware insights without prop drilling.
+  const { scope } = useCoPensadorScope()
+  const insight = scope?.kind === 'repo-search' ? scope.insight ?? null : searchInsight ?? null
+
   const cards: CoPCard[] = []
 
   if (focusedRepo) {
@@ -88,6 +96,39 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
         title: 'Voyage pendente',
         tone: T.warn,
         description: 'A chave Voyage ainda não está configurada. A busca semântica depende dela para gerar e consultar embeddings.',
+      })
+    }
+
+    // Route-specific insights — appended *after* the generic repo cards so the
+    // panel keeps a consistent baseline while still adapting to where the
+    // user is.
+    if (scope?.kind === 'repo-issues') {
+      const issueCount = focusedRepo.metadata?.issue_count ?? 0
+      cards.unshift({
+        icon: 'shield',
+        title: 'Triando alertas',
+        tone: T.danger,
+        description: issueCount > 0
+          ? `${issueCount} alertas detectados no último code review. Comece pelos críticos (vermelho) — costumam ser configs sensíveis, deps vulneráveis ou input validation.`
+          : 'Nenhum alerta no último code review. Aproveite para rodar uma análise de segurança ou arquitetura — categorias diferentes pegam padrões diferentes.',
+      })
+    }
+
+    if (scope?.kind === 'repo-pulls') {
+      cards.unshift({
+        icon: 'pr',
+        title: 'Revisando PRs',
+        tone: T.accent,
+        description: 'Clique em qualquer PR para ver o detalhe no GitHub. Se uma PR já tem análise da IA, o card mostra contagens por severity — comece pelos críticos antes de aprovar.',
+      })
+    }
+
+    if (scope?.kind === 'repo-files') {
+      cards.unshift({
+        icon: 'doc',
+        title: 'Navegando arquivos',
+        tone: T.ai,
+        description: 'O visualizador de arquivos completo ainda está em desenvolvimento. Use a aba "Buscar" para localizar trechos por intenção enquanto isso.',
       })
     }
   } else {
@@ -312,10 +353,10 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
 
       <div style={contentStyle}>
         <div style={{ fontSize: 10.5, fontWeight: 600, color: T.faint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          {cards.length + (searchInsight ? 1 : 0)} insight{cards.length + (searchInsight ? 1 : 0) !== 1 ? 's' : ''}
+          {cards.length + (insight ? 1 : 0)} insight{cards.length + (insight ? 1 : 0) !== 1 ? 's' : ''}
         </div>
 
-        {searchInsight && <SearchSynthesisCard repoId={focusedRepo?.id} insight={searchInsight} />}
+        {insight && <SearchSynthesisCard repoId={focusedRepo?.id} insight={insight} />}
 
         {cards.map((card, i) => (
           <div key={i} style={cardStyle}>

@@ -10,6 +10,7 @@ import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusB
 import { CriticalIssuesCard } from '@/components/repository/CriticalIssuesCard'
 import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
+import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { CodeAnalysis } from '@/lib/types/analysis'
 import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import {
@@ -83,6 +84,8 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
   // Local mirror of the embeddings state — the poller updates this without
   // forcing a full server refetch of the overview.
   const [embeddingsState, setEmbeddingsState] = useState<EmbeddingsState | undefined>(repo.embeddings_state)
+
+  usePublishScope({ kind: 'repo-overview', repoId: repo.id }, [repo.id])
 
   const triggerEmbeddings = useCallback(async () => {
     try {

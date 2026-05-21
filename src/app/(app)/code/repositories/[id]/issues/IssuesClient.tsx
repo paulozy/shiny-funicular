@@ -3,6 +3,7 @@
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 import { IssueList } from '@/components/analysis/IssueList'
+import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { CodeAnalysis } from '@/lib/types/analysis'
 import { RepositoryResponse } from '@/lib/types/repository'
 
@@ -12,6 +13,10 @@ interface IssuesClientProps {
 }
 
 export function IssuesClient({ analysis, repo }: IssuesClientProps) {
+  usePublishScope(
+    { kind: 'repo-issues', repoId: repo.id, analysisId: analysis?.id },
+    [repo.id, analysis?.id]
+  )
   const pageStyle: CSSProperties = {
     padding: '24px 28px 32px',
   }
