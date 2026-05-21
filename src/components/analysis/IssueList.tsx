@@ -4,11 +4,13 @@ import { CSSProperties, useMemo, useState } from 'react'
 import { T } from '@/lib/tokens'
 import { stableKey } from '@/lib/stable-key'
 import { CodeIssue, SeverityLevel } from '@/lib/types/analysis'
+import { RepositoryResponse } from '@/lib/types/repository'
 import { IssueCard } from './IssueCard'
 
 interface IssueListProps {
   issues: CodeIssue[]
-  repoId: string
+  repo: RepositoryResponse
+  analysisCreatedAt?: string | null
 }
 
 const severityOrder: SeverityLevel[] = ['critical', 'error', 'warning', 'info']
@@ -20,7 +22,7 @@ const severityLabel: Record<SeverityLevel, string> = {
   info: 'Info',
 }
 
-export function IssueList({ issues, repoId }: IssueListProps) {
+export function IssueList({ issues, repo, analysisCreatedAt }: IssueListProps) {
   const [activeSeverities, setActiveSeverities] = useState<Set<SeverityLevel>>(
     () => new Set(severityOrder)
   )
@@ -198,7 +200,8 @@ export function IssueList({ issues, repoId }: IssueListProps) {
                   <IssueCard
                     key={stableKey([issue.id, severity, issue.title, issue.file, issue.line], idx)}
                     issue={issue}
-                    repoId={repoId}
+                    repo={repo}
+                    analysisCreatedAt={analysisCreatedAt}
                   />
                 ))}
               </div>

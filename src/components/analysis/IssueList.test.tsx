@@ -1,6 +1,20 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { IssueList } from './IssueList'
 import { CodeIssue } from '@/lib/types/analysis'
+import { RepositoryResponse } from '@/lib/types/repository'
+
+const repo: RepositoryResponse = {
+  id: 'r1',
+  name: 'app',
+  full_name: 'org/app',
+  url: 'https://github.com/org/app',
+  provider: 'github',
+  is_private: false,
+  metadata: { default_branch: 'main' },
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  organization_id: 'org-1',
+}
 
 const issues: CodeIssue[] = [
   {
@@ -36,14 +50,14 @@ const issues: CodeIssue[] = [
 
 describe('IssueList', () => {
   it('renders all issues grouped by severity', () => {
-    render(<IssueList issues={issues} repoId="r1" />)
+    render(<IssueList issues={issues} repo={repo} />)
     expect(screen.getByText('Hardcoded secret')).toBeInTheDocument()
     expect(screen.getByText('N+1 query')).toBeInTheDocument()
     expect(screen.getByText('Missing comment')).toBeInTheDocument()
   })
 
   it('filters out a severity when its chip is toggled off', () => {
-    render(<IssueList issues={issues} repoId="r1" />)
+    render(<IssueList issues={issues} repo={repo} />)
     // toggle off "Crítico"
     fireEvent.click(screen.getByRole('button', { name: /crítico · 1/i }))
     expect(screen.queryByText('Hardcoded secret')).not.toBeInTheDocument()
@@ -51,19 +65,19 @@ describe('IssueList', () => {
   })
 
   it('filters by free text against title, description, file', () => {
-    render(<IssueList issues={issues} repoId="r1" />)
+    render(<IssueList issues={issues} repo={repo} />)
     fireEvent.change(screen.getByLabelText('Buscar alertas'), { target: { value: 'service.go' } })
     expect(screen.getByText('N+1 query')).toBeInTheDocument()
     expect(screen.queryByText('Hardcoded secret')).not.toBeInTheDocument()
   })
 
   it('shows the global empty state when the list is empty', () => {
-    render(<IssueList issues={[]} repoId="r1" />)
+    render(<IssueList issues={[]} repo={repo} />)
     expect(screen.getByText('Nenhum alerta encontrado nessa análise.')).toBeInTheDocument()
   })
 
   it('shows the filter empty state when filters exclude everything', () => {
-    render(<IssueList issues={issues} repoId="r1" />)
+    render(<IssueList issues={issues} repo={repo} />)
     fireEvent.change(screen.getByLabelText('Buscar alertas'), { target: { value: 'no-such-text' } })
     expect(
       screen.getByText('Nenhum alerta corresponde aos filtros atuais.')
