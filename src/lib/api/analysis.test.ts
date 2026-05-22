@@ -112,20 +112,19 @@ describe('backendListAnalyses', () => {
     // Mirrors a real wire payload for an in-progress / freshly-failed analysis
     // where the worker has not recorded token usage yet. Pre-fix this would
     // throw BackendError because the Zod schema declared tokens_used as required.
+    // Build the row by omitting tokens_used via destructuring (no `as any`).
+    const { tokens_used: _omitted, ...rowWithoutTokens } = VALID_RESPONSE.analyses[0]
+    void _omitted
     const responseWithoutTokens = {
       ...VALID_RESPONSE,
       analyses: [
         {
-          ...VALID_RESPONSE.analyses[0],
+          ...rowWithoutTokens,
           id: 'analysis-no-tokens',
           status: 'pending',
-          // tokens_used intentionally absent
         },
       ],
     }
-    // Remove tokens_used from the row.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (responseWithoutTokens.analyses[0] as any).tokens_used
 
     mockFetchOnce({ ok: true, body: responseWithoutTokens })
     const result = await backendListAnalyses('token', 'repo-1')
