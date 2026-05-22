@@ -106,7 +106,9 @@ export function IssuesClient({ analysis, repo }: IssuesClientProps) {
         </div>
         <div style={metaRowStyle}>
           {analysis.ai_model && <span>Modelo: {analysis.ai_model}</span>}
-          {analysis.tokens_used > 0 && <span>{analysis.tokens_used} tokens</span>}
+          {analysis.tokens_used !== undefined && analysis.tokens_used > 0 && (
+            <span>{analysis.tokens_used} tokens</span>
+          )}
           {analysis.processing_ms !== undefined && (
             <span>{Math.round(analysis.processing_ms / 1000)}s de processamento</span>
           )}

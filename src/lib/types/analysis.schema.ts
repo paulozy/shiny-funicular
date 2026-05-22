@@ -65,7 +65,7 @@ export const CodeAnalysisSchema = z.object({
   warning_count: z.number(),
   info_count: z.number(),
   ai_model: z.string().optional(),
-  tokens_used: z.number(),
+  tokens_used: z.number().optional(),
   processing_ms: z.number().optional(),
   error_message: z.string().optional(),
   created_at: z.string(),

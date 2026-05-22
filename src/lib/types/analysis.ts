@@ -50,7 +50,7 @@ export interface CodeAnalysis {
   warning_count: number
   info_count: number
   ai_model?: string
-  tokens_used: number
+  tokens_used?: number
   processing_ms?: number
   error_message?: string
   created_at: string
