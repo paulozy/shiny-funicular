@@ -9,6 +9,7 @@ import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
 import { TemplateFileTree } from '@/components/templates/TemplateFileTree'
 import { TemplateFileViewer } from '@/components/templates/TemplateFileViewer'
+import { TemplateActionsMenu } from '@/components/templates/TemplateActionsMenu'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 
@@ -163,6 +164,10 @@ export function TemplateDetailClient({
               <MFIcon name="flag" size={11} />
               {template.is_pinned ? 'Fixado' : 'Fixar'}
             </Button>
+            <TemplateActionsMenu
+              template={template}
+              onDeleted={() => router.push('/templates')}
+            />
           </div>
           {template.summary && (
             <div style={summaryStyle}>{template.summary}</div>

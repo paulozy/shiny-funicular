@@ -127,4 +127,14 @@ describe('TemplateCard', () => {
     expect(screen.getByText('Falhou')).toBeInTheDocument()
     expect(screen.getByText(/0 arquivos · 1\.234 tokens/)).toBeInTheDocument()
   })
+
+  it('does not render the actions menu when onDeleted is not provided', () => {
+    render(<TemplateCard template={baseTemplate} />)
+    expect(screen.queryByLabelText('Mais ações')).not.toBeInTheDocument()
+  })
+
+  it('renders the actions menu when onDeleted is provided', () => {
+    render(<TemplateCard template={baseTemplate} onDeleted={jest.fn()} />)
+    expect(screen.getByLabelText('Mais ações')).toBeInTheDocument()
+  })
 })

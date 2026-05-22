@@ -1,10 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TemplateDetailClient } from './TemplateDetailClient'
 import { UserInfo } from '@/lib/types/auth'
 import { CodeTemplate } from '@/lib/types/template'
 
+const push = jest.fn()
+const refresh = jest.fn()
+
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ push, refresh }),
   usePathname: () => '/templates/t-1',
 }))
 
@@ -47,6 +50,11 @@ const baseTemplate: CodeTemplate = {
 }
 
 describe('TemplateDetailClient', () => {
+  beforeEach(() => {
+    push.mockClear()
+    refresh.mockClear()
+  })
+
   it('does not render the files/tokens metadata line when the template is pending', () => {
     const pending: CodeTemplate = {
       ...baseTemplate,
@@ -87,5 +95,25 @@ describe('TemplateDetailClient', () => {
     expect(screen.getByText('Concluído')).toBeInTheDocument()
     expect(screen.getByText('1 arquivos')).toBeInTheDocument()
     expect(screen.getByText('1.500 tokens')).toBeInTheDocument()
+  })
+
+  it('redirects to /templates after a successful delete', async () => {
+    // The actions menu uses global fetch (not apiFetch — see TemplateActionsMenu).
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: () => Promise.resolve(undefined),
+    }) as unknown as typeof fetch
+
+    render(<TemplateDetailClient user={baseUser} template={baseTemplate} htmlByPath={{}} />)
+
+    fireEvent.click(screen.getByLabelText('Mais ações'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /excluir/i }))
+    // Two buttons match "Excluir": the menuitem (already clicked) and the destructive
+    // dialog button. After closing the menu, only the destructive one remains.
+    const destructive = screen.getAllByRole('button', { name: /excluir/i }).slice(-1)[0]
+    fireEvent.click(destructive)
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/templates'))
   })
 })

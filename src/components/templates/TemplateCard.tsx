@@ -6,10 +6,12 @@ import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
 import { CodeTemplate, TemplateStatus, isTerminalTemplateStatus } from '@/lib/types/template'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { TemplateActionsMenu } from './TemplateActionsMenu'
 
 interface TemplateCardProps {
   template: CodeTemplate
   onUpdated?: (next: CodeTemplate) => void
+  onDeleted?: (templateId: string) => void
 }
 
 function statusTone(status: TemplateStatus): string {
@@ -38,7 +40,7 @@ function statusLabel(status: TemplateStatus): string {
   }
 }
 
-export function TemplateCard({ template, onUpdated }: TemplateCardProps) {
+export function TemplateCard({ template, onUpdated, onDeleted }: TemplateCardProps) {
   const [pinning, setPinning] = useState(false)
   const [pinned, setPinned] = useState(template.is_pinned)
 
@@ -164,6 +166,9 @@ export function TemplateCard({ template, onUpdated }: TemplateCardProps) {
         >
           <MFIcon name="flag" size={12} color="currentColor" />
         </button>
+        {onDeleted && (
+          <TemplateActionsMenu template={template} onDeleted={onDeleted} />
+        )}
       </div>
 
       {template.summary && (
