@@ -4,7 +4,7 @@ import { CSSProperties, useState } from 'react'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
-import { CodeTemplate, TemplateStatus } from '@/lib/types/template'
+import { CodeTemplate, TemplateStatus, isTerminalTemplateStatus } from '@/lib/types/template'
 import { MFIcon } from '@/components/icons/MFIcon'
 
 interface TemplateCardProps {
@@ -193,9 +193,11 @@ export function TemplateCard({ template, onUpdated }: TemplateCardProps) {
 
       <div style={footerStyle}>
         <span style={statusPillStyle}>{statusLabel(template.status)}</span>
-        <span style={{ marginLeft: 'auto' }}>
-          {template.files.length} arquivos · {template.tokens_used.toLocaleString('pt-BR')} tokens
-        </span>
+        {isTerminalTemplateStatus(template.status) && (
+          <span style={{ marginLeft: 'auto' }}>
+            {template.files?.length ?? 0} arquivos · {(template.tokens_used ?? 0).toLocaleString('pt-BR')} tokens
+          </span>
+        )}
       </div>
     </div>
   )

@@ -22,11 +22,11 @@ export interface CodeTemplate {
   stack_hint?: string
   stack_snapshot?: StackProfile | null
   status: TemplateStatus
-  files: GeneratedFile[]
+  files?: GeneratedFile[]
   summary?: string
   model?: string
-  tokens_used: number
-  processing_ms: number
+  tokens_used?: number
+  processing_ms?: number
   error_message?: string
   is_pinned: boolean
   name?: string
