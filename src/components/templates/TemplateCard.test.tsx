@@ -76,4 +76,65 @@ describe('TemplateCard', () => {
       expect(screen.getByLabelText('Fixar template')).toBeInTheDocument()
     })
   })
+
+  it('does not crash and hides the files/tokens footer when template is pending', () => {
+    const pending: CodeTemplate = {
+      ...baseTemplate,
+      id: 't-pending',
+      status: 'pending',
+      // Backend omits tokens_used / processing_ms when the worker has not run yet.
+      tokens_used: undefined,
+      processing_ms: undefined,
+      files: undefined,
+    }
+
+    render(<TemplateCard template={pending} />)
+
+    expect(screen.getByText('Pendente')).toBeInTheDocument()
+    expect(screen.queryByText(/tokens/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/arquivos/)).not.toBeInTheDocument()
+  })
+
+  it('does not crash and hides the files/tokens footer when template is generating', () => {
+    const generating: CodeTemplate = {
+      ...baseTemplate,
+      id: 't-generating',
+      status: 'generating',
+      tokens_used: undefined,
+      processing_ms: undefined,
+      files: [],
+    }
+
+    render(<TemplateCard template={generating} />)
+
+    expect(screen.getByText('Gerando…')).toBeInTheDocument()
+    expect(screen.queryByText(/tokens/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/arquivos/)).not.toBeInTheDocument()
+  })
+
+  it('renders the files/tokens footer for failed templates (terminal state with tokens already burned)', () => {
+    const failed: CodeTemplate = {
+      ...baseTemplate,
+      id: 't-failed',
+      status: 'failed',
+      tokens_used: 1234,
+      processing_ms: 5000,
+      files: [],
+    }
+
+    render(<TemplateCard template={failed} />)
+
+    expect(screen.getByText('Falhou')).toBeInTheDocument()
+    expect(screen.getByText(/0 arquivos · 1\.234 tokens/)).toBeInTheDocument()
+  })
+
+  it('does not render the actions menu when onDeleted is not provided', () => {
+    render(<TemplateCard template={baseTemplate} />)
+    expect(screen.queryByLabelText('Mais ações')).not.toBeInTheDocument()
+  })
+
+  it('renders the actions menu when onDeleted is provided', () => {
+    render(<TemplateCard template={baseTemplate} onDeleted={jest.fn()} />)
+    expect(screen.getByLabelText('Mais ações')).toBeInTheDocument()
+  })
 })

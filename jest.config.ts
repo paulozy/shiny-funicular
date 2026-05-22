@@ -58,7 +58,7 @@ const config: Config = {
       ...baseConfig,
       displayName: 'pages',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/src/app/(auth|app)/**/*.test.tsx'],
+      testMatch: ['<rootDir>/src/app/**/*.test.tsx'],
       preset: 'ts-jest',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', { tsconfig: { jsx: 'react-jsx', esModuleInterop: true, allowSyntheticDefaultImports: true } }],

@@ -99,6 +99,10 @@ export function TemplatesClient({ user, initialTemplates }: TemplatesClientProps
     setTemplates((prev) => prev.map((t) => (t.id === next.id ? next : t)))
   }, [])
 
+  const handleTemplateDeleted = useCallback((templateId: string) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== templateId))
+  }, [])
+
   const contentStyle: CSSProperties = { padding: '20px 24px 28px' }
 
   const headerStyle: CSSProperties = {
@@ -227,7 +231,12 @@ export function TemplatesClient({ user, initialTemplates }: TemplatesClientProps
         ) : (
           <div style={gridStyle}>
             {filtered.map((template) => (
-              <TemplateCard key={template.id} template={template} onUpdated={handleTemplateUpdated} />
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onUpdated={handleTemplateUpdated}
+                onDeleted={handleTemplateDeleted}
+              />
             ))}
           </div>
         )}

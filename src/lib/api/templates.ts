@@ -102,3 +102,14 @@ export async function backendPinTemplate(
   })
   return handleResponse<CodeTemplate>(response)
 }
+
+export async function backendDeleteTemplate(
+  accessToken: string,
+  templateId: string
+): Promise<void> {
+  const response = await fetch(getApiUrl(`/templates/${templateId}`), {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  await handleResponse<void>(response)
+}

@@ -9,6 +9,7 @@ import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
 import { TemplateFileTree } from '@/components/templates/TemplateFileTree'
 import { TemplateFileViewer } from '@/components/templates/TemplateFileViewer'
+import { TemplateActionsMenu } from '@/components/templates/TemplateActionsMenu'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 
@@ -163,6 +164,10 @@ export function TemplateDetailClient({
               <MFIcon name="flag" size={11} />
               {template.is_pinned ? 'Fixado' : 'Fixar'}
             </Button>
+            <TemplateActionsMenu
+              template={template}
+              onDeleted={() => router.push('/templates')}
+            />
           </div>
           {template.summary && (
             <div style={summaryStyle}>{template.summary}</div>
@@ -181,11 +186,13 @@ export function TemplateDetailClient({
               {template.error_message}
             </div>
           )}
-          <div style={{ fontSize: 11, color: T.faint, display: 'flex', gap: 12 }}>
-            <span>{template.files.length} arquivos</span>
-            <span>{template.tokens_used.toLocaleString('pt-BR')} tokens</span>
-            {template.model && <span>{template.model}</span>}
-          </div>
+          {isTerminal && (
+            <div style={{ fontSize: 11, color: T.faint, display: 'flex', gap: 12 }}>
+              <span>{template.files?.length ?? 0} arquivos</span>
+              <span>{(template.tokens_used ?? 0).toLocaleString('pt-BR')} tokens</span>
+              {template.model && <span>{template.model}</span>}
+            </div>
+          )}
         </div>
 
         {!isTerminal ? (
@@ -203,7 +210,7 @@ export function TemplateDetailClient({
             <MFIcon name="sparkles" size={14} color={T.ai} />
             O template está sendo gerado. Esta página atualiza automaticamente.
           </div>
-        ) : template.files.length === 0 ? (
+        ) : (template.files?.length ?? 0) === 0 ? (
           <div
             style={{
               flex: 1,
@@ -219,7 +226,7 @@ export function TemplateDetailClient({
         ) : (
           <div style={splitStyle}>
             <TemplateFileTree
-              files={template.files}
+              files={template.files ?? []}
               activePath={activeFile?.path}
               onSelect={(file) => setActiveFile(file)}
             />
