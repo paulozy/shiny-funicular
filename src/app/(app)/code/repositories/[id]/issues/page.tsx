@@ -26,7 +26,12 @@ export default async function IssuesPage({ params }: IssuesPageProps) {
 
   const [repos, analysesResponse] = await Promise.all([
     backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
-    backendListAnalyses(accessToken, id, { limit: 20, offset: 0 }).catch(() => null),
+    backendListAnalyses(accessToken, id, {
+      type: 'code_review',
+      status: 'completed',
+      limit: 5,
+      offset: 0,
+    }).catch(() => null),
   ])
 
   const repo = repos?.repositories.find((item) => item.id === id)
@@ -34,10 +39,10 @@ export default async function IssuesPage({ params }: IssuesPageProps) {
     notFound()
   }
 
+  // Filter out PR-scoped analyses; the issues page is repo-wide.
+  // pull_request_id can be undefined (repo-wide) or a number (PR-scoped).
   const latestReview: CodeAnalysis | null =
-    analysesResponse?.analyses.find(
-      (a) => a.type === 'code_review' && a.status === 'completed'
-    ) ?? null
+    analysesResponse?.analyses.find((a) => !a.pull_request_id) ?? null
 
   return <IssuesClient analysis={latestReview} repo={repo} />
 }

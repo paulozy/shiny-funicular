@@ -94,6 +94,44 @@ describe('backendListAnalyses', () => {
     expect(call).toContain('limit=5')
     expect(call).toContain('offset=10')
   })
+
+  it('forwards type and status as query params', async () => {
+    mockFetchOnce({ ok: true, body: VALID_RESPONSE })
+    await backendListAnalyses('token', 'repo-1', {
+      type: 'code_review',
+      status: 'completed',
+      limit: 5,
+    })
+    const call = (global.fetch as jest.Mock).mock.calls[0][0] as string
+    expect(call).toContain('type=code_review')
+    expect(call).toContain('status=completed')
+    expect(call).toContain('limit=5')
+  })
+
+  it('parses successfully when tokens_used is absent (backend omits zero counters)', async () => {
+    // Mirrors a real wire payload for an in-progress / freshly-failed analysis
+    // where the worker has not recorded token usage yet. Pre-fix this would
+    // throw BackendError because the Zod schema declared tokens_used as required.
+    // Build the row by omitting tokens_used via destructuring (no `as any`).
+    const { tokens_used: _omitted, ...rowWithoutTokens } = VALID_RESPONSE.analyses[0]
+    void _omitted
+    const responseWithoutTokens = {
+      ...VALID_RESPONSE,
+      analyses: [
+        {
+          ...rowWithoutTokens,
+          id: 'analysis-no-tokens',
+          status: 'pending',
+        },
+      ],
+    }
+
+    mockFetchOnce({ ok: true, body: responseWithoutTokens })
+    const result = await backendListAnalyses('token', 'repo-1')
+    expect(result.analyses).toHaveLength(1)
+    expect(result.analyses[0].id).toBe('analysis-no-tokens')
+    expect(result.analyses[0].tokens_used).toBeUndefined()
+  })
 })
 
 // Sanity check: the error class is exported and instanceof works across module
