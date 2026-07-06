@@ -40,19 +40,20 @@ const repo: RepositoryResponse = {
 }
 
 describe('RepositoryOverviewClient', () => {
-  it('renders repository identity, metrics and action links', () => {
-    render(<RepositoryOverviewClient repo={repo} latestAnalysis={null} />)
+  it('renders repository identity, activity metrics and action links', () => {
+    render(<RepositoryOverviewClient repo={repo} />)
 
     expect(screen.getByRole('heading', { name: 'web' })).toBeInTheDocument()
     expect(screen.getByText(/Frontend principal/i)).toBeInTheDocument()
     expect(screen.getByText('develop')).toBeInTheDocument()
-    expect(screen.getByText('85/100')).toBeInTheDocument()
-    expect(screen.getAllByText('5').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('10').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/concluída/i).length).toBeGreaterThan(0)
-    // 76% appears twice: in the "Cobertura" metric tile AND in the new
-    // RepoHealthCard pill — both fed from the same coverage source.
-    expect(screen.getAllByText('76%').length).toBeGreaterThan(0)
+    // activity signals from the GitHub sync render
+    expect(screen.getByText('PRs abertos')).toBeInTheDocument()
+    expect(screen.getByText('Issues')).toBeInTheDocument()
+    expect(screen.getByText('Contribuidores')).toBeInTheDocument()
+    // analysis-derived UI is gone (no quality score, analysis status or coverage)
+    expect(screen.queryByText('85/100')).not.toBeInTheDocument()
+    expect(screen.queryByText(/concluída/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('76%')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /buscar no repositório/i })).toHaveAttribute(
       'href',
       '/code/repositories/repo-1/search?branch=develop'
@@ -64,15 +65,14 @@ describe('RepositoryOverviewClient', () => {
     render(
       <RepositoryOverviewClient
         repo={{ ...repo, analysis_status: null, reviews_count: null, stats: undefined, metadata: {} }}
-        latestAnalysis={null}
       />
     )
 
     // Stack card collapses to a single empty-state line when languages,
     // frameworks and topics are all absent.
     expect(screen.getByText(/Sem informações de stack detectadas/i)).toBeInTheDocument()
-    expect(screen.getAllByText(/Sem análise/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/Nunca analisado/i)).toBeInTheDocument()
     expect(screen.getByText('main')).toBeInTheDocument()
+    // no analysis artifacts leak into the empty state
+    expect(screen.queryByText(/sem análise/i)).not.toBeInTheDocument()
   })
 })

@@ -4,7 +4,6 @@ import { CSSProperties, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { RepositoryListResponse } from '@/lib/types/repository'
-import { analysisStatusLabel, analysisStatusTone, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
@@ -155,43 +154,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
     flexWrap: 'wrap',
   }
 
-  const analysisStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    margin: '8px 0 10px',
-    flexWrap: 'wrap',
-  }
-
-  const qualityStyle: CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'baseline',
-    gap: 3,
-    fontSize: 18,
-    fontWeight: 700,
-    letterSpacing: 0,
-  }
-
-  const statusPillStyle = (tone: string): CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 5,
-    border: `1px solid ${T.border}`,
-    borderRadius: T.radius.tag,
-    padding: '2px 8px',
-    background: T.surfaceAlt,
-    color: tone,
-    fontSize: 11,
-    fontWeight: 600,
-  })
-
-  const mutedMetricStyle: CSSProperties = {
-    color: T.faint,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-  }
-
   const menuButtonStyle: CSSProperties = {
     appearance: 'none',
     border: `1px solid ${T.border}`,
@@ -260,7 +222,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
             >
               {filter === 'todos' && 'Todos'}
               {filter === 'hot' && 'Hot'}
-              {filter === 'alertas' && 'Com Alertas'}
+              {filter === 'alertas' && 'Com issues'}
             </button>
           ))}
         </div>
@@ -284,9 +246,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
             const issueCount = repo.metadata?.issue_count ?? 0
             const defaultBranch = repo.metadata?.default_branch || 'main'
             const isMenuOpen = openMenuRepoId === repo.id
-            const stats = getRepositoryStats(repo)
-            const qualityColor = qualityTone(stats.latest_quality_score, T)
-            const statusTone = analysisStatusTone(repo.analysis_status, T)
 
             return (
               <div key={repo.id} className="repo-card" style={cardStyle}>
@@ -362,28 +321,8 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                   )}
                 </div>
                 <div style={descStyle}>{repo.description || 'Sem descrição'}</div>
-                <div style={analysisStyle}>
-                  {stats.has_analysis ? (
-                    <div style={{ ...qualityStyle, color: qualityColor }} aria-label={`Qualidade ${stats.latest_quality_score} de 100`}>
-                      {Math.round(stats.latest_quality_score)}
-                      <span style={{ fontSize: 11.5, fontWeight: 600, color: T.faint }}>/100</span>
-                    </div>
-                  ) : (
-                    <div style={{ ...qualityStyle, color: T.ink3 }}>Sem análise</div>
-                  )}
-                  <span style={statusPillStyle(statusTone)}>
-                    <MFIcon name={repo.analysis_status === 'failed' ? 'x' : stats.has_analysis ? 'check' : 'database'} size={11} color="currentColor" />
-                    {stats.has_analysis ? analysisStatusLabel(repo.analysis_status) : 'Analisar repo'}
-                  </span>
+                <div style={{ ...footerStyle, marginTop: 10 }}>
                   <EmbeddingsStatusBadge state={repo.embeddings_state} size="compact" />
-                </div>
-                <div style={footerStyle}>
-                  <span style={mutedMetricStyle}>
-                    <MFIcon name="doc" size={11} color={T.faint} /> {stats.total_analyses} análises
-                  </span>
-                  <span style={mutedMetricStyle}>
-                    <MFIcon name="check" size={11} color={T.faint} /> {repo.reviews_count ?? 0} reviews
-                  </span>
                   <span style={{ color: prCount > 0 ? T.ink2 : T.faint, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <MFIcon name="pr" size={11} color={T.faint} /> {prCount} PRs
                   </span>
@@ -395,7 +334,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                       gap: 4,
                     }}
                   >
-                    <MFIcon name="shield" size={11} color={issueCount > 0 ? T.danger : T.faint} /> {issueCount} alertas
+                    <MFIcon name="shield" size={11} color={issueCount > 0 ? T.danger : T.faint} /> {issueCount} issues
                   </span>
                 </div>
               </div>

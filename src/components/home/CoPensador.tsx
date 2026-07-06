@@ -4,7 +4,6 @@ import { CSSProperties, ReactNode } from 'react'
 import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { SearchInsight } from '@/lib/types/search'
-import { getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
 import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
 import { SearchSynthesisCard } from '@/components/home/SearchSynthesisCard'
@@ -36,50 +35,14 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
 
   if (focusedRepo) {
     const issues = focusedRepo.metadata?.issue_count ?? 0
-    const coverage = focusedRepo.metadata?.test_coverage
     const branch = focusedRepo.metadata?.default_branch || 'main'
-    const stats = getRepositoryStats(focusedRepo)
-
-    if (focusedRepo.analysis_status === 'failed') {
-      cards.push({
-        icon: 'x',
-        title: 'Análise falhou',
-        tone: T.danger,
-        description: 'A última análise deste repositório falhou. Verifique configurações e credenciais antes de confiar nos sinais de qualidade.',
-      })
-    } else if (!stats.has_analysis) {
-      cards.push({
-        icon: 'database',
-        title: 'Repo sem análise',
-        tone: T.warn,
-        description: 'Este repositório ainda não tem análise de qualidade. O score 0 do backend representa ausência de análise, não baixa qualidade.',
-      })
-    } else if (stats.latest_quality_score < 70) {
-      cards.push({
-        icon: 'trophy',
-        title: 'Qualidade baixa',
-        tone: qualityTone(stats.latest_quality_score, T),
-        description: `Última análise marcou ${Math.round(stats.latest_quality_score)}/100. Use a busca para localizar os pontos de maior impacto antes de refatorar.`,
-      })
-    }
 
     if (issues > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Alertas no repo',
+        title: 'Issues no repo',
         tone: T.danger,
-        description: `${issues} alerta${issues !== 1 ? 's' : ''} em ${focusedRepo.name}. Priorize os trechos mais sensíveis antes de novas mudanças.`,
-      })
-    }
-
-    if (coverage === undefined || coverage < 60) {
-      cards.push({
-        icon: 'check',
-        title: 'Cobertura baixa',
-        tone: T.warn,
-        description: coverage === undefined
-          ? 'Cobertura não detectada. Busque por testes existentes antes de abrir novas refatorações.'
-          : `Cobertura em ${Math.round(coverage)}%. Vale buscar hotspots sem testes antes de evoluir o repo.`,
+        description: `${issues} issue${issues !== 1 ? 's' : ''} aberta${issues !== 1 ? 's' : ''} no GitHub em ${focusedRepo.name}.`,
       })
     }
 
@@ -102,98 +65,24 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
     // Route-specific insights — appended *after* the generic repo cards so the
     // panel keeps a consistent baseline while still adapting to where the
     // user is.
-    if (scope?.kind === 'repo-issues') {
-      const issueCount = focusedRepo.metadata?.issue_count ?? 0
-      cards.unshift({
-        icon: 'shield',
-        title: 'Triando alertas',
-        tone: T.danger,
-        description: issueCount > 0
-          ? `${issueCount} alertas detectados no último code review. Comece pelos críticos (vermelho) — costumam ser configs sensíveis, deps vulneráveis ou input validation.`
-          : 'Nenhum alerta no último code review. Aproveite para rodar uma análise de segurança ou arquitetura — categorias diferentes pegam padrões diferentes.',
-      })
-    }
-
     if (scope?.kind === 'repo-pulls') {
       cards.unshift({
         icon: 'pr',
         title: 'Revisando PRs',
         tone: T.accent,
-        description: 'Clique em qualquer PR para ver o detalhe no GitHub. Se uma PR já tem análise da IA, o card mostra contagens por severity — comece pelos críticos antes de aprovar.',
-      })
-    }
-
-    if (scope?.kind === 'repo-files') {
-      cards.unshift({
-        icon: 'doc',
-        title: 'Navegando arquivos',
-        tone: T.ai,
-        description: 'O visualizador de arquivos completo ainda está em desenvolvimento. Use a aba "Buscar" para localizar trechos por intenção enquanto isso.',
+        description: 'Clique em qualquer PR para abrir o detalhe no GitHub.',
       })
     }
   } else {
-    const reposWithoutAnalysis = repos.repositories.filter((r) => !getRepositoryStats(r).has_analysis)
-    const reposWithFailedAnalysis = repos.repositories.filter((r) => r.analysis_status === 'failed')
-    const reposWithLowQuality = repos.repositories.filter((r) => {
-      const stats = getRepositoryStats(r)
-      return stats.has_analysis && stats.latest_quality_score < 70
-    })
-
-    if (reposWithFailedAnalysis.length > 0) {
-      cards.push({
-        icon: 'x',
-        title: 'Análises com falha',
-        tone: T.danger,
-        description: (
-          <div>
-            <div>{reposWithFailedAnalysis.length} repositórios com análise falha</div>
-            <ul style={{ margin: '4px 0 0 0', paddingLeft: 16, fontSize: 11.5 }}>
-              {reposWithFailedAnalysis.slice(0, 3).map((r) => (
-                <li key={r.id}>{r.name}</li>
-              ))}
-            </ul>
-          </div>
-        ),
-      })
-    }
-
-    if (reposWithLowQuality.length > 0) {
-      cards.push({
-        icon: 'trophy',
-        title: 'Qualidade baixa',
-        tone: T.warn,
-        description: (
-          <div>
-            <div>{reposWithLowQuality.length} repositórios abaixo de 70/100</div>
-            <ul style={{ margin: '4px 0 0 0', paddingLeft: 16, fontSize: 11.5 }}>
-              {reposWithLowQuality.slice(0, 3).map((r) => (
-                <li key={r.id}>{r.name}</li>
-              ))}
-            </ul>
-          </div>
-        ),
-      })
-    }
-
-    if (reposWithoutAnalysis.length > 0) {
-      cards.push({
-        icon: 'database',
-        title: 'Repos sem análise',
-        tone: T.warn,
-        description: `${reposWithoutAnalysis.length} repositório${reposWithoutAnalysis.length !== 1 ? 's' : ''} ainda sem score de qualidade.`,
-      })
-    }
-
-    // Rule 1: Repos with issues
     const reposWithIssues = repos.repositories.filter((r) => (r.metadata?.issue_count ?? 0) > 0)
     if (reposWithIssues.length > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Repos com alertas',
+        title: 'Repos com issues',
         tone: T.danger,
         description: (
           <div>
-            <div>{reposWithIssues.length} repositórios com alertas</div>
+            <div>{reposWithIssues.length} repositórios com issues abertas no GitHub</div>
             <ul style={{ margin: '4px 0 0 0', paddingLeft: 16, fontSize: 11.5 }}>
               {reposWithIssues.slice(0, 3).map((r) => (
                 <li key={r.id}>{r.name}</li>
@@ -204,35 +93,6 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
       })
     }
 
-    // Rule 2: Low coverage
-    const coverageValues = repos.repositories
-      .map((r) => r.metadata?.test_coverage)
-      .filter((val): val is number => val !== undefined && val !== null)
-
-    const avgCoverage = coverageValues.length > 0 ? Math.round(coverageValues.reduce((a, b) => a + b, 0) / coverageValues.length) : null
-
-    const reposWithLowCoverage = repos.repositories.filter((r) => {
-      const cov = r.metadata?.test_coverage
-      return cov === undefined || cov < 60
-    })
-
-    if (reposWithLowCoverage.length > 0) {
-      cards.push({
-        icon: 'check',
-        title: 'Cobertura de testes baixa',
-        tone: T.warn,
-        description: (
-          <div>
-            <div>
-              {reposWithLowCoverage.length} repos com cobertura {'<'} 60%
-            </div>
-            {avgCoverage !== null && <div style={{ marginTop: 4, fontSize: 11.5 }}>Média: {avgCoverage}%</div>}
-          </div>
-        ),
-      })
-    }
-
-    // Rule 3: Incomplete organization config
     const configKeys = [
       { key: 'github_token_configured', label: 'GitHub Token' },
       { key: 'anthropic_api_key_configured', label: 'Chave Anthropic' },

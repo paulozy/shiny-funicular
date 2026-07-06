@@ -118,7 +118,7 @@ describe('HomeClient', () => {
     expect(push).not.toHaveBeenCalledWith('/code/repositories/repo-1')
   })
 
-  it('shows enriched analysis quality and empty analysis state in repository cards', () => {
+  it('renders repository cards without analysis/quality artifacts', () => {
     render(
       <HomeClient
         user={baseUser}
@@ -147,11 +147,12 @@ describe('HomeClient', () => {
       />
     )
 
-    expect(screen.getByLabelText(/qualidade 85 de 100/i)).toBeInTheDocument()
-    expect(screen.getByText(/concluída/i)).toBeInTheDocument()
-    expect(screen.getByText(/5 reviews/i)).toBeInTheDocument()
-    expect(screen.getByText(/10 análises/i)).toBeInTheDocument()
-    expect(screen.getByText(/sem análise/i)).toBeInTheDocument()
-    expect(screen.queryByLabelText(/qualidade 0 de 100/i)).not.toBeInTheDocument()
+    // repository names still render
+    expect(screen.getByText('api')).toBeInTheDocument()
+    // analysis-derived UI is gone from the cards
+    expect(screen.queryByLabelText(/qualidade .* de 100/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/sem análise/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/\breviews\b/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/\banálises\b/i)).not.toBeInTheDocument()
   })
 })

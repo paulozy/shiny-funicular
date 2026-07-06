@@ -12,12 +12,10 @@ describe('RepoTabBar', () => {
     mockPathname = '/code/repositories/repo-1'
   })
 
-  it('renders the six repository sections with correct hrefs', () => {
+  it('renders the four repository sections with correct hrefs', () => {
     render(<RepoTabBar repoId="repo-1" />)
 
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('href', '/code/repositories/repo-1')
-    expect(screen.getByRole('link', { name: 'Arquivos' })).toHaveAttribute('href', '/code/repositories/repo-1/files')
-    expect(screen.getByRole('link', { name: 'Alertas' })).toHaveAttribute('href', '/code/repositories/repo-1/issues')
     expect(screen.getByRole('link', { name: 'Pull Requests' })).toHaveAttribute(
       'href',
       '/code/repositories/repo-1/pull-requests'
@@ -27,12 +25,9 @@ describe('RepoTabBar', () => {
       'href',
       '/code/repositories/repo-1/settings'
     )
-  })
-
-  it('marks the issues tab as active for nested issues paths', () => {
-    mockPathname = '/code/repositories/repo-1/issues'
-    render(<RepoTabBar repoId="repo-1" />)
-    expect(screen.getByRole('link', { name: 'Alertas' })).toHaveAttribute('aria-current', 'page')
+    // Removed for the MVP (analysis/stub):
+    expect(screen.queryByRole('link', { name: 'Alertas' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Arquivos' })).not.toBeInTheDocument()
   })
 
   it('marks the pull-requests tab as active for nested pull-requests paths', () => {
@@ -46,7 +41,6 @@ describe('RepoTabBar', () => {
     render(<RepoTabBar repoId="repo-1" />)
 
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('link', { name: 'Arquivos' })).not.toHaveAttribute('aria-current')
   })
 
   it('marks the search tab as active for any nested search path', () => {
@@ -57,9 +51,9 @@ describe('RepoTabBar', () => {
   })
 
   it('respects the activeTab override when the pathname is ambiguous', () => {
-    mockPathname = '/code/repositories/repo-1/files?path=cmd/server/main.go'
-    render(<RepoTabBar repoId="repo-1" activeTab="files" />)
+    mockPathname = '/code/repositories/repo-1/pull-requests/42'
+    render(<RepoTabBar repoId="repo-1" activeTab="pull-requests" />)
 
-    expect(screen.getByRole('link', { name: 'Arquivos' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Pull Requests' })).toHaveAttribute('aria-current', 'page')
   })
 })

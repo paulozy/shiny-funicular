@@ -7,21 +7,12 @@ import { Tag } from '@/components/ui/Tag'
 import { GenerateTemplateModal } from '@/components/templates/GenerateTemplateModal'
 import { EmbeddingsActionButton } from '@/components/embeddings/EmbeddingsActionButton'
 import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
-import { CriticalIssuesCard } from '@/components/repository/CriticalIssuesCard'
 import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
 import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
-import { CodeAnalysis } from '@/lib/types/analysis'
-import { analysisStatusLabel, analysisStatusTone, analysisStatusVariant, getRepositoryStats, qualityTone } from '@/lib/repository-analysis'
-import {
-  coverageStatusLabel,
-  coverageStatusVariant,
-  coverageWasMeasured,
-  syncStatusLabel,
-  syncStatusVariant,
-} from '@/lib/coverage'
+import { syncStatusLabel, syncStatusVariant } from '@/lib/coverage'
 import { T } from '@/lib/tokens'
-import { CoverageStatus, EmbeddingsState, RepositoryResponse, isTerminalEmbeddingsStatus } from '@/lib/types/repository'
+import { EmbeddingsState, RepositoryResponse, isTerminalEmbeddingsStatus } from '@/lib/types/repository'
 import { apiFetch } from '@/lib/api/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -29,7 +20,6 @@ import { CSSProperties, useCallback, useEffect, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
-  latestAnalysis: CodeAnalysis | null
 }
 
 function formatDate(value: string): string {
@@ -41,44 +31,7 @@ function formatDate(value: string): string {
   })
 }
 
-function formatNullableDate(value?: string | null): string {
-  if (!value) return 'Nunca analisado'
-  return formatDate(value)
-}
-
-function metricTone(kind: string, value?: number): string {
-  if (kind === 'alerts' && value && value > 0) return T.danger
-  if (kind === 'coverage') {
-    if (value === undefined) return T.ink
-    if (value < 60) return T.danger
-    if (value < 80) return T.warn
-    return T.ok
-  }
-  return T.ink
-}
-
-function pickCoverage(repo: RepositoryResponse): {
-  percentage?: number
-  status: CoverageStatus | '' | undefined
-} {
-  // Prefer the authoritative value from the latest analysis (`stats`); fall
-  // back to the legacy `metadata.test_coverage` populated by the sync. When
-  // we only have a number without an explicit status, we still treat it as
-  // measured so legacy data keeps rendering as a percentage.
-  const statsCoverage = repo.stats?.test_coverage
-  const statsStatus = repo.stats?.coverage_status
-  if (statsStatus === 'ok' || statsStatus === 'partial') {
-    return { percentage: statsCoverage, status: statsStatus }
-  }
-  const metaCoverage = repo.metadata?.test_coverage
-  const metaStatus = repo.metadata?.coverage_status
-  if (typeof metaCoverage === 'number' && metaCoverage > 0) {
-    return { percentage: metaCoverage, status: metaStatus ?? 'ok' }
-  }
-  return { percentage: metaCoverage, status: metaStatus ?? statsStatus ?? '' }
-}
-
-export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOverviewClientProps) {
+export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
   const router = useRouter()
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
   // Local mirror of the embeddings state — the poller updates this without
@@ -123,97 +76,25 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
   }, [repo.id, embeddingsState])
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'
-  const stats = getRepositoryStats(repo)
   const searchHref = `/code/repositories/${repo.id}/search?branch=${encodeURIComponent(branch)}`
   const settingsHref = `/code/repositories/${repo.id}/settings`
-  const languageEntries = Object.entries(metadata.languages || {}).sort((a, b) => b[1] - a[1])
-  const languageTotal = languageEntries.reduce((sum, [, value]) => sum + value, 0)
 
+  const issueCount = metadata.issue_count ?? 0
+
+  // Activity/metadata signals that always exist from the GitHub sync — no AI
+  // analysis required. These replace the removed quality score / analysis tiles.
   const metrics = [
-    {
-      label: 'Qualidade',
-      value: stats.has_analysis ? `${Math.round(stats.latest_quality_score)}/100` : 'Sem análise',
-      icon: 'trophy',
-      tone: stats.has_analysis ? qualityTone(stats.latest_quality_score, T) : T.ink3,
-    },
-    { label: 'Status análise', value: analysisStatusLabel(repo.analysis_status), icon: 'database', tone: analysisStatusTone(repo.analysis_status, T) },
-    { label: 'Reviews', value: repo.reviews_count ?? 0, icon: 'check', tone: T.ink },
-    { label: 'Análises', value: stats.total_analyses, icon: 'doc', tone: T.ink },
-  ]
-
-  const coverage = pickCoverage(repo)
-  const coverageMeasured = coverageWasMeasured(coverage.status)
-
-  const qualitySupportMetrics = [
-    { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: metricTone('prs', metadata.pr_count), href: `/code/repositories/${repo.id}/pull-requests` },
-    { label: 'Alertas', value: metadata.issue_count ?? 0, icon: 'shield', tone: metricTone('alerts', metadata.issue_count), href: `/code/repositories/${repo.id}/issues` },
-    {
-      label: 'Cobertura',
-      value: coverageMeasured && coverage.percentage !== undefined
-        ? `${Math.round(coverage.percentage)}%`
-        : '—',
-      icon: 'check',
-      tone: coverageMeasured ? metricTone('coverage', coverage.percentage) : T.ink3,
-      coverageBadge: coverage.status as CoverageStatus | '' | undefined,
-    },
+    { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: T.ink, href: `/code/repositories/${repo.id}/pull-requests` },
+    { label: 'Issues', value: issueCount, icon: 'shield', tone: issueCount > 0 ? T.danger : T.ink },
     { label: 'Contribuidores', value: metadata.contributors ?? '-', icon: 'user', tone: T.ink },
   ]
 
   const secondaryMetrics = [
-    ['Última análise', formatNullableDate(stats.last_analyzed_at)],
     ['Commits', metadata.commit_count ?? '-'],
     ['Branches', metadata.branch_count ?? '-'],
     ['Stars', metadata.star_count ?? '-'],
     ['Forks', metadata.fork_count ?? '-'],
   ]
-
-  const nextActions = [
-    ...(!stats.has_analysis
-      ? [{
-        title: 'Analisar repositório',
-        description: 'Este repositório ainda não tem análise de qualidade. Configure ou rode uma análise para preencher score, reviews e histórico.',
-        href: settingsHref,
-        label: 'Configurar',
-        icon: 'database',
-      }]
-      : []),
-    ...(repo.analysis_status === 'failed'
-      ? [{
-        title: 'Revisar falha de análise',
-        description: 'A última análise falhou. Verifique configurações e credenciais antes de tentar novamente.',
-        href: settingsHref,
-        label: 'Ver ajustes',
-        icon: 'x',
-      }]
-      : []),
-    ...(metadata.issue_count && metadata.issue_count > 0
-      ? [{
-        title: 'Revisar alertas',
-        description: `${metadata.issue_count} alerta${metadata.issue_count !== 1 ? 's' : ''} detectado${metadata.issue_count !== 1 ? 's' : ''} neste repositório.`,
-        href: `${searchHref}&q=alertas%20seguran%C3%A7a`,
-        label: 'Abrir busca',
-        icon: 'shield',
-      }]
-      : []),
-    ...(metadata.test_coverage === undefined || metadata.test_coverage < 60
-      ? [{
-        title: 'Melhorar cobertura',
-        description: metadata.test_coverage === undefined ? 'Cobertura ainda não detectada nos metadados.' : `Cobertura em ${Math.round(metadata.test_coverage)}%.`,
-        href: `${searchHref}&q=testes`,
-        label: 'Buscar testes',
-        icon: 'check',
-      }]
-      : []),
-    ...(embeddingsState && !['indexed', 'indexing', 'pending'].includes(embeddingsState.status)
-      ? [{
-        title: 'Gerar índice semântico',
-        description: 'Atualize embeddings para melhorar a busca por intenção neste repositório.',
-        href: settingsHref,
-        label: 'Configurações',
-        icon: 'database',
-      }]
-      : []),
-  ].slice(0, 3)
 
   // Header CTA is only meaningful when the user actually has to do something
   // (idle/stale/failed). When the index is healthy or in progress, the
@@ -269,21 +150,9 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
 
   const metricGridStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: 12,
     marginBottom: 14,
-  }
-
-  const analysisBannerStyle: CSSProperties = {
-    border: `1px solid ${stats.has_analysis ? T.border : T.warnBorder}`,
-    background: stats.has_analysis ? T.surface : T.warnBg,
-    borderRadius: T.radius.card,
-    padding: 12,
-    marginBottom: 14,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    color: stats.has_analysis ? T.ink : T.warn,
   }
 
   const cardStyle: CSSProperties = {
@@ -313,7 +182,7 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
 
   const twoColumnStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: '1.25fr 1fr',
+    gridTemplateColumns: '1fr 1fr',
     gap: 14,
     marginBottom: 14,
   }
@@ -365,7 +234,6 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
             <Tag>{repo.provider}</Tag>
             <Tag variant={repo.is_private ? 'warn' : 'ok'}>{repo.is_private ? 'privado' : 'público'}</Tag>
             <Tag variant={syncStatusVariant(repo.sync_status)}>{syncStatusLabel(repo.sync_status)}</Tag>
-            <Tag variant={analysisStatusVariant(repo.analysis_status)}>{analysisStatusLabel(repo.analysis_status)}</Tag>
             <EmbeddingsStatusBadge state={embeddingsState} />
           </div>
           <div style={subtitleStyle}>
@@ -414,30 +282,8 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
         onSuccess={(response) => router.push(`/templates/${response.id}`)}
       />
 
-      <div style={analysisBannerStyle}>
-        <MFIcon name={stats.has_analysis ? 'trophy' : 'database'} size={14} color="currentColor" />
-        <div style={{ fontSize: 12.5, lineHeight: 1.45 }}>
-          {stats.has_analysis
-            ? <>Última análise em <span style={{ fontFamily: T.mono }}>{formatNullableDate(stats.last_analyzed_at)}</span>.</>
-            : 'Repositório ainda sem análise. O score 0 do backend está sendo tratado como estado vazio, não como baixa qualidade.'}
-        </div>
-      </div>
-
       <div style={metricGridStyle}>
-        {metrics.map((metric) => (
-          <div key={metric.label} style={cardStyle}>
-            <div style={metricLabelStyle}>
-              <MFIcon name={metric.icon} size={12} color={T.faint} />
-              {metric.label}
-            </div>
-            <div style={{ ...metricValueStyle, color: metric.tone }}>{metric.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ ...metricGridStyle, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-        {qualitySupportMetrics.map((metric) => {
-          const badge = (metric as { coverageBadge?: CoverageStatus | '' | undefined }).coverageBadge
+        {metrics.map((metric) => {
           const href = (metric as { href?: string }).href
           const inner = (
             <>
@@ -446,11 +292,6 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
                 {metric.label}
               </div>
               <div style={{ ...metricValueStyle, color: metric.tone }}>{metric.value}</div>
-              {badge !== undefined && metric.label === 'Cobertura' && (
-                <div style={{ marginTop: 6 }}>
-                  <Tag variant={coverageStatusVariant(badge)}>{coverageStatusLabel(badge)}</Tag>
-                </div>
-              )}
             </>
           )
           if (href) {
@@ -488,66 +329,35 @@ export function RepositoryOverviewClient({ repo, latestAnalysis }: RepositoryOve
         })}
       </div>
 
-      <div style={{ ...twoColumnStyle, gridTemplateColumns: '1fr 1fr' }}>
+      <div style={twoColumnStyle}>
         <ProjectStackCard
           languages={metadata.languages}
           frameworks={metadata.frameworks}
           topics={metadata.topics}
         />
+        <RepoHealthCard repo={repo} embeddingsState={embeddingsState} />
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <CriticalIssuesCard analysis={latestAnalysis} repoId={repo.id} />
-          <RepoHealthCard
-            repo={repo}
-            embeddingsState={embeddingsState}
-            coverage={coverage}
-          />
+      <section style={cardStyle}>
+        <div style={sectionHeaderStyle}>
+          <MFIcon name="flag" size={14} color={T.accent} />
+          <span style={sectionTitleStyle}>Operação</span>
         </div>
-      </div>
-
-      <div style={twoColumnStyle}>
-        <section style={cardStyle}>
-          <div style={sectionHeaderStyle}>
-            <MFIcon name="flag" size={14} color={T.accent} />
-            <span style={sectionTitleStyle}>Operação</span>
+        {secondaryMetrics.map(([label, value]) => (
+          <div key={label} style={rowStyle}>
+            <span style={{ color: T.faint }}>{label}</span>
+            <span>{value}</span>
           </div>
-          {secondaryMetrics.map(([label, value]) => (
-            <div key={label} style={rowStyle}>
-              <span style={{ color: T.faint }}>{label}</span>
-              <span>{value}</span>
-            </div>
-          ))}
-          <div style={rowStyle}>
-            <span style={{ color: T.faint }}>CI</span>
-            <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>{metadata.has_ci ? 'Configurado' : 'Não detectado'}</Tag>
-          </div>
-          <div style={{ ...rowStyle, borderBottom: 0 }}>
-            <span style={{ color: T.faint }}>Testes</span>
-            <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>{metadata.has_tests ? 'Detectados' : 'Não detectados'}</Tag>
-          </div>
-        </section>
-
-        <section style={cardStyle}>
-          <div style={sectionHeaderStyle}>
-            <MFIcon name="lightbulb" size={14} color={T.ai} />
-            <span style={sectionTitleStyle}>Próximas ações</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {nextActions.map((action) => (
-              <Link key={action.title} href={action.href} style={{ textDecoration: 'none' }}>
-                <div style={{ border: `1px solid ${T.border}`, borderRadius: 6, padding: 10, color: T.ink }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 600 }}>
-                    <MFIcon name={action.icon} size={12} color={T.accent} />
-                    {action.title}
-                    <span style={{ marginLeft: 'auto', color: T.accent, fontSize: 11.5 }}>{action.label}</span>
-                  </div>
-                  <div style={{ marginTop: 4, fontSize: 12, color: T.ink3, lineHeight: 1.4 }}>{action.description}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      </div>
+        ))}
+        <div style={rowStyle}>
+          <span style={{ color: T.faint }}>CI</span>
+          <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>{metadata.has_ci ? 'Configurado' : 'Não detectado'}</Tag>
+        </div>
+        <div style={{ ...rowStyle, borderBottom: 0 }}>
+          <span style={{ color: T.faint }}>Testes</span>
+          <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>{metadata.has_tests ? 'Detectados' : 'Não detectados'}</Tag>
+        </div>
+      </section>
     </div>
   )
 }
