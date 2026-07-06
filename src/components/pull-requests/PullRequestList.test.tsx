@@ -29,7 +29,7 @@ function makeItem(overrides: Partial<PullRequestListItemResponse['pull_request']
 
 describe('PullRequestList', () => {
   it('renders empty state when no items', () => {
-    render(<PullRequestList items={[]} />)
+    render(<PullRequestList items={[]} repoId="r1" />)
     expect(screen.getByText('Nenhum PR aberto no momento.')).toBeInTheDocument()
   })
 
@@ -38,7 +38,7 @@ describe('PullRequestList', () => {
       makeItem({ id: 1, number: 1, title: 'Open one', draft: false }),
       makeItem({ id: 2, number: 2, title: 'Draft one', draft: true }),
     ]
-    render(<PullRequestList items={items} />)
+    render(<PullRequestList items={items} repoId="r1" />)
 
     const openSection = screen.getByRole('region', { name: 'PRs abertos' })
     const draftSection = screen.getByRole('region', { name: 'PRs draft' })
@@ -53,15 +53,16 @@ describe('PullRequestList', () => {
       makeItem({ id: 1, number: 1, title: 'Older', updated_at: '2026-05-01T00:00:00Z' }),
       makeItem({ id: 2, number: 2, title: 'Newer', updated_at: '2026-05-18T00:00:00Z' }),
     ]
-    render(<PullRequestList items={items} />)
-    const titles = screen.getAllByRole('link').map((a) => a.textContent)
-    expect(titles[0]).toBe('Newer')
-    expect(titles[1]).toBe('Older')
+    render(<PullRequestList items={items} repoId="r1" />)
+    const newer = screen.getByRole('link', { name: 'Newer' })
+    const older = screen.getByRole('link', { name: 'Older' })
+    // Newer must appear before Older in document order.
+    expect(newer.compareDocumentPosition(older) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('hides the open section when there are no open PRs', () => {
     const items = [makeItem({ id: 1, number: 1, title: 'Only draft', draft: true })]
-    render(<PullRequestList items={items} />)
+    render(<PullRequestList items={items} repoId="r1" />)
     expect(screen.queryByRole('region', { name: 'PRs abertos' })).not.toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'PRs draft' })).toBeInTheDocument()
   })

@@ -61,7 +61,7 @@ export function PullRequestsClient({ items, repo, loadError }: PullRequestsClien
         <span style={subtitleStyle}>
           {loadError
             ? 'Não foi possível listar os PRs do GitHub.'
-            : `${totalLabel} · clique no título de qualquer PR para abrir no GitHub.`}
+            : `${totalLabel} · clique em um PR para revisar pela IDP.`}
         </span>
       </div>
 
@@ -71,7 +71,7 @@ export function PullRequestsClient({ items, repo, loadError }: PullRequestsClien
         </div>
       )}
 
-      {!loadError && <PullRequestList items={items} />}
+      {!loadError && <PullRequestList items={items} repoId={repo.id} />}
     </div>
   )
 }

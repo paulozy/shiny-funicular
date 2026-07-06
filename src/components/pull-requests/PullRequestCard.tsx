@@ -1,15 +1,19 @@
 'use client'
 
 import { CSSProperties } from 'react'
+import Link from 'next/link'
 import { T } from '@/lib/tokens'
+import { MFIcon } from '@/components/icons/MFIcon'
 import { PullRequestListItemResponse } from '@/lib/types/pull_request'
 
 interface PullRequestCardProps {
   item: PullRequestListItemResponse
+  repoId: string
 }
 
-export function PullRequestCard({ item }: PullRequestCardProps) {
+export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
   const { pull_request: pr, latest_analysis: analysis } = item
+  const detailHref = `/code/repositories/${repoId}/pull-requests/${pr.number}`
 
   const cardStyle: CSSProperties = {
     backgroundColor: T.surface,
@@ -123,20 +127,24 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
     <article style={cardStyle} aria-label={`Pull request ${pr.number}: ${pr.title}`}>
       <div style={headerStyle}>
         <span style={numberStyle}>#{pr.number}</span>
-        <a
-          href={pr.html_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={titleStyle}
-          title={pr.title}
-        >
+        <Link href={detailHref} style={titleStyle} title={pr.title}>
           {pr.title}
-        </a>
+        </Link>
         {pr.draft ? (
           <span style={draftTagStyle}>Draft</span>
         ) : (
           <span style={tagStyle}>Open</span>
         )}
+        <a
+          href={pr.html_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Abrir no GitHub"
+          aria-label="Abrir no GitHub"
+          style={{ display: 'inline-flex', alignItems: 'center', color: T.faint, flexShrink: 0 }}
+        >
+          <MFIcon name="arrow-right" size={13} color="currentColor" />
+        </a>
       </div>
 
       <div style={branchesStyle}>
@@ -163,9 +171,9 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
         </span>
       </div>
 
-      {analysis && (
+      {analysis ? (
         <div style={analysisRowStyle}>
-          <span style={{ color: T.ink3, fontWeight: 600 }}>Análise da PR:</span>
+          <span style={{ color: T.ink3, fontWeight: 600 }}>Revisão da IA:</span>
           {criticalCount > 0 && (
             <span style={{ color: T.danger, fontWeight: 600 }}>
               {criticalCount} críticos
@@ -180,6 +188,16 @@ export function PullRequestCard({ item }: PullRequestCardProps) {
           {analysis.issue_count === 0 && (
             <span style={{ color: T.ok }}>nenhum alerta</span>
           )}
+          <Link href={detailHref} style={{ marginLeft: 'auto', color: T.accent, textDecoration: 'none', fontWeight: 600 }}>
+            Ver revisão →
+          </Link>
+        </div>
+      ) : (
+        <div style={analysisRowStyle}>
+          <span style={{ color: T.ink3 }}>Sem revisão ainda.</span>
+          <Link href={detailHref} style={{ marginLeft: 'auto', color: T.accent, textDecoration: 'none', fontWeight: 600 }}>
+            Revisar PR →
+          </Link>
         </div>
       )}
     </article>
