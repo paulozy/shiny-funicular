@@ -286,6 +286,12 @@ export function PullRequestDetailClient({
 
         {!reviewing && hasReview && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {analysis?.created_at && (
+              <div style={{ fontSize: 11.5, color: T.faint }}>
+                Revisão de {new Date(analysis.created_at).toLocaleString('pt-BR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                {analysis.ai_model ? ` · ${analysis.ai_model}` : ''}
+              </div>
+            )}
             {analysis?.summary_text && (
               <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.5 }}>{analysis.summary_text}</div>
             )}
@@ -294,7 +300,6 @@ export function PullRequestDetailClient({
               <span><strong style={{ color: T.danger }}>{analysis?.error_count ?? 0}</strong> erros</span>
               <span><strong style={{ color: T.warn }}>{analysis?.warning_count ?? 0}</strong> avisos</span>
               <span><strong>{analysis?.info_count ?? 0}</strong> infos</span>
-              {analysis?.ai_model && <span style={{ marginLeft: 'auto', color: T.faint }}>{analysis.ai_model}</span>}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
