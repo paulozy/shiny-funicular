@@ -21,6 +21,7 @@ interface PullRequestDetailClientProps {
 }
 
 const MAX_POLL_TICKS = 45 // ~3 min at 4s
+const MAX_CONSECUTIVE_POLL_ERRORS = 3 // stop polling after this many failed checks in a row
 
 export function PullRequestDetailClient({
   repoId,
@@ -31,6 +32,7 @@ export function PullRequestDetailClient({
   const [detail, setDetail] = useState<PullRequestDetailResponse | null>(initialDetail)
   const [reviewing, setReviewing] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [pollNotice, setPollNotice] = useState<string | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [publishMsg, setPublishMsg] = useState<string | null>(null)
   const [publishError, setPublishError] = useState<string | null>(null)
@@ -48,6 +50,7 @@ export function PullRequestDetailClient({
     if (!reviewing) return
     let cancelled = false
     let ticks = 0
+    let consecutiveErrors = 0
 
     const handle = setInterval(async () => {
       ticks += 1
@@ -56,17 +59,28 @@ export function PullRequestDetailClient({
           `/api/repositories/${repoId}/pull-requests/${prNumber}`
         )
         if (cancelled) return
+        consecutiveErrors = 0
         setDetail(next)
         const a = next.latest_analysis
         const settled =
           !!a &&
           a.id !== prevAnalysisIdRef.current &&
           (a.status === 'completed' || a.status === 'failed')
-        if (settled || ticks >= MAX_POLL_TICKS) {
+        if (settled) {
           setReviewing(false)
+          return
+        }
+        if (ticks >= MAX_POLL_TICKS) {
+          setReviewing(false)
+          setPollNotice('A revisão está demorando mais que o esperado. Atualize a página ou tente revisar novamente.')
         }
       } catch {
-        if (ticks >= MAX_POLL_TICKS) setReviewing(false)
+        if (cancelled) return
+        consecutiveErrors += 1
+        if (consecutiveErrors >= MAX_CONSECUTIVE_POLL_ERRORS || ticks >= MAX_POLL_TICKS) {
+          setReviewing(false)
+          setPollNotice('Não foi possível verificar o status da revisão. Verifique sua conexão e tente novamente.')
+        }
       }
     }, 4000)
 
@@ -78,6 +92,7 @@ export function PullRequestDetailClient({
 
   const triggerReview = useCallback(async () => {
     setActionError(null)
+    setPollNotice(null)
     prevAnalysisIdRef.current = detail?.latest_analysis?.id ?? null
     try {
       await apiFetch(`/api/repositories/${repoId}/pull-requests/${prNumber}/analyze`, {
@@ -240,6 +255,12 @@ export function PullRequestDetailClient({
           <MFIcon name="sparkles" size={14} color={T.ai} />
           Revisão da IA
         </div>
+
+        {pollNotice && !reviewing && (
+          <div style={{ fontSize: 12.5, color: T.warn, marginBottom: 10 }} role="alert">
+            {pollNotice}
+          </div>
+        )}
 
         {reviewing && (
           <div style={{ fontSize: 13, color: T.ink3 }}>

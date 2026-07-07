@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { PullRequestDetailClient } from '@/app/(app)/code/repositories/[id]/pull-requests/[pr_number]/PullRequestDetailClient'
 import { PullRequestDetailResponse } from '@/lib/types/pull_request'
 import { apiFetch } from '@/lib/api/client'
@@ -136,5 +136,38 @@ describe('PullRequestDetailClient', () => {
     expect(screen.getByText(/new line here/)).toBeInTheDocument()
     // and the review section still invites a first review
     expect(screen.getByText(/ainda não foi revisado/i)).toBeInTheDocument()
+  })
+
+  it('stops polling and warns after consecutive errors', async () => {
+    jest.useFakeTimers()
+    try {
+      mockApiFetch.mockImplementation((url: unknown) => {
+        if (typeof url === 'string' && url.endsWith('/analyze')) {
+          return Promise.resolve({ status: 'queued' } as never)
+        }
+        // every poll (GET detail) fails
+        return Promise.reject(new Error('network down'))
+      })
+
+      render(
+        <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: /revisar pr/i }))
+
+      // flush the POST so `reviewing` flips on and the polling interval is set
+      await act(async () => {})
+
+      // three failed polls (4s each) → stop with a warning, not a 3-min silent wait
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          await jest.advanceTimersByTimeAsync(4000)
+        })
+      }
+
+      expect(screen.getByText(/não foi possível verificar/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /revisar pr/i })).toBeInTheDocument()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })
