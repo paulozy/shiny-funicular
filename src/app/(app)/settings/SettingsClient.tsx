@@ -1,6 +1,6 @@
 'use client'
 
-import { CSSProperties, useState, useId } from 'react'
+import { CSSProperties, ReactNode, useState, useId } from 'react'
 import { UserInfo } from '@/lib/types/auth'
 import { OrganizationConfigResponse, UpdateOrganizationConfigRequest } from '@/lib/types/organization'
 import { RepositoryListResponse } from '@/lib/types/repository'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { CoPensador } from '@/components/home/CoPensador'
 
@@ -69,11 +70,9 @@ function defaultConfig(config: OrganizationConfigResponse | null): OrganizationC
     anthropic_tokens_per_hour: config?.anthropic_tokens_per_hour ?? 20000,
     github_token_configured: config?.github_token_configured ?? false,
     github_pr_review_enabled: config?.github_pr_review_enabled ?? false,
-    webhook_base_url: config?.webhook_base_url ?? '',
     embeddings_provider: config?.embeddings_provider ?? 'voyage',
     voyage_api_key_configured: config?.voyage_api_key_configured ?? false,
     embeddings_model: config?.embeddings_model ?? 'voyage-code-3',
-    embeddings_dimensions: config?.embeddings_dimensions ?? 1024,
     github_client_id_configured: config?.github_client_id_configured ?? false,
     github_client_secret_configured: config?.github_client_secret_configured ?? false,
     github_callback_url: config?.github_callback_url ?? '',
@@ -142,6 +141,123 @@ function SecretField({
   )
 }
 
+const tokenCodeStyle: CSSProperties = {
+  fontFamily: T.mono,
+  fontSize: 11,
+  background: T.bg,
+  border: `1px solid ${T.border}`,
+  borderRadius: 4,
+  padding: '1px 4px',
+}
+
+// Step-by-step tutorial shown inside the GitHub token tooltip. The token is
+// used by the backend for repo sync, private clones, PR operations, and
+// documentation PRs — all covered by the classic `repo` scope.
+function GitHubTokenTutorial() {
+  const linkStyle: CSSProperties = { color: T.accent, fontWeight: 500, textDecoration: 'none' }
+  return (
+    <div>
+      <div style={{ fontWeight: 600, color: T.ink, marginBottom: 6, fontSize: 12.5 }}>
+        Como gerar um GitHub token
+      </div>
+      <ol style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
+        <li>
+          Abra{' '}
+          <a href="https://github.com/settings/tokens" target="_blank" rel="noreferrer noopener" style={linkStyle}>
+            github.com/settings/tokens
+          </a>{' '}
+          e clique em <strong>Generate new token (classic)</strong>.
+        </li>
+        <li>
+          Dê um nome (ex.: <span style={tokenCodeStyle}>IDP</span>) e defina uma expiração.
+        </li>
+        <li>
+          Marque o escopo <span style={tokenCodeStyle}>repo</span> — cobre repositórios privados, conteúdos e pull requests.
+        </li>
+        <li>
+          Clique em <strong>Generate token</strong> e copie o valor (começa com <span style={tokenCodeStyle}>ghp_</span>).
+        </li>
+        <li>Cole no campo abaixo. O GitHub não mostra o token novamente.</li>
+      </ol>
+      <a
+        href="https://github.com/settings/tokens/new?scopes=repo&description=IDP"
+        target="_blank"
+        rel="noreferrer noopener"
+        style={{ ...linkStyle, display: 'inline-block', marginTop: 8 }}
+      >
+        Abrir criação do token →
+      </a>
+    </div>
+  )
+}
+
+// Small helper trigger that opens a Tooltip with step-by-step guidance,
+// rendered above the related input. Keeps the "how do I fill this?" affordance
+// consistent across the settings tabs.
+function HelpHint({ label, content, width = 320 }: { label: string; content: ReactNode; width?: number }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <Tooltip content={content} triggerLabel={label} width={width}>
+        <MFIcon name="lightbulb" size={13} color={T.accent} />
+        <span style={{ fontSize: 12, color: T.accent, fontWeight: 500 }}>{label}</span>
+      </Tooltip>
+    </div>
+  )
+}
+
+function GitHubCallbackTutorial() {
+  const linkStyle: CSSProperties = { color: T.accent, fontWeight: 500, textDecoration: 'none' }
+  return (
+    <div>
+      <div style={{ fontWeight: 600, color: T.ink, marginBottom: 6, fontSize: 12.5 }}>
+        Callback URL do GitHub
+      </div>
+      <ol style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
+        <li>
+          Crie um OAuth App em{' '}
+          <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer noopener" style={linkStyle}>
+            github.com/settings/developers
+          </a>{' '}
+          (OAuth Apps → New).
+        </li>
+        <li>
+          Em <strong>Authorization callback URL</strong>, use a URL de callback do IDP:{' '}
+          <span style={tokenCodeStyle}>https://SEU-BACKEND/api/v1/auth/github/callback</span>
+        </li>
+        <li>Cole a <strong>mesma</strong> URL no campo ao lado — as duas precisam ser idênticas.</li>
+        <li>Copie o <strong>Client ID</strong>, gere um <strong>Client Secret</strong> e cole abaixo.</li>
+      </ol>
+    </div>
+  )
+}
+
+function GitLabCallbackTutorial() {
+  const linkStyle: CSSProperties = { color: T.accent, fontWeight: 500, textDecoration: 'none' }
+  return (
+    <div>
+      <div style={{ fontWeight: 600, color: T.ink, marginBottom: 6, fontSize: 12.5 }}>
+        Callback URL do GitLab
+      </div>
+      <ol style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
+        <li>
+          Crie uma aplicação em{' '}
+          <a href="https://gitlab.com/-/profile/applications" target="_blank" rel="noreferrer noopener" style={linkStyle}>
+            GitLab → Preferences → Applications
+          </a>.
+        </li>
+        <li>
+          Em <strong>Redirect URI</strong>, use a URL de callback do IDP:{' '}
+          <span style={tokenCodeStyle}>https://SEU-BACKEND/api/v1/auth/gitlab/callback</span>
+        </li>
+        <li>
+          Marque os scopes <span style={tokenCodeStyle}>read_user</span> e <span style={tokenCodeStyle}>read_api</span>.
+        </li>
+        <li>Cole a mesma URL ao lado + o <strong>Application ID</strong> e <strong>Secret</strong> abaixo.</li>
+      </ol>
+    </div>
+  )
+}
+
 type Tab = 'ia' | 'github' | 'search' | 'oauth'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
@@ -183,17 +299,11 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
     if (config.github_pr_review_enabled !== baseline.github_pr_review_enabled) {
       body.github_pr_review_enabled = config.github_pr_review_enabled
     }
-    if ((config.webhook_base_url ?? '') !== (baseline.webhook_base_url ?? '')) {
-      body.webhook_base_url = config.webhook_base_url ?? ''
-    }
     if (config.embeddings_provider !== baseline.embeddings_provider) {
       body.embeddings_provider = config.embeddings_provider
     }
     if (config.embeddings_model !== baseline.embeddings_model) {
       body.embeddings_model = config.embeddings_model
-    }
-    if (config.embeddings_dimensions !== baseline.embeddings_dimensions) {
-      body.embeddings_dimensions = config.embeddings_dimensions
     }
     if ((config.github_callback_url ?? '') !== (baseline.github_callback_url ?? '')) {
       body.github_callback_url = config.github_callback_url ?? ''
@@ -218,7 +328,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
     setError(null)
     setMessage(null)
 
-    if (config.anthropic_tokens_per_hour <= 0 || config.embeddings_dimensions <= 0) {
+    if (config.anthropic_tokens_per_hour <= 0) {
       setError('Limites numéricos precisam ser maiores que zero.')
       return
     }
@@ -452,7 +562,30 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   const oauthGridStyle: CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '0 16px',
+    gap: 16,
+  }
+
+  const providerCardStyle: CSSProperties = {
+    background: T.bg,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: 14,
+  }
+
+  const providerHeaderStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  }
+
+  const providerNameStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    fontSize: 13,
+    fontWeight: 600,
+    color: T.ink,
   }
 
   if (!isAdmin) {
@@ -578,6 +711,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                   Review de PR {config.github_pr_review_enabled ? 'ativo' : 'inativo'}
                 </Tag>
               </div>
+              <HelpHint label="Como gerar um GitHub token?" content={<GitHubTokenTutorial />} />
               <SecretField
                 name="github_token"
                 value={secrets.github_token}
@@ -592,12 +726,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                   label="Revisão automática de PRs"
                 />
               </div>
-              <Input
-                label="Webhook base URL"
-                value={config.webhook_base_url ?? ''}
-                onChange={(event) => setConfig((prev) => ({ ...prev, webhook_base_url: event.target.value }))}
-                placeholder="https://idp.example.com"
-              />
             </section>
           )}
 
@@ -633,13 +761,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 value={config.embeddings_model}
                 onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_model: event.target.value }))}
               />
-              <Input
-                label="Dimensões"
-                type="number"
-                min={1}
-                value={config.embeddings_dimensions}
-                onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_dimensions: Number(event.target.value) }))}
-              />
             </section>
           )}
 
@@ -649,18 +770,26 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 <MFIcon name="lock" size={15} color={T.ink3} />
                 <span style={sectionTitleStyle}>OAuth</span>
               </div>
-              <div style={statusRowStyle}>
-                <Tag variant={config.github_client_id_configured ? 'ok' : 'warn'}>GitHub client ID</Tag>
-                <Tag variant={configured(config, 'github_client_secret') ? 'ok' : 'warn'}>GitHub secret</Tag>
-                <Tag variant={config.gitlab_client_id_configured ? 'ok' : 'warn'}>GitLab client ID</Tag>
-                <Tag variant={configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>GitLab secret</Tag>
+              <div style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.5, marginBottom: 14 }}>
+                Cada organização usa seu próprio OAuth App. Registre o app no provedor, cole aqui o Client ID e o Secret, e use a mesma callback URL nos dois lados.
               </div>
               <div style={oauthGridStyle}>
-                <div>
+                <div style={providerCardStyle}>
+                  <div style={providerHeaderStyle}>
+                    <span style={providerNameStyle}>
+                      <MFIcon name="branch" size={14} color={T.accent} />
+                      GitHub
+                    </span>
+                    <Tag variant={config.github_client_id_configured && configured(config, 'github_client_secret') ? 'ok' : 'warn'}>
+                      {config.github_client_id_configured && configured(config, 'github_client_secret') ? 'Configurado' : 'Pendente'}
+                    </Tag>
+                  </div>
+                  <HelpHint label="Como configurar a callback URL?" content={<GitHubCallbackTutorial />} />
                   <Input
-                    label="GitHub callback URL"
+                    label="Callback URL"
                     value={config.github_callback_url ?? ''}
                     onChange={(event) => setConfig((prev) => ({ ...prev, github_callback_url: event.target.value }))}
+                    placeholder="https://seu-backend/api/v1/auth/github/callback"
                   />
                   <SecretField
                     name="github_client_id"
@@ -678,11 +807,22 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                     onClear={() => clearSecret('github_client_secret')}
                   />
                 </div>
-                <div>
+                <div style={providerCardStyle}>
+                  <div style={providerHeaderStyle}>
+                    <span style={providerNameStyle}>
+                      <MFIcon name="branch" size={14} color={T.ai} />
+                      GitLab
+                    </span>
+                    <Tag variant={config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'ok' : 'warn'}>
+                      {config.gitlab_client_id_configured && configured(config, 'gitlab_client_secret') ? 'Configurado' : 'Pendente'}
+                    </Tag>
+                  </div>
+                  <HelpHint label="Como configurar a callback URL?" content={<GitLabCallbackTutorial />} />
                   <Input
-                    label="GitLab callback URL"
+                    label="Callback URL"
                     value={config.gitlab_callback_url ?? ''}
                     onChange={(event) => setConfig((prev) => ({ ...prev, gitlab_callback_url: event.target.value }))}
+                    placeholder="https://seu-backend/api/v1/auth/gitlab/callback"
                   />
                   <SecretField
                     name="gitlab_client_id"

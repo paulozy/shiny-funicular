@@ -14,7 +14,6 @@ describe('organization api', () => {
       embeddings_provider: 'voyage',
       voyage_api_key_configured: false,
       embeddings_model: 'voyage-code-3',
-      embeddings_dimensions: 1024,
       github_client_id_configured: false,
       github_client_secret_configured: false,
       gitlab_client_id_configured: false,

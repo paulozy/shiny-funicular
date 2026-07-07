@@ -11,12 +11,6 @@ export function MetricStrip({ repos }: MetricStripProps) {
   const totalPRs = repos.repositories.reduce((sum, repo) => sum + (repo.metadata?.pr_count ?? 0), 0)
   const totalIssues = repos.repositories.reduce((sum, repo) => sum + (repo.metadata?.issue_count ?? 0), 0)
 
-  const coverageValues = repos.repositories
-    .map((repo) => repo.metadata?.test_coverage)
-    .filter((val): val is number => val !== undefined && val !== null)
-
-  const avgCoverage = coverageValues.length > 0 ? Math.round(coverageValues.reduce((a, b) => a + b, 0) / coverageValues.length) : null
-
   const metrics = [
     {
       k: 'Repositórios',
@@ -33,24 +27,17 @@ export function MetricStrip({ repos }: MetricStripProps) {
       tone: T.ink,
     },
     {
-      k: 'Alertas',
+      k: 'Issues',
       v: totalIssues.toString(),
-      s: totalIssues > 0 ? `${Math.min(2, totalIssues)} críticos` : 'Nenhum',
+      s: totalIssues > 0 ? 'abertas no GitHub' : 'Nenhuma',
       icon: 'shield',
       tone: totalIssues > 0 ? T.danger : T.ink,
-    },
-    {
-      k: 'Cobertura média',
-      v: avgCoverage !== null ? `${avgCoverage}%` : '–',
-      s: avgCoverage !== null ? `${avgCoverage > 80 ? '+' : ''}${avgCoverage - 80}% essa sem.` : 'Sem dados',
-      icon: 'check',
-      tone: T.ink,
     },
   ]
 
   const containerStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(3, 1fr)',
     gap: 12,
     marginBottom: 18,
   }

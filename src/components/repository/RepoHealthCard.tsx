@@ -2,19 +2,13 @@ import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import {
-  CoverageStatus,
   EmbeddingsState,
-  RepositoryAnalysisStatus,
   RepositoryResponse,
 } from '@/lib/types/repository'
 
 interface RepoHealthCardProps {
   repo: RepositoryResponse
   embeddingsState?: EmbeddingsState
-  coverage: {
-    percentage?: number
-    status: CoverageStatus | '' | undefined
-  }
 }
 
 type Tone = 'ok' | 'warn' | 'danger' | 'accent' | 'neutral'
@@ -48,20 +42,6 @@ function syncPill(status?: string): Pill {
   }
 }
 
-function analysisPill(status: RepositoryAnalysisStatus | string | null | undefined): Pill {
-  switch (status) {
-    case 'completed':
-      return { key: 'analysis', label: 'Análise', value: 'concluída', tone: 'ok' }
-    case 'in_progress':
-      return { key: 'analysis', label: 'Análise', value: 'em andamento', tone: 'accent' }
-    case 'failed':
-      return { key: 'analysis', label: 'Análise', value: 'falhou', tone: 'danger' }
-    case 'pending':
-    default:
-      return { key: 'analysis', label: 'Análise', value: 'pendente', tone: 'warn' }
-  }
-}
-
 function embeddingsPill(state?: EmbeddingsState): Pill {
   if (!state || !state.provider_configured) {
     return { key: 'embeddings', label: 'Embeddings', value: 'sem provedor', tone: 'neutral' }
@@ -82,22 +62,10 @@ function embeddingsPill(state?: EmbeddingsState): Pill {
   }
 }
 
-function coveragePill(coverage: RepoHealthCardProps['coverage']): Pill {
-  const measured = coverage.status === 'ok' || coverage.status === 'partial'
-  if (!measured || coverage.percentage === undefined) {
-    return { key: 'coverage', label: 'Cobertura', value: 'sem dados', tone: 'neutral' }
-  }
-  const pct = Math.round(coverage.percentage)
-  const tone: Tone = pct >= 75 ? 'ok' : pct >= 50 ? 'warn' : 'danger'
-  return { key: 'coverage', label: 'Cobertura', value: `${pct}%`, tone }
-}
-
-export function RepoHealthCard({ repo, embeddingsState, coverage }: RepoHealthCardProps) {
+export function RepoHealthCard({ repo, embeddingsState }: RepoHealthCardProps) {
   const pills: Pill[] = [
     syncPill(repo.sync_status),
-    analysisPill(repo.analysis_status),
     embeddingsPill(embeddingsState ?? repo.embeddings_state),
-    coveragePill(coverage),
   ]
 
   const cardStyle: CSSProperties = {

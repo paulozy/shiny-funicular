@@ -108,7 +108,6 @@ export function OnboardingTutorial({ orgConfig, canConfigure = false, onImportRe
                   { key: 'GitHub Token', value: orgConfig.github_token_configured },
                   { key: 'Chave Anthropic', value: orgConfig.anthropic_api_key_configured },
                   { key: 'Chave Voyage', value: orgConfig.voyage_api_key_configured },
-                  { key: 'Webhook Base URL', value: !!orgConfig.webhook_base_url },
                 ].map((item) => (
                   <div key={item.key} style={configKeyStyle(!!item.value)}>
                     <MFIcon name={item.value ? 'check' : 'x'} size={12} color={item.value ? T.ok : T.danger} />

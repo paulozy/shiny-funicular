@@ -6,10 +6,9 @@ interface RepoTabBarProps {
   repoId: string
   /**
    * Optional fallback when the current pathname does not match any tab — useful
-   * for nested routes (e.g. `/code/repositories/:id/files?path=...`) where the
-   * pathname still points at `/files`.
+   * for nested routes where the pathname points at a sub-path of a tab.
    */
-  activeTab?: 'overview' | 'files' | 'search' | 'issues' | 'pull-requests' | 'settings'
+  activeTab?: 'overview' | 'search' | 'pull-requests' | 'settings'
 }
 
 export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
@@ -19,18 +18,6 @@ export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
       label: 'Visão geral',
       href: base,
       forceActive: activeTab === 'overview',
-    },
-    {
-      label: 'Arquivos',
-      href: `${base}/files`,
-      matchPrefix: `${base}/files`,
-      forceActive: activeTab === 'files',
-    },
-    {
-      label: 'Alertas',
-      href: `${base}/issues`,
-      matchPrefix: `${base}/issues`,
-      forceActive: activeTab === 'issues',
     },
     {
       label: 'Pull Requests',

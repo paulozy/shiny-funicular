@@ -71,8 +71,7 @@ describe('CoPensador', () => {
     render(<CoPensador repos={repos} focusedRepo={focusedRepo} />)
 
     expect(screen.getByText(/contexto: web/i)).toBeInTheDocument()
-    expect(screen.getByText(/alertas no repo/i)).toBeInTheDocument()
-    expect(screen.getByText(/cobertura baixa/i)).toBeInTheDocument()
+    expect(screen.getByText(/issues no repo/i)).toBeInTheDocument()
     expect(screen.getByText(/busca semântica/i)).toBeInTheDocument()
   })
 
@@ -80,7 +79,7 @@ describe('CoPensador', () => {
     render(<CoPensador repos={repos} />)
 
     expect(screen.getByText(/contexto: Code · 1 repos/i)).toBeInTheDocument()
-    expect(screen.getByText(/repos com alertas/i)).toBeInTheDocument()
+    expect(screen.getByText(/repos com issues/i)).toBeInTheDocument()
   })
 
   it('renders search synthesis insights above repository insights', () => {
@@ -105,36 +104,13 @@ describe('CoPensador', () => {
     expect(screen.getByText(/claude/i)).toBeInTheDocument()
   })
 
-  it('uses enriched analysis stats without treating missing analysis as quality zero', () => {
+  it('does not surface analysis/quality cards (removed from the MVP)', () => {
     render(
       <CoPensador
         repos={repos}
         focusedRepo={{
           ...focusedRepo,
-          metadata: { ...focusedRepo.metadata, issue_count: 0, test_coverage: 90 },
-          analysis_status: null,
-          stats: {
-            total_analyses: 0,
-            latest_quality_score: 0,
-            has_analysis: false,
-            last_analyzed_at: null,
-          },
-        }}
-      />
-    )
-
-    expect(screen.getByText(/repo sem análise/i)).toBeInTheDocument()
-    expect(screen.getByText(/ausência de análise, não baixa qualidade/i)).toBeInTheDocument()
-    expect(screen.queryByText(/0\/100/i)).not.toBeInTheDocument()
-  })
-
-  it('flags low quality only when the repository has analysis', () => {
-    render(
-      <CoPensador
-        repos={repos}
-        focusedRepo={{
-          ...focusedRepo,
-          metadata: { ...focusedRepo.metadata, issue_count: 0, test_coverage: 90 },
+          metadata: { ...focusedRepo.metadata, issue_count: 0 },
           analysis_status: 'completed',
           stats: {
             total_analyses: 2,
@@ -146,8 +122,11 @@ describe('CoPensador', () => {
       />
     )
 
-    expect(screen.getByText(/qualidade baixa/i)).toBeInTheDocument()
-    expect(screen.getByText(/58\/100/i)).toBeInTheDocument()
+    expect(screen.queryByText(/qualidade baixa/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/sem análise/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/\/100/)).not.toBeInTheDocument()
+    // the semantic-search card remains the baseline insight
+    expect(screen.getByText(/busca semântica/i)).toBeInTheDocument()
   })
 
   it('links file references in rendered synthesis when they match search results', () => {

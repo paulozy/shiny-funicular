@@ -6,9 +6,17 @@
 // - models/pull_request.go:    PullRequestResponse / PullRequestListItemResponse / PullRequestListResponse
 // - handlers/analysis_pull_requests.go: GET /repositories/:id/pull-requests
 
-import { CodeIssue } from './analysis'
-
 export type PullRequestState = 'open' | 'closed' | 'merged'
+
+// Issue type from analysis (inlined from deleted analysis.ts)
+export interface CodeIssue {
+  severity: 'info' | 'warning' | 'error' | 'critical'
+  category: string
+  title: string
+  description: string
+  is_ai_generated?: boolean
+  confidence?: number
+}
 
 export interface PullRequestResponse {
   id: number

@@ -192,7 +192,7 @@ export function RepositorySettingsClient({
               Voyage {!providerStatusKnown ? 'configurado pela organização' : providerConfigured ? 'configurado' : 'pendente'}
             </Tag>
             <Tag variant="default">{orgConfig?.embeddings_model || 'voyage-code-3'}</Tag>
-            <Tag variant="default">{orgConfig?.embeddings_dimensions || 1024} dimensões</Tag>
+            <Tag variant="default">1024 dimensões</Tag>
           </div>
 
           <div style={descriptionStyle}>
