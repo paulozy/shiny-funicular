@@ -71,7 +71,7 @@ describe('CoPensador', () => {
     render(<CoPensador repos={repos} focusedRepo={focusedRepo} />)
 
     expect(screen.getByText(/contexto: web/i)).toBeInTheDocument()
-    expect(screen.getByText(/issues \+ PRs no repo/i)).toBeInTheDocument()
+    expect(screen.getByText(/issues no repo/i)).toBeInTheDocument()
     expect(screen.getByText(/busca semântica/i)).toBeInTheDocument()
   })
 

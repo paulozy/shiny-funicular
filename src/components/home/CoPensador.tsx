@@ -4,6 +4,7 @@ import { CSSProperties, ReactNode } from 'react'
 import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { SearchInsight } from '@/lib/types/search'
+import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
 import { SearchSynthesisCard } from '@/components/home/SearchSynthesisCard'
@@ -34,15 +35,15 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
   const cards: CoPCard[] = []
 
   if (focusedRepo) {
-    const issues = focusedRepo.metadata?.issue_count ?? 0
+    const issues = openIssueCount(focusedRepo.metadata)
     const branch = focusedRepo.metadata?.default_branch || 'main'
 
     if (issues > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Issues + PRs no repo',
+        title: 'Issues no repo',
         tone: T.danger,
-        description: `${issues} aberto${issues !== 1 ? 's' : ''} no GitHub (issues + PRs) em ${focusedRepo.name}.`,
+        description: `${issues} issue${issues !== 1 ? 's' : ''} aberta${issues !== 1 ? 's' : ''} no GitHub em ${focusedRepo.name}.`,
       })
     }
 
@@ -74,15 +75,15 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
       })
     }
   } else {
-    const reposWithIssues = repos.repositories.filter((r) => (r.metadata?.issue_count ?? 0) > 0)
+    const reposWithIssues = repos.repositories.filter((r) => openIssueCount(r.metadata) > 0)
     if (reposWithIssues.length > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Repos com issues + PRs',
+        title: 'Repos com issues',
         tone: T.danger,
         description: (
           <div>
-            <div>{reposWithIssues.length} repositórios com issues/PRs abertos no GitHub</div>
+            <div>{reposWithIssues.length} repositórios com issues abertas no GitHub</div>
             <ul style={{ margin: '4px 0 0 0', paddingLeft: 16, fontSize: 11.5 }}>
               {reposWithIssues.slice(0, 3).map((r) => (
                 <li key={r.id}>{r.name}</li>

@@ -48,7 +48,7 @@ describe('RepositoryOverviewClient', () => {
     expect(screen.getByText('develop')).toBeInTheDocument()
     // activity signals from the GitHub sync render
     expect(screen.getByText('PRs abertos')).toBeInTheDocument()
-    expect(screen.getByText('Issues + PRs')).toBeInTheDocument()
+    expect(screen.getByText('Issues')).toBeInTheDocument()
     expect(screen.getByText('Contribuidores')).toBeInTheDocument()
     // analysis-derived UI is gone (no quality score, analysis status or coverage)
     expect(screen.queryByText('85/100')).not.toBeInTheDocument()
