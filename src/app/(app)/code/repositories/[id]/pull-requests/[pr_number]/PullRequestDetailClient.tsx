@@ -38,7 +38,10 @@ export function PullRequestDetailClient({
   const [publishError, setPublishError] = useState<string | null>(null)
   const prevAnalysisIdRef = useRef<string | null>(null)
 
-  usePublishScope({ kind: 'repo-pulls', repoId }, [repoId])
+  usePublishScope(
+    { kind: 'repo-pulls', repoId, prNumber, issues: detail?.latest_analysis?.issues },
+    [repoId, prNumber, detail?.latest_analysis?.issues]
+  )
 
   const pr = detail?.pull_request
   const analysis = detail?.latest_analysis

@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { SearchInsight } from '@/lib/types/search'
+import { CodeIssue } from '@/lib/types/pull_request'
 
 /**
  * Discriminated union describing what the CoPensador side panel should be
@@ -22,7 +23,7 @@ export type CoPensadorScope =
   | { kind: 'repo-overview'; repoId: string }
   | { kind: 'repo-issues'; repoId: string; analysisId?: string }
   | { kind: 'repo-search'; repoId: string; query?: string; insight?: SearchInsight | null }
-  | { kind: 'repo-pulls'; repoId: string }
+  | { kind: 'repo-pulls'; repoId: string; prNumber?: number; issues?: CodeIssue[] }
   | { kind: 'repo-files'; repoId: string }
 
 interface ScopeContextValue {

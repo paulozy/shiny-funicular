@@ -71,3 +71,19 @@ export function buildReviewSubmission(
     comments,
   }
 }
+
+/**
+ * Paste-ready markdown for a single finding's suggestion:
+ * `` `file:line` — title `` + blank line + suggestion. Derived from the finding
+ * object so callers never hand-concatenate in JSX.
+ */
+export function formatSuggestionForCopy(issue: CodeIssue): string {
+  const loc = issue.file ? `\`${issue.file}${issue.line ? `:${issue.line}` : ''}\` — ` : ''
+  const head = `${loc}${issue.title}`
+  return issue.suggestion ? `${head}\n\n${issue.suggestion}` : head
+}
+
+/** All suggestions joined into one paste-ready block, separated by rules. */
+export function formatAllSuggestionsForCopy(issues: CodeIssue[]): string {
+  return issues.map(formatSuggestionForCopy).join('\n\n---\n\n')
+}

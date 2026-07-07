@@ -1,4 +1,4 @@
-import { buildReviewSubmission } from './pr-review'
+import { buildReviewSubmission, formatSuggestionForCopy, formatAllSuggestionsForCopy } from './pr-review'
 import { CodeIssue, PullRequestFileResponse } from '@/lib/types/pull_request'
 
 const file: PullRequestFileResponse = {
@@ -47,5 +47,32 @@ describe('buildReviewSubmission', () => {
     const out = buildReviewSubmission([file], issues)
     expect(out.comments).toEqual([])
     expect(out.body).toContain('Fora do diff')
+  })
+})
+
+describe('formatSuggestionForCopy', () => {
+  it('builds a paste-ready block with file:line, title and suggestion', () => {
+    const issue: CodeIssue = {
+      severity: 'error', category: 'bug', title: 'Null deref', description: 'd',
+      file: 'internal/a.go', line: 88, suggestion: 'Cheque nil antes.',
+    }
+    const out = formatSuggestionForCopy(issue)
+    expect(out).toBe('`internal/a.go:88` — Null deref\n\nCheque nil antes.')
+  })
+
+  it('omits the location prefix when there is no file', () => {
+    const issue: CodeIssue = { severity: 'info', category: 'x', title: 'T', description: 'd', suggestion: 'S' }
+    expect(formatSuggestionForCopy(issue)).toBe('T\n\nS')
+  })
+
+  it('joins all suggestions with a horizontal rule', () => {
+    const issues: CodeIssue[] = [
+      { severity: 'error', category: 'b', title: 'A', description: 'd', file: 'a.go', line: 1, suggestion: 'sa' },
+      { severity: 'warning', category: 'b', title: 'B', description: 'd', file: 'b.go', line: 2, suggestion: 'sb' },
+    ]
+    const out = formatAllSuggestionsForCopy(issues)
+    expect(out).toContain('\n\n---\n\n')
+    expect(out).toContain('`a.go:1` — A')
+    expect(out).toContain('`b.go:2` — B')
   })
 })
