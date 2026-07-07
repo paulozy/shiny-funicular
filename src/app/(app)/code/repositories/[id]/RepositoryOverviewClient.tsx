@@ -85,7 +85,7 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
   // analysis required. These replace the removed quality score / analysis tiles.
   const metrics = [
     { label: 'PRs abertos', value: metadata.pr_count ?? 0, icon: 'pr', tone: T.ink, href: `/code/repositories/${repo.id}/pull-requests` },
-    { label: 'Issues', value: issueCount, icon: 'shield', tone: issueCount > 0 ? T.danger : T.ink },
+    { label: 'Issues + PRs', value: issueCount, icon: 'shield', tone: issueCount > 0 ? T.danger : T.ink },
     { label: 'Contribuidores', value: metadata.contributors ?? '-', icon: 'user', tone: T.ink },
   ]
 

@@ -40,9 +40,9 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
     if (issues > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Issues no repo',
+        title: 'Issues + PRs no repo',
         tone: T.danger,
-        description: `${issues} issue${issues !== 1 ? 's' : ''} aberta${issues !== 1 ? 's' : ''} no GitHub em ${focusedRepo.name}.`,
+        description: `${issues} aberto${issues !== 1 ? 's' : ''} no GitHub (issues + PRs) em ${focusedRepo.name}.`,
       })
     }
 
@@ -78,11 +78,11 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
     if (reposWithIssues.length > 0) {
       cards.push({
         icon: 'shield',
-        title: 'Repos com issues',
+        title: 'Repos com issues + PRs',
         tone: T.danger,
         description: (
           <div>
-            <div>{reposWithIssues.length} repositórios com issues abertas no GitHub</div>
+            <div>{reposWithIssues.length} repositórios com issues/PRs abertos no GitHub</div>
             <ul style={{ margin: '4px 0 0 0', paddingLeft: 16, fontSize: 11.5 }}>
               {reposWithIssues.slice(0, 3).map((r) => (
                 <li key={r.id}>{r.name}</li>

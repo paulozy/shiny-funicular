@@ -334,7 +334,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                       gap: 4,
                     }}
                   >
-                    <MFIcon name="shield" size={11} color={issueCount > 0 ? T.danger : T.faint} /> {issueCount} issues
+                    <MFIcon name="shield" size={11} color={issueCount > 0 ? T.danger : T.faint} /> {issueCount} issues + PRs
                   </span>
                 </div>
               </div>

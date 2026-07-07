@@ -27,9 +27,9 @@ export function MetricStrip({ repos }: MetricStripProps) {
       tone: T.ink,
     },
     {
-      k: 'Issues',
+      k: 'Issues + PRs',
       v: totalIssues.toString(),
-      s: totalIssues > 0 ? 'abertas no GitHub' : 'Nenhuma',
+      s: totalIssues > 0 ? 'abertos no GitHub' : 'Nenhum',
       icon: 'shield',
       tone: totalIssues > 0 ? T.danger : T.ink,
     },
