@@ -42,4 +42,24 @@ describe('parseUnifiedDiff', () => {
     const lines = diffNewLines(PATCH)
     expect([...lines].sort((a, b) => a - b)).toEqual([1, 2, 3, 4])
   })
+
+  it('does not emit a phantom line for a trailing newline in the patch', () => {
+    // patch ending in "\n" → split() yields a trailing "" element
+    const hunks = parseUnifiedDiff('@@ -1,1 +1,2 @@\n ctx\n+added\n')
+    expect(hunks[0].lines).toHaveLength(2) // context + added only, no phantom
+    expect(hunks[0].lines[1]).toMatchObject({ type: 'add', newLine: 2, content: 'added' })
+  })
+
+  it('keeps line numbers aligned by skipping non-grammar lines', () => {
+    // a stray line without the unified-diff prefix must not shift line numbers
+    const hunks = parseUnifiedDiff('@@ -1,2 +1,2 @@\n ctx1\nstray\n ctx2')
+    const ctx = hunks[0].lines.filter((l) => l.type === 'context')
+    expect(ctx).toHaveLength(2)
+    expect(ctx[1]).toMatchObject({ content: 'ctx2', newLine: 2 }) // not shifted to 3
+  })
+
+  it('treats a blank context line (single space) as empty content', () => {
+    const hunks = parseUnifiedDiff('@@ -1,2 +1,2 @@\n \n+x')
+    expect(hunks[0].lines[0]).toMatchObject({ type: 'context', content: '', newLine: 1 })
+  })
 })

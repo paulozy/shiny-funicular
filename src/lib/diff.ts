@@ -47,12 +47,17 @@ export function parseUnifiedDiff(patch?: string): DiffHunk[] {
     } else if (raw.startsWith('\\')) {
       // "\ No newline at end of file" — metadata, not a real line.
       continue
-    } else {
-      const content = raw.startsWith(' ') ? raw.slice(1) : raw
-      current.lines.push({ type: 'context', content, oldLine: oldLn, newLine: newLn })
+    } else if (raw.startsWith(' ')) {
+      // Context lines are always prefixed with a single space in a unified
+      // diff. Strip exactly that space (a blank context line is " " → "").
+      current.lines.push({ type: 'context', content: raw.slice(1), oldLine: oldLn, newLine: newLn })
       oldLn += 1
       newLn += 1
     }
+    // Anything else — an empty string (e.g. the trailing element from
+    // splitting a patch that ends in "\n") or a malformed line — is NOT part
+    // of the hunk grammar. Skip it without advancing line numbers so findings
+    // stay anchored to the correct post-image line.
   }
 
   return hunks
