@@ -14,6 +14,10 @@ export interface CodeIssue {
   category: string
   title: string
   description: string
+  file?: string
+  line?: number
+  suggestion?: string
+  code?: string
   is_ai_generated?: boolean
   confidence?: number
 }
@@ -90,4 +94,23 @@ export interface PullRequestDetailResponse {
   pull_request: PullRequestResponse
   files: PullRequestFileResponse[]
   latest_analysis?: PullRequestReviewAnalysisResponse
+}
+
+export interface PullRequestReviewCommentInput {
+  path: string
+  line: number
+  side?: string
+  body: string
+}
+
+export interface CreatePullRequestReviewRequest {
+  event: string
+  body?: string
+  comments?: PullRequestReviewCommentInput[]
+}
+
+export interface CreatePullRequestReviewResult {
+  review_id: number
+  event: string
+  status: string
 }

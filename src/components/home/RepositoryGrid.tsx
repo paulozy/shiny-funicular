@@ -4,6 +4,7 @@ import { CSSProperties, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { RepositoryListResponse } from '@/lib/types/repository'
+import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
@@ -22,7 +23,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
 
   const filtered = repos.repositories.filter((repo) => {
     if (activeFilter === 'hot') return (repo.metadata?.pr_count ?? 0) > 0
-    if (activeFilter === 'alertas') return (repo.metadata?.issue_count ?? 0) > 0
+    if (activeFilter === 'alertas') return openIssueCount(repo.metadata) > 0
     return true
   })
 
@@ -243,7 +244,7 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
         <div style={gridStyle}>
           {sorted.map((repo) => {
             const prCount = repo.metadata?.pr_count ?? 0
-            const issueCount = repo.metadata?.issue_count ?? 0
+            const issueCount = openIssueCount(repo.metadata)
             const defaultBranch = repo.metadata?.default_branch || 'main'
             const isMenuOpen = openMenuRepoId === repo.id
 

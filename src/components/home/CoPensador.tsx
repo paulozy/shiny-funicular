@@ -4,9 +4,11 @@ import { CSSProperties, ReactNode } from 'react'
 import { RepositoryListResponse, RepositoryResponse } from '@/lib/types/repository'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { SearchInsight } from '@/lib/types/search'
+import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { MFIcon, AISpark } from '@/components/icons/MFIcon'
 import { SearchSynthesisCard } from '@/components/home/SearchSynthesisCard'
+import { PrSuggestionsCard } from '@/components/home/PrSuggestionsCard'
 import { useCoPensadorScope } from '@/components/shell/CoPensadorScopeProvider'
 
 interface CoPensadorProps {
@@ -30,11 +32,12 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
   // lets the panel render route-aware insights without prop drilling.
   const { scope } = useCoPensadorScope()
   const insight = scope?.kind === 'repo-search' ? scope.insight ?? null : searchInsight ?? null
+  const prIssues = scope?.kind === 'repo-pulls' ? scope.issues ?? [] : []
 
   const cards: CoPCard[] = []
 
   if (focusedRepo) {
-    const issues = focusedRepo.metadata?.issue_count ?? 0
+    const issues = openIssueCount(focusedRepo.metadata)
     const branch = focusedRepo.metadata?.default_branch || 'main'
 
     if (issues > 0) {
@@ -74,7 +77,7 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
       })
     }
   } else {
-    const reposWithIssues = repos.repositories.filter((r) => (r.metadata?.issue_count ?? 0) > 0)
+    const reposWithIssues = repos.repositories.filter((r) => openIssueCount(r.metadata) > 0)
     if (reposWithIssues.length > 0) {
       cards.push({
         icon: 'shield',
@@ -217,6 +220,8 @@ export function CoPensador({ repos, orgConfig, focusedRepo, searchInsight }: CoP
         </div>
 
         {insight && <SearchSynthesisCard repoId={focusedRepo?.id} insight={insight} />}
+
+        <PrSuggestionsCard issues={prIssues} />
 
         {cards.map((card, i) => (
           <div key={i} style={cardStyle}>

@@ -7,9 +7,10 @@ import { PullRequestCard } from './PullRequestCard'
 
 interface PullRequestListProps {
   items: PullRequestListItemResponse[]
+  repoId: string
 }
 
-export function PullRequestList({ items }: PullRequestListProps) {
+export function PullRequestList({ items, repoId }: PullRequestListProps) {
   const { open, drafts } = useMemo(() => {
     const sorted = [...items].sort(
       (a, b) =>
@@ -62,7 +63,7 @@ export function PullRequestList({ items }: PullRequestListProps) {
           <h2 style={groupHeaderStyle}>Abertos ({open.length})</h2>
           <div style={listStyle}>
             {open.map((item) => (
-              <PullRequestCard key={item.pull_request.id} item={item} />
+              <PullRequestCard key={item.pull_request.id} item={item} repoId={repoId} />
             ))}
           </div>
         </section>
@@ -73,7 +74,7 @@ export function PullRequestList({ items }: PullRequestListProps) {
           <h2 style={groupHeaderStyle}>Drafts ({drafts.length})</h2>
           <div style={listStyle}>
             {drafts.map((item) => (
-              <PullRequestCard key={item.pull_request.id} item={item} />
+              <PullRequestCard key={item.pull_request.id} item={item} repoId={repoId} />
             ))}
           </div>
         </section>

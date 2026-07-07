@@ -11,6 +11,7 @@ import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
 import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { syncStatusLabel, syncStatusVariant } from '@/lib/coverage'
+import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { EmbeddingsState, RepositoryResponse, isTerminalEmbeddingsStatus } from '@/lib/types/repository'
 import { apiFetch } from '@/lib/api/client'
@@ -79,7 +80,7 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
   const searchHref = `/code/repositories/${repo.id}/search?branch=${encodeURIComponent(branch)}`
   const settingsHref = `/code/repositories/${repo.id}/settings`
 
-  const issueCount = metadata.issue_count ?? 0
+  const issueCount = openIssueCount(metadata)
 
   // Activity/metadata signals that always exist from the GitHub sync — no AI
   // analysis required. These replace the removed quality score / analysis tiles.

@@ -25,16 +25,20 @@ const baseItem: PullRequestListItemResponse = {
 }
 
 describe('PullRequestCard', () => {
-  it('renders the PR number, title and link to GitHub', () => {
-    render(<PullRequestCard item={baseItem} />)
+  it('links the title to the in-IDP detail page and keeps a GitHub link', () => {
+    render(<PullRequestCard item={baseItem} repoId="r1" />)
     expect(screen.getByText('#42')).toBeInTheDocument()
-    const link = screen.getByRole('link', { name: 'Refactor auth middleware' })
-    expect(link).toHaveAttribute('href', 'https://github.com/owner/repo/pull/42')
-    expect(link).toHaveAttribute('target', '_blank')
+
+    const title = screen.getByRole('link', { name: 'Refactor auth middleware' })
+    expect(title).toHaveAttribute('href', '/code/repositories/r1/pull-requests/42')
+
+    const github = screen.getByRole('link', { name: 'Abrir no GitHub' })
+    expect(github).toHaveAttribute('href', 'https://github.com/owner/repo/pull/42')
+    expect(github).toHaveAttribute('target', '_blank')
   })
 
   it('shows "Open" tag for non-draft PRs', () => {
-    render(<PullRequestCard item={baseItem} />)
+    render(<PullRequestCard item={baseItem} repoId="r1" />)
     expect(screen.getByText('Open')).toBeInTheDocument()
     expect(screen.queryByText('Draft')).not.toBeInTheDocument()
   })
@@ -44,20 +48,20 @@ describe('PullRequestCard', () => {
       ...baseItem,
       pull_request: { ...baseItem.pull_request, draft: true },
     }
-    render(<PullRequestCard item={draft} />)
+    render(<PullRequestCard item={draft} repoId="r1" />)
     expect(screen.getByText('Draft')).toBeInTheDocument()
     expect(screen.queryByText('Open')).not.toBeInTheDocument()
   })
 
   it('displays additions, deletions, files and commits', () => {
-    render(<PullRequestCard item={baseItem} />)
+    render(<PullRequestCard item={baseItem} repoId="r1" />)
     expect(screen.getByText('+120')).toBeInTheDocument()
     expect(screen.getByText('-35')).toBeInTheDocument()
     expect(screen.getByText('7 arquivos')).toBeInTheDocument()
     expect(screen.getByText('5 commits')).toBeInTheDocument()
   })
 
-  it('renders the latest analysis summary when present', () => {
+  it('renders the latest review summary and a link to the review when present', () => {
     const withAnalysis: PullRequestListItemResponse = {
       ...baseItem,
       latest_analysis: {
@@ -77,12 +81,25 @@ describe('PullRequestCard', () => {
         updated_at: '2026-05-18T21:00:00Z',
       },
     }
-    render(<PullRequestCard item={withAnalysis} />)
+    render(<PullRequestCard item={withAnalysis} repoId="r1" />)
     expect(screen.getByText('1 críticos')).toBeInTheDocument()
     expect(screen.getByText('2 avisos')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ver revisão/i })).toHaveAttribute(
+      'href',
+      '/code/repositories/r1/pull-requests/42'
+    )
   })
 
-  it('shows "nenhum alerta" when analysis exists but has zero issues', () => {
+  it('offers a "Revisar PR" link when there is no review yet', () => {
+    render(<PullRequestCard item={baseItem} repoId="r1" />)
+    expect(screen.getByText('Sem revisão ainda.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /revisar pr/i })).toHaveAttribute(
+      'href',
+      '/code/repositories/r1/pull-requests/42'
+    )
+  })
+
+  it('shows "nenhum alerta" when a review exists but has zero issues', () => {
     const clean: PullRequestListItemResponse = {
       ...baseItem,
       latest_analysis: {
@@ -102,7 +119,7 @@ describe('PullRequestCard', () => {
         updated_at: '2026-05-18T21:00:00Z',
       },
     }
-    render(<PullRequestCard item={clean} />)
+    render(<PullRequestCard item={clean} repoId="r1" />)
     expect(screen.getByText('nenhum alerta')).toBeInTheDocument()
   })
 })

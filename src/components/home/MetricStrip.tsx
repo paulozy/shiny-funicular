@@ -1,5 +1,6 @@
 import { CSSProperties } from 'react'
 import { RepositoryListResponse } from '@/lib/types/repository'
+import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 
@@ -9,7 +10,7 @@ interface MetricStripProps {
 
 export function MetricStrip({ repos }: MetricStripProps) {
   const totalPRs = repos.repositories.reduce((sum, repo) => sum + (repo.metadata?.pr_count ?? 0), 0)
-  const totalIssues = repos.repositories.reduce((sum, repo) => sum + (repo.metadata?.issue_count ?? 0), 0)
+  const totalIssues = repos.repositories.reduce((sum, repo) => sum + openIssueCount(repo.metadata), 0)
 
   const metrics = [
     {
