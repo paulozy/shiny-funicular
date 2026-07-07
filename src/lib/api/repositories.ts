@@ -61,6 +61,26 @@ export async function backendGetRepositories(
   return normalizeRepositoryList(body)
 }
 
+export interface RepositorySyncResponse {
+  status: string
+  type: string
+  target: string
+}
+
+/** Enqueues a throttled background re-sync of the repository metadata. */
+export async function backendSyncRepository(
+  accessToken: string,
+  repoId: string
+): Promise<RepositorySyncResponse> {
+  const response = await fetch(getApiUrl(`/repositories/${repoId}/sync`), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  return handleResponse<RepositorySyncResponse>(response)
+}
+
 export async function backendCreateRepository(
   accessToken: string,
   body: CreateRepositoryRequest

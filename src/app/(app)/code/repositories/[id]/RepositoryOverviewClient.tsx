@@ -41,6 +41,13 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
 
   usePublishScope({ kind: 'repo-overview', repoId: repo.id }, [repo.id])
 
+  // Kick a throttled background re-sync when the repo is opened so metadata
+  // (open PR/issue counts, stars, branches, …) converges after PRs are
+  // merged/closed. Fire-and-forget — the backend throttles repeated calls.
+  useEffect(() => {
+    apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' }).catch(() => {})
+  }, [repo.id])
+
   const triggerEmbeddings = useCallback(async () => {
     try {
       await apiFetch(`/api/repositories/${repo.id}/embeddings`, { method: 'POST' })
