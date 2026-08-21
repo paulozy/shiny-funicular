@@ -1,3 +1,4 @@
+import { Scorecard } from '@/lib/types/scorecard'
 import { TeamRef } from '@/lib/types/teams'
 
 export type RepoProvider = 'github' | 'gitlab' | 'gitea' | 'custom'
@@ -54,6 +55,8 @@ export interface RepositoryResponse {
   /** The accountable team. Absent means unowned, which the catalog surfaces. */
   owner_team?: TeamRef
   stats?: RepositoryStats
+  /** Deterministic maturity checks, computed server-side on each read. */
+  scorecard?: Scorecard
   created_at: string
   updated_at: string
   organization_id: string
@@ -84,6 +87,7 @@ export interface BackendRepositoryResponse {
   sync_error?: string
   last_synced_at?: string
   owner_team?: TeamRef
+  scorecard?: Scorecard
   stats?: Partial<RepositoryStats> | null
   created_at: string
   updated_at: string

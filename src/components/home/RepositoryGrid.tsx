@@ -251,6 +251,17 @@ export function RepositoryGrid({ repos }: RepositoryGridProps) {
                     {repo.name}
                   </Link>
                   <span style={tagStyle}>{repo.provider}</span>
+                  {repo.scorecard && repo.scorecard.failing > 0 && (
+                    <span
+                      style={{ ...tagStyle, color: T.warn, borderColor: 'transparent', background: T.surfaceAlt }}
+                      title={repo.scorecard.verdicts
+                        .filter((v) => v.status === 'fail')
+                        .map((v) => v.title)
+                        .join(' · ')}
+                    >
+                      {repo.scorecard.failing} pendência(s)
+                    </span>
+                  )}
                   {repo.owner_team ? (
                     <span style={tagStyle} title={`Time responsável: ${repo.owner_team.name}`}>
                       {repo.owner_team.name}

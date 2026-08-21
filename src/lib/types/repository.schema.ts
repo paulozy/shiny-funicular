@@ -79,6 +79,23 @@ export const BackendRepositoryResponseSchema = z.object({
   owner_team: z
     .object({ id: z.string(), name: z.string(), slug: z.string() })
     .optional(),
+  scorecard: z
+    .object({
+      passing: z.number(),
+      failing: z.number(),
+      not_applicable: z.number(),
+      total: z.number(),
+      verdicts: z.array(
+        z.object({
+          check_id: z.string(),
+          version: z.number(),
+          title: z.string(),
+          status: z.enum(['pass', 'fail', 'not_applicable']),
+          reason: z.string(),
+        })
+      ),
+    })
+    .optional(),
   stats: RepositoryStatsPartialSchema.nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),

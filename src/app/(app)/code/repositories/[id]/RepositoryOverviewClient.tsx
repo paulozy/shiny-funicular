@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
 import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
+import { ScorecardCard } from '@/components/repository/ScorecardCard'
 import { syncStatusLabel, syncStatusVariant } from '@/lib/coverage'
 import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
@@ -275,6 +276,10 @@ export function RepositoryOverviewClient({ repo, canSync = false }: RepositoryOv
           topics={metadata.topics}
         />
         <RepoHealthCard repo={repo} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <ScorecardCard scorecard={repo.scorecard} />
       </div>
 
       <section style={cardStyle}>
