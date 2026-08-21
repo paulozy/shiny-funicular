@@ -76,6 +76,9 @@ export const BackendRepositoryResponseSchema = z.object({
   sync_status: SyncStatusSchema.optional(),
   sync_error: z.string().optional(),
   last_synced_at: z.string().optional(),
+  owner_team: z
+    .object({ id: z.string(), name: z.string(), slug: z.string() })
+    .optional(),
   stats: RepositoryStatsPartialSchema.nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),

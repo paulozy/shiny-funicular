@@ -251,6 +251,18 @@ export function RepositoryGrid({ repos }: RepositoryGridProps) {
                     {repo.name}
                   </Link>
                   <span style={tagStyle}>{repo.provider}</span>
+                  {repo.owner_team ? (
+                    <span style={tagStyle} title={`Time responsável: ${repo.owner_team.name}`}>
+                      {repo.owner_team.name}
+                    </span>
+                  ) : (
+                    <span
+                      style={{ ...tagStyle, color: T.warn, borderColor: 'transparent', background: T.surfaceAlt }}
+                      title="Nenhum time é responsável por este repositório"
+                    >
+                      sem dono
+                    </span>
+                  )}
                   {prCount > 0 && (
                     <span
                       style={{

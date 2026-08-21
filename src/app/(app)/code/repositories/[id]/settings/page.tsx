@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
-import { canConfigureOrganization, canManageCoverageTokens } from '@/lib/permissions'
+import { canAssignRepositoryOwner, canConfigureOrganization, canManageCoverageTokens } from '@/lib/permissions'
 import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { RepositorySettingsClient } from './RepositorySettingsClient'
@@ -38,6 +38,7 @@ export default async function RepositorySettingsPage({ params }: RepositorySetti
       repo={repo}
       orgConfig={orgConfig}
       canManageCoverageTokens={canManageCoverageTokens(user)}
+      canAssignOwner={canAssignRepositoryOwner(user)}
     />
   )
 }

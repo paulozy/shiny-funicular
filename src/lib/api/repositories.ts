@@ -139,6 +139,7 @@ export function normalizeRepository(repo: BackendRepositoryResponse): Repository
     sync_status: repo.sync_status,
     sync_error: repo.sync_error,
     last_synced_at: repo.last_synced_at,
+    owner_team: repo.owner_team,
     stats: normalizeRepositoryStats(repo.stats),
     created_at: repo.created_at,
     updated_at: repo.updated_at,

@@ -1,3 +1,5 @@
+import { TeamRef } from '@/lib/types/teams'
+
 export type RepoProvider = 'github' | 'gitlab' | 'gitea' | 'custom'
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 export type CoverageStatus = 'ok' | 'partial' | 'failed' | 'not_configured'
@@ -49,6 +51,8 @@ export interface RepositoryResponse {
   sync_status?: SyncStatus
   sync_error?: string
   last_synced_at?: string
+  /** The accountable team. Absent means unowned, which the catalog surfaces. */
+  owner_team?: TeamRef
   stats?: RepositoryStats
   created_at: string
   updated_at: string
@@ -79,6 +83,7 @@ export interface BackendRepositoryResponse {
   sync_status?: SyncStatus
   sync_error?: string
   last_synced_at?: string
+  owner_team?: TeamRef
   stats?: Partial<RepositoryStats> | null
   created_at: string
   updated_at: string

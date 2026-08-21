@@ -12,17 +12,20 @@ import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { CoverageTokensSection } from '@/components/repository/CoverageTokensSection'
+import { RepositoryOwnerSection } from '@/components/repository/RepositoryOwnerSection'
 
 interface RepositorySettingsClientProps {
   repo: RepositoryResponse
   orgConfig: OrganizationConfigResponse | null
   canManageCoverageTokens: boolean
+  canAssignOwner: boolean
 }
 
 export function RepositorySettingsClient({
   repo,
   orgConfig,
   canManageCoverageTokens,
+  canAssignOwner,
 }: RepositorySettingsClientProps) {
 
   const pageStyle: CSSProperties = {
@@ -126,6 +129,10 @@ export function RepositorySettingsClient({
 
       <div style={layoutStyle}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <section style={sectionStyle}>
+          <RepositoryOwnerSection repo={repo} canAssign={canAssignOwner} />
+        </section>
+
         <section style={sectionStyle}>
           <CoverageTokensSection repo={repo} canManage={canManageCoverageTokens} />
         </section>

@@ -52,6 +52,8 @@ export const canEditDocs = (user: Actor) => hasRole(user, 'developer')
 export const canEditRepository = (user: Actor) => hasRole(user, 'maintainer')
 export const canDeleteRepository = (user: Actor) => hasRole(user, 'maintainer')
 export const canManageCoverageTokens = (user: Actor) => hasRole(user, 'maintainer')
+export const canAssignRepositoryOwner = (user: Actor) => hasRole(user, 'maintainer')
+export const canManageTeams = (user: Actor) => hasRole(user, 'maintainer')
 
 export const canConfigureOrganization = (user: Actor) => hasRole(user, 'admin')
 export const canManageMembers = (user: Actor) => hasRole(user, 'admin')

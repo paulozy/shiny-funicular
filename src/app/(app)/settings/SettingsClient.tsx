@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { MembersSection } from '@/components/organization/MembersSection'
+import { TeamsSection } from '@/components/organization/TeamsSection'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -249,7 +250,7 @@ function GitLabCallbackTutorial() {
   )
 }
 
-type Tab = 'ia' | 'github' | 'oauth' | 'members'
+type Tab = 'ia' | 'github' | 'oauth' | 'members' | 'teams'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
@@ -595,7 +596,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
             <h1 style={titleStyle}>Configurações</h1>
           </div>
           <div style={{ flex: 1 }} />
-          {activeTab !== 'members' && (
+          {activeTab !== 'members' && activeTab !== 'teams' && (
             <div style={headerButtonGroupStyle}>
               {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
               <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
@@ -618,6 +619,9 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           </button>
           <button style={tabStyle(activeTab === 'members')} onClick={() => setActiveTab('members')}>
             Membros
+          </button>
+          <button style={tabStyle(activeTab === 'teams')} onClick={() => setActiveTab('teams')}>
+            Times
           </button>
         </div>
 
@@ -702,6 +706,12 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'members' && (
             <section style={sectionStyle}>
               <MembersSection user={user} />
+            </section>
+          )}
+
+          {activeTab === 'teams' && (
+            <section style={sectionStyle}>
+              <TeamsSection />
             </section>
           )}
 
