@@ -19,13 +19,10 @@ function makeRepo(overrides: Partial<RepositoryResponse> = {}): RepositoryRespon
 }
 
 describe('RepoHealthCard', () => {
-  it('shows the sync and embeddings pills', () => {
+  it('shows the sync and coverage pills', () => {
     render(<RepoHealthCard repo={makeRepo()} />)
     expect(screen.getByLabelText('Sync: em dia')).toBeInTheDocument()
-    expect(screen.getByLabelText('Embeddings: sem provedor')).toBeInTheDocument()
-    // analysis and coverage pills were removed from the MVP
-    expect(screen.queryByLabelText(/Análise:/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/Cobertura:/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Coverage: não configurado')).toBeInTheDocument()
   })
 
   it('marks sync error as danger', () => {
@@ -33,13 +30,20 @@ describe('RepoHealthCard', () => {
     expect(screen.getByLabelText('Sync: falhou')).toBeInTheDocument()
   })
 
-  it('reports the embeddings status from a configured provider', () => {
+  it('reports the uploaded coverage percentage', () => {
     render(
       <RepoHealthCard
-        repo={makeRepo()}
-        embeddingsState={{ status: 'indexed', count: 42, provider_configured: true }}
+        repo={makeRepo({ stats: { has_coverage: true, test_coverage: 82.5, coverage_status: 'ok' } })}
       />
     )
-    expect(screen.getByLabelText('Embeddings: indexado')).toBeInTheDocument()
+    expect(screen.getByLabelText('Coverage: 82.5%')).toBeInTheDocument()
+  })
+
+  // A repo whose CI never uploaded must not be shown as a red 0% — that would
+  // read as "no tests" when the truth is "we don't know".
+  it('does not render a missing report as 0%', () => {
+    render(<RepoHealthCard repo={makeRepo({ stats: { has_coverage: false, test_coverage: 0 } })} />)
+    expect(screen.getByLabelText('Coverage: não configurado')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Coverage: 0.0%')).not.toBeInTheDocument()
   })
 })

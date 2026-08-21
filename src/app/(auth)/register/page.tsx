@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -12,6 +12,10 @@ import { T } from '@/lib/tokens'
 
 export default function RegisterPage() {
   const router = useRouter()
+  // An invite carries the organization with it, so the org-name field is both
+  // unnecessary and something the user must not be able to override.
+  const inviteToken = useSearchParams().get('invite') ?? ''
+  const joiningByInvite = inviteToken !== ''
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,7 +52,8 @@ export default function RegisterPage() {
           full_name: fullName,
           email,
           password,
-          organization_name: organizationName,
+          organization_name: joiningByInvite ? undefined : organizationName,
+          invite_token: inviteToken || undefined,
         }),
       })
 
@@ -61,7 +66,13 @@ export default function RegisterPage() {
   }
 
   async function handleOAuth(provider: 'github' | 'gitlab') {
-    window.location.href = `/auth/oauth/${provider}?organization_name=${encodeURIComponent(organizationName || 'default')}`
+    const params = new URLSearchParams()
+    if (joiningByInvite) {
+      params.set('invite_token', inviteToken)
+    } else {
+      params.set('organization_name', organizationName || 'default')
+    }
+    window.location.href = `/auth/oauth/${provider}?${params.toString()}`
   }
 
   const dividerStyle: CSSProperties = {
@@ -149,14 +160,22 @@ export default function RegisterPage() {
           required
         />
 
-        <Input
-          label="Nome da organização"
-          type="text"
-          value={organizationName}
-          onChange={(e) => setOrganizationName(e.target.value)}
-          placeholder="Minha Empresa"
-          required
-        />
+        {joiningByInvite ? (
+          <Alert variant="ok">
+            Você foi convidado para uma organização. Use o mesmo e-mail que recebeu o
+            convite — ele só funciona para esse endereço.
+          </Alert>
+        ) : (
+          <Input
+            label="Nome da organização"
+            type="text"
+            value={organizationName}
+            onChange={(e) => setOrganizationName(e.target.value)}
+            placeholder="Minha Empresa"
+            hint="Cria uma organização nova. Para entrar numa que já existe, peça um convite."
+            required
+          />
+        )}
 
         <Button
           type="submit"

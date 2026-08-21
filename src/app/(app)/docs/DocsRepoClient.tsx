@@ -24,6 +24,7 @@ import { DocGenerationCard } from '@/components/docs/DocGenerationCard'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { GenerateDocsModal } from '@/components/docs/GenerateDocsModal'
 import { Button } from '@/components/ui/Button'
+import { canGenerateDocs } from '@/lib/permissions'
 import { MFIcon } from '@/components/icons/MFIcon'
 
 interface DocsRepoClientProps {
@@ -206,6 +207,8 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     background: T.surface,
   }
 
+  const mayGenerate = canGenerateDocs(user)
+
   const tabButtonStyle = (active: boolean): CSSProperties => ({
     appearance: 'none',
     border: 0,
@@ -237,7 +240,8 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
       activeHub="code"
       breadcrumb={[{ label: 'Code', href: '/' }, { label: 'Documentação' }]}
       topRight={
-        selectedRepoId && (
+        selectedRepoId &&
+        mayGenerate && (
           <Button variant="primary" size="md" onClick={() => setShowModal(true)}>
             <MFIcon name="sparkles" size={12} />
             Gerar documentação

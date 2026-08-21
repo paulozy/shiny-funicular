@@ -10,11 +10,12 @@ import { AppShell } from '@/components/shell/AppShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
+import { MembersSection } from '@/components/organization/MembersSection'
+import { TeamsSection } from '@/components/organization/TeamsSection'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { MFIcon } from '@/components/icons/MFIcon'
-import { CoPensador } from '@/components/home/CoPensador'
 
 interface SettingsClientProps {
   user: UserInfo
@@ -25,7 +26,6 @@ interface SettingsClientProps {
 type SecretKey =
   | 'anthropic_api_key'
   | 'github_token'
-  | 'voyage_api_key'
   | 'github_client_id'
   | 'github_client_secret'
   | 'gitlab_client_id'
@@ -36,7 +36,6 @@ type SecretState = Record<SecretKey, string>
 const SECRET_LABELS: Record<SecretKey, string> = {
   anthropic_api_key: 'Anthropic API key',
   github_token: 'GitHub token',
-  voyage_api_key: 'Voyage API key',
   github_client_id: 'GitHub client ID',
   github_client_secret: 'GitHub client secret',
   gitlab_client_id: 'GitLab client ID',
@@ -57,7 +56,6 @@ const LANGUAGE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 const EMPTY_SECRETS: SecretState = {
   anthropic_api_key: '',
   github_token: '',
-  voyage_api_key: '',
   github_client_id: '',
   github_client_secret: '',
   gitlab_client_id: '',
@@ -69,10 +67,6 @@ function defaultConfig(config: OrganizationConfigResponse | null): OrganizationC
     anthropic_api_key_configured: config?.anthropic_api_key_configured ?? false,
     anthropic_tokens_per_hour: config?.anthropic_tokens_per_hour ?? 20000,
     github_token_configured: config?.github_token_configured ?? false,
-    github_pr_review_enabled: config?.github_pr_review_enabled ?? false,
-    embeddings_provider: config?.embeddings_provider ?? 'voyage',
-    voyage_api_key_configured: config?.voyage_api_key_configured ?? false,
-    embeddings_model: config?.embeddings_model ?? 'voyage-code-3',
     github_client_id_configured: config?.github_client_id_configured ?? false,
     github_client_secret_configured: config?.github_client_secret_configured ?? false,
     github_callback_url: config?.github_callback_url ?? '',
@@ -89,8 +83,6 @@ function configured(config: OrganizationConfigResponse, key: SecretKey): boolean
       return config.anthropic_api_key_configured
     case 'github_token':
       return config.github_token_configured
-    case 'voyage_api_key':
-      return config.voyage_api_key_configured
     case 'github_client_id':
       return config.github_client_id_configured
     case 'github_client_secret':
@@ -258,7 +250,7 @@ function GitLabCallbackTutorial() {
   )
 }
 
-type Tab = 'ia' | 'github' | 'search' | 'oauth'
+type Tab = 'ia' | 'github' | 'oauth' | 'members' | 'teams'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
@@ -274,8 +266,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   const summaryItems = [
     { label: 'Anthropic', ready: config.anthropic_api_key_configured },
     { label: 'GitHub token', ready: config.github_token_configured },
-    { label: 'Voyage', ready: config.voyage_api_key_configured },
-    { label: 'Review de PR', ready: config.github_pr_review_enabled },
     { label: 'OAuth GitHub', ready: config.github_client_id_configured && config.github_client_secret_configured },
     { label: 'OAuth GitLab', ready: config.gitlab_client_id_configured && config.gitlab_client_secret_configured },
   ]
@@ -295,15 +285,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
 
     if (config.anthropic_tokens_per_hour !== baseline.anthropic_tokens_per_hour) {
       body.anthropic_tokens_per_hour = config.anthropic_tokens_per_hour
-    }
-    if (config.github_pr_review_enabled !== baseline.github_pr_review_enabled) {
-      body.github_pr_review_enabled = config.github_pr_review_enabled
-    }
-    if (config.embeddings_provider !== baseline.embeddings_provider) {
-      body.embeddings_provider = config.embeddings_provider
-    }
-    if (config.embeddings_model !== baseline.embeddings_model) {
-      body.embeddings_model = config.embeddings_model
     }
     if ((config.github_callback_url ?? '') !== (baseline.github_callback_url ?? '')) {
       body.github_callback_url = config.github_callback_url ?? ''
@@ -594,7 +575,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
         user={user}
         activeHub="settings"
         breadcrumb={[{ label: 'Configurações' }]}
-        aiPanel={repos ? <CoPensador repos={repos} orgConfig={initialConfig} /> : undefined}
       >
         <div style={pageStyle}>
           <Alert variant="danger">Apenas administradores podem alterar configurações da organização.</Alert>
@@ -608,7 +588,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
       user={user}
       activeHub="settings"
       breadcrumb={[{ label: 'Configurações' }, { label: user.organization?.name || 'Organização' }]}
-      aiPanel={repos ? <CoPensador repos={repos} orgConfig={config} /> : undefined}
     >
       <div style={pageStyle}>
         <div style={headerStyle}>
@@ -617,13 +596,15 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
             <h1 style={titleStyle}>Configurações</h1>
           </div>
           <div style={{ flex: 1 }} />
-          <div style={headerButtonGroupStyle}>
-            {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
-            <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
-              <MFIcon name="check" size={12} />
-              Salvar
-            </Button>
-          </div>
+          {activeTab !== 'members' && activeTab !== 'teams' && (
+            <div style={headerButtonGroupStyle}>
+              {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
+              <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
+                <MFIcon name="check" size={12} />
+                Salvar
+              </Button>
+            </div>
+          )}
         </div>
 
         <div style={tabBarStyle}>
@@ -633,11 +614,14 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           <button style={tabStyle(activeTab === 'github')} onClick={() => setActiveTab('github')}>
             GitHub
           </button>
-          <button style={tabStyle(activeTab === 'search')} onClick={() => setActiveTab('search')}>
-            Busca semântica
-          </button>
           <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
             OAuth
+          </button>
+          <button style={tabStyle(activeTab === 'members')} onClick={() => setActiveTab('members')}>
+            Membros
+          </button>
+          <button style={tabStyle(activeTab === 'teams')} onClick={() => setActiveTab('teams')}>
+            Times
           </button>
         </div>
 
@@ -707,9 +691,6 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>
                   Token {configured(config, 'github_token') ? 'configurado' : 'pendente'}
                 </Tag>
-                <Tag variant={config.github_pr_review_enabled ? 'ok' : 'default'}>
-                  Review de PR {config.github_pr_review_enabled ? 'ativo' : 'inativo'}
-                </Tag>
               </div>
               <HelpHint label="Como gerar um GitHub token?" content={<GitHubTokenTutorial />} />
               <SecretField
@@ -719,48 +700,18 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 onChange={(value) => setSecret('github_token', value)}
                 onClear={() => clearSecret('github_token')}
               />
-              <div style={toggleRowStyle}>
-                <Toggle
-                  checked={config.github_pr_review_enabled}
-                  onChange={(checked) => setConfig((prev) => ({ ...prev, github_pr_review_enabled: checked }))}
-                  label="Revisão automática de PRs"
-                />
-              </div>
             </section>
           )}
 
-          {activeTab === 'search' && (
+          {activeTab === 'members' && (
             <section style={sectionStyle}>
-              <div style={sectionHeaderStyle}>
-                <MFIcon name="search" size={15} color={T.ok} />
-                <span style={sectionTitleStyle}>Busca semântica</span>
-              </div>
-              <div style={statusRowStyle}>
-                <Tag variant={configured(config, 'voyage_api_key') ? 'ok' : 'warn'}>
-                  Voyage {configured(config, 'voyage_api_key') ? 'configurado' : 'pendente'}
-                </Tag>
-              </div>
-              <div style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.5, marginBottom: 14 }}>
-                Configure o provider usado pela busca semântica. A geração do índice é feita nas configurações de cada repositório.
-              </div>
-              <SelectField
-                label="Provider"
-                value={config.embeddings_provider}
-                onChange={(value) => setConfig((prev) => ({ ...prev, embeddings_provider: value }))}
-                options={[{ value: 'voyage', label: 'Voyage' }]}
-              />
-              <SecretField
-                name="voyage_api_key"
-                value={secrets.voyage_api_key}
-                isConfigured={configured(config, 'voyage_api_key')}
-                onChange={(value) => setSecret('voyage_api_key', value)}
-                onClear={() => clearSecret('voyage_api_key')}
-              />
-              <Input
-                label="Modelo"
-                value={config.embeddings_model}
-                onChange={(event) => setConfig((prev) => ({ ...prev, embeddings_model: event.target.value }))}
-              />
+              <MembersSection user={user} />
+            </section>
+          )}
+
+          {activeTab === 'teams' && (
+            <section style={sectionStyle}>
+              <TeamsSection />
             </section>
           )}
 

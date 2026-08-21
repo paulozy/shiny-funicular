@@ -3,7 +3,6 @@ import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
 import { backendGetRepositories } from '@/lib/api/repositories'
-import { getDefaultSearchBranch } from '@/lib/search'
 import { T } from '@/lib/tokens'
 
 interface FileStubPageProps {
@@ -37,7 +36,7 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
     notFound()
   }
 
-  const branch = queryParams.branch || getDefaultSearchBranch(repo)
+  const branch = queryParams.branch || repo.metadata?.default_branch || 'main'
   const path = queryParams.path || 'arquivo'
   const lines =
     queryParams.start_line && queryParams.end_line

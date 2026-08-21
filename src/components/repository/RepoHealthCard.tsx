@@ -1,14 +1,10 @@
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
-import {
-  EmbeddingsState,
-  RepositoryResponse,
-} from '@/lib/types/repository'
+import { RepositoryResponse, RepositoryStats } from '@/lib/types/repository'
 
 interface RepoHealthCardProps {
   repo: RepositoryResponse
-  embeddingsState?: EmbeddingsState
 }
 
 type Tone = 'ok' | 'warn' | 'danger' | 'accent' | 'neutral'
@@ -42,31 +38,25 @@ function syncPill(status?: string): Pill {
   }
 }
 
-function embeddingsPill(state?: EmbeddingsState): Pill {
-  if (!state || !state.provider_configured) {
-    return { key: 'embeddings', label: 'Embeddings', value: 'sem provedor', tone: 'neutral' }
+// Coverage comes from the repository's CI upload, not from any analysis of
+// ours. `has_coverage` false means nothing was ever uploaded — which reads very
+// differently from a measured 0%.
+function coveragePill(stats?: RepositoryStats): Pill {
+  if (!stats?.has_coverage) {
+    return { key: 'coverage', label: 'Coverage', value: 'não configurado', tone: 'neutral' }
   }
-  switch (state.status) {
-    case 'indexed':
-      return { key: 'embeddings', label: 'Embeddings', value: 'indexado', tone: 'ok' }
-    case 'indexing':
-    case 'pending':
-      return { key: 'embeddings', label: 'Embeddings', value: 'em andamento', tone: 'accent' }
-    case 'stale':
-      return { key: 'embeddings', label: 'Embeddings', value: 'desatualizado', tone: 'warn' }
-    case 'failed':
-      return { key: 'embeddings', label: 'Embeddings', value: 'falhou', tone: 'danger' }
-    case 'idle':
-    default:
-      return { key: 'embeddings', label: 'Embeddings', value: 'sem índice', tone: 'neutral' }
+  if (stats.coverage_status === 'failed') {
+    return { key: 'coverage', label: 'Coverage', value: 'relatório inválido', tone: 'danger' }
   }
+
+  const pct = stats.test_coverage ?? 0
+  const value = `${pct.toFixed(1)}%`
+  const tone: Tone = pct >= 80 ? 'ok' : pct >= 50 ? 'warn' : 'danger'
+  return { key: 'coverage', label: 'Coverage', value, tone }
 }
 
-export function RepoHealthCard({ repo, embeddingsState }: RepoHealthCardProps) {
-  const pills: Pill[] = [
-    syncPill(repo.sync_status),
-    embeddingsPill(embeddingsState ?? repo.embeddings_state),
-  ]
+export function RepoHealthCard({ repo }: RepoHealthCardProps) {
+  const pills: Pill[] = [syncPill(repo.sync_status), coveragePill(repo.stats)]
 
   const cardStyle: CSSProperties = {
     background: T.surface,

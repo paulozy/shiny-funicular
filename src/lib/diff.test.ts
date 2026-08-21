@@ -1,4 +1,4 @@
-import { parseUnifiedDiff, diffNewLines } from './diff'
+import { parseUnifiedDiff } from './diff'
 
 const PATCH = [
   '@@ -1,3 +1,4 @@',
@@ -36,18 +36,6 @@ describe('parseUnifiedDiff', () => {
     const hunks = parseUnifiedDiff('@@ -1 +1 @@\n+x\n\\ No newline at end of file')
     expect(hunks[0].lines).toHaveLength(1)
     expect(hunks[0].lines[0]).toMatchObject({ type: 'add', content: 'x' })
-  })
-
-  it('diffNewLines collects added and context new line numbers only', () => {
-    const lines = diffNewLines(PATCH)
-    expect([...lines].sort((a, b) => a - b)).toEqual([1, 2, 3, 4])
-  })
-
-  it('does not emit a phantom line for a trailing newline in the patch', () => {
-    // patch ending in "\n" → split() yields a trailing "" element
-    const hunks = parseUnifiedDiff('@@ -1,1 +1,2 @@\n ctx\n+added\n')
-    expect(hunks[0].lines).toHaveLength(2) // context + added only, no phantom
-    expect(hunks[0].lines[1]).toMatchObject({ type: 'add', newLine: 2, content: 'added' })
   })
 
   it('keeps line numbers aligned by skipping non-grammar lines', () => {

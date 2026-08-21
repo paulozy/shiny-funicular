@@ -58,7 +58,7 @@ describe('middleware (transparent refresh)', () => {
       )
     )
 
-    const res = await middleware(makeRequest('/templates', { refresh_token: 'old-refresh' }))
+    const res = await middleware(makeRequest('/docs', { refresh_token: 'old-refresh' }))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('location')).toBeNull()
@@ -85,7 +85,7 @@ describe('middleware (transparent refresh)', () => {
   it('redirects to /login and clears both cookies when the backend says the refresh token is invalid (401)', async () => {
     fetchMock.mockResolvedValue(new Response('{}', { status: 401 }))
 
-    const res = await middleware(makeRequest('/templates', { refresh_token: 'revoked' }))
+    const res = await middleware(makeRequest('/docs', { refresh_token: 'revoked' }))
 
     expect(res.headers.get('location')).toContain('/login')
     // When clearing, Next.js sets the cookie with maxAge 0 (or no value).
@@ -102,7 +102,7 @@ describe('middleware (transparent refresh)', () => {
   it('redirects to /login WITHOUT clearing cookies when the backend has a transient 5xx', async () => {
     fetchMock.mockResolvedValue(new Response('boom', { status: 503 }))
 
-    const res = await middleware(makeRequest('/templates', { refresh_token: 'still-valid' }))
+    const res = await middleware(makeRequest('/docs', { refresh_token: 'still-valid' }))
 
     expect(res.headers.get('location')).toContain('/login')
     // No explicit cookie deletion happened — the response carries no
@@ -117,7 +117,7 @@ describe('middleware (transparent refresh)', () => {
   it('redirects to /login WITHOUT clearing cookies when the backend fetch throws (network error)', async () => {
     fetchMock.mockRejectedValue(new TypeError('network error'))
 
-    const res = await middleware(makeRequest('/templates', { refresh_token: 'still-valid' }))
+    const res = await middleware(makeRequest('/docs', { refresh_token: 'still-valid' }))
 
     expect(res.headers.get('location')).toContain('/login')
     const setCookies = res.cookies.getAll()

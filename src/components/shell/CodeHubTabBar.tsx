@@ -3,7 +3,7 @@
 import { TabBar, TabBarItem } from '@/components/shell/TabBar'
 
 interface CodeHubTabBarProps {
-  activeTab?: 'repositories' | 'templates' | 'docs' | 'graph'
+  activeTab?: 'repositories' | 'docs' | 'graph'
 }
 
 export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps) {
@@ -12,12 +12,6 @@ export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps
       label: 'Repositórios',
       href: '/',
       forceActive: activeTab === 'repositories',
-    },
-    {
-      label: 'Templates',
-      href: '/templates',
-      matchPrefix: '/templates',
-      forceActive: activeTab === 'templates',
     },
     {
       label: 'Documentação',

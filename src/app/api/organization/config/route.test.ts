@@ -27,10 +27,6 @@ describe('/api/organization/config', () => {
       anthropic_api_key_configured: true,
       anthropic_tokens_per_hour: 20000,
       github_token_configured: true,
-      github_pr_review_enabled: false,
-      embeddings_provider: 'voyage',
-      voyage_api_key_configured: true,
-      embeddings_model: 'voyage-code-3',
       github_client_id_configured: false,
       github_client_secret_configured: false,
       gitlab_client_id_configured: false,
@@ -52,17 +48,12 @@ describe('/api/organization/config', () => {
 
   it('forwards patch payload to the backend helper', async () => {
     const payload = {
-      github_pr_review_enabled: true,
       anthropic_api_key: 'new-key',
     }
     const response = {
       anthropic_api_key_configured: true,
       anthropic_tokens_per_hour: 20000,
       github_token_configured: false,
-      github_pr_review_enabled: true,
-      embeddings_provider: 'voyage',
-      voyage_api_key_configured: false,
-      embeddings_model: 'voyage-code-3',
       github_client_id_configured: false,
       github_client_secret_configured: false,
       gitlab_client_id_configured: false,
@@ -91,10 +82,6 @@ describe('/api/organization/config', () => {
       anthropic_api_key_configured: true,
       anthropic_tokens_per_hour: 20000,
       github_token_configured: false,
-      github_pr_review_enabled: false,
-      embeddings_provider: 'voyage',
-      voyage_api_key_configured: false,
-      embeddings_model: 'voyage-code-3',
       github_client_id_configured: false,
       github_client_secret_configured: false,
       gitlab_client_id_configured: false,

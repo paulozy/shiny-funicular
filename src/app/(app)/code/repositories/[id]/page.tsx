@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { backendGetMe } from '@/lib/api/auth'
 import { backendGetRepositories } from '@/lib/api/repositories'
 import { RepositoryOverviewClient } from './RepositoryOverviewClient'
+import { canSyncRepository } from '@/lib/permissions'
 
 interface RepositoryOverviewPageProps {
   params: Promise<{ id: string }>
@@ -31,5 +32,5 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
     notFound()
   }
 
-  return <RepositoryOverviewClient repo={repo} />
+  return <RepositoryOverviewClient repo={repo} canSync={canSyncRepository(user)} />
 }

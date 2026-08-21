@@ -1,6 +1,6 @@
 // Minimal unified-diff parser for rendering GitHub PR patches in the IDP.
 // GitHub returns each file's `patch` as a unified diff; we parse it into hunks
-// of typed lines carrying old/new line numbers so findings can be anchored to
+// of typed lines carrying old/new line numbers so each row renders with its
 // the post-image (new) line.
 
 export type DiffLineType = 'add' | 'del' | 'context'
@@ -56,23 +56,9 @@ export function parseUnifiedDiff(patch?: string): DiffHunk[] {
     }
     // Anything else — an empty string (e.g. the trailing element from
     // splitting a patch that ends in "\n") or a malformed line — is NOT part
-    // of the hunk grammar. Skip it without advancing line numbers so findings
+    // of the hunk grammar. Skip it without advancing line numbers so rows
     // stay anchored to the correct post-image line.
   }
 
   return hunks
-}
-
-/** The set of post-image (new) line numbers that appear in the diff. Used to
- * decide whether a finding can be anchored inline or must fall back to a list. */
-export function diffNewLines(patch?: string): Set<number> {
-  const lines = new Set<number>()
-  for (const hunk of parseUnifiedDiff(patch)) {
-    for (const line of hunk.lines) {
-      if (line.newLine !== undefined && (line.type === 'add' || line.type === 'context')) {
-        lines.add(line.newLine)
-      }
-    }
-  }
-  return lines
 }

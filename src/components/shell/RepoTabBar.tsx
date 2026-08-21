@@ -8,7 +8,7 @@ interface RepoTabBarProps {
    * Optional fallback when the current pathname does not match any tab — useful
    * for nested routes where the pathname points at a sub-path of a tab.
    */
-  activeTab?: 'overview' | 'search' | 'pull-requests' | 'settings'
+  activeTab?: 'overview' | 'pull-requests' | 'settings'
 }
 
 export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
@@ -24,12 +24,6 @@ export function RepoTabBar({ repoId, activeTab }: RepoTabBarProps) {
       href: `${base}/pull-requests`,
       matchPrefix: `${base}/pull-requests`,
       forceActive: activeTab === 'pull-requests',
-    },
-    {
-      label: 'Buscar',
-      href: `${base}/search`,
-      matchPrefix: `${base}/search`,
-      forceActive: activeTab === 'search',
     },
     {
       label: 'Configurações',

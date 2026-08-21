@@ -1,6 +1,11 @@
-# IDP with AI — Frontend
+# IDP — Frontend
 
-Frontend do **Code Hub**, uma Internal Developer Platform (IDP) com IA integrada para gestão de repositórios, busca semântica de código e revisão de pull requests assistida por IA.
+Frontend do **Code Hub**, uma Internal Developer Platform (IDP) para catálogo de
+repositórios, navegação de pull requests, grafo de dependências entre repos,
+cobertura vinda do CI e documentação de projeto.
+
+> A geração de documentação é a **única** funcionalidade que usa IA. Review de PR
+> assistido, busca semântica e templates de código foram removidos.
 
 Construído com Next.js 15 (App Router), React 19 e TypeScript, seguindo o padrão **Backend For Frontend (BFF)** — todos os tokens ficam em cookies HttpOnly e o navegador nunca fala direto com o backend Go.
 
@@ -14,8 +19,6 @@ Construído com Next.js 15 (App Router), React 19 e TypeScript, seguindo o padr�
 | Login (dark) | ![Login dark](docs/images/login-dark.png) |
 | Code Hub — home com repositórios | ![Code Hub](docs/images/codehub.png) |
 | Onboarding (organização vazia) | ![Onboarding](docs/images/onboarding.png) |
-| Visão do repositório + Co‑pensador | ![Repo overview](docs/images/repo-co-thinker.png) |
-| Busca semântica | ![Semantic search](docs/images/semantic-search.png) |
 | Configurações da organização | ![Settings](docs/images/org-settings.png) |
 
 ---
@@ -32,25 +35,25 @@ Construído com Next.js 15 (App Router), React 19 e TypeScript, seguindo o padr�
   - Grid de repositórios com métricas agregadas (PRs, issues, cobertura, linguagens).
   - Modal de importar/criar repositório por URL (GitHub, GitLab, Gitea).
   - Tutorial de onboarding quando a organização ainda não tem repositórios.
-- **Co‑pensador (painel lateral de IA)**
-  - Cards contextuais derivados do estado real do repo (sem alucinar).
-  - Sinaliza qualidade baixa, falta de cobertura, alertas e configuração incompleta.
 - **Visão do repositório**
-  - Overview com metadados, status de análise e badges de provider.
-  - Badge de cobertura derivado do `coverage_status` da última análise (ok / parcial / falha / não medido).
+  - Overview com metadados, sinais de atividade (PRs, issues, contribuidores) e badges de provider.
+  - Card de saúde com pills de sync e cobertura; `has_coverage` distingue “não configurado” de 0% medido.
   - Banner de erro quando o sync inicial falhou — exibe a mensagem do backend e indica que a próxima inicialização do servidor reagenda.
   - Listagem de arquivos.
-  - Configurações por repositório (busca semântica + tokens de upload de cobertura).
+  - Configurações por repositório (tokens de upload de cobertura).
 - **Cobertura via CI**
   - Tela de configurações do repositório permite gerar tokens `cov_*` revogáveis com escopo por repositório.
   - O token é exibido **uma vez** logo após a criação, com botão de copiar e snippet pronto pro GitHub Actions já preenchido com o `IDP_REPOSITORY_ID`.
   - CI do projeto usa o token via `POST /api/v1/repositories/:id/coverage` (formatos: Go / LCOV / Cobertura / JaCoCo).
   - Tokens podem ser revogados a qualquer momento pela mesma tela.
-- **Busca semântica de código**
-  - Omnibar dentro do contexto do repositório.
-  - Resultados code‑first com snippet, score em %, branch e linha.
-  - Filtros: branch, `min_score`, `limit`, linguagem (client‑side).
-  - CTA para gerar índice (`POST /repositories/:id/embeddings`) com tratamento de 503 (Voyage não configurado) e 409 (indexação em andamento).
+- **Pull requests**
+  - Listagem dos PRs abertos direto da API do GitHub.
+  - Detalhe com descrição, contadores e diff por arquivo (parser de unified diff próprio).
+- **Documentação (IA)**
+  - Geração por repositório e por organização (ADR, arquitetura, service doc, guidelines).
+  - Editor Markdown in-app para ajustar o conteúdo gerado.
+- **Grafo de repositórios**
+  - Mapa espacial das relações entre repos, com CRUD de relacionamentos.
 - **Tema claro/escuro**
   - Toggle persistente na top‑bar, com tokens em CSS vars.
 - **Internacionalização**
@@ -89,7 +92,7 @@ npm run dev
 
 Acesse http://localhost:3001 — o middleware redireciona para `/login` se não houver sessão.
 
-> O frontend depende do backend Go em `../backend`, que precisa estar rodando para login, OAuth, repositórios e busca semântica funcionarem.
+> O frontend depende do backend Go em `../backend`, que precisa estar rodando para login, OAuth, repositórios, pull requests e documentação funcionarem.
 
 ### Variáveis de ambiente
 
@@ -140,20 +143,25 @@ src/
 │   │   ├── code/repositories/[id]/
 │   │   │   ├── page.tsx        # overview do repo
 │   │   │   ├── files/          # navegação de arquivos
-│   │   │   ├── search/         # busca semântica
+│   │   │   ├── pull-requests/  # lista e detalhe de PR com diff
 │   │   │   └── settings/       # configurações do repo
+│   │   ├── docs/               # documentação (org e por repo)
+│   │   ├── graph/              # grafo de relacionamentos
 │   │   └── settings/           # configurações da organização
 │   ├── api/                    # Route Handlers (BFF)
 │   │   ├── auth/{login,register,refresh,logout,me,select-organization}/
-│   │   ├── repositories/[id]/{search,embeddings}/
+│   │   ├── repositories/[id]/{pull-requests,docs,coverage,sync}/
 │   │   └── organization/config/
 │   └── auth/{callback,oauth}/[provider]/   # OAuth GitHub/GitLab
 │
 ├── components/
 │   ├── auth/                   # AuthShell, OAuthButton, Logo
-│   ├── home/                   # RepositoryGrid, CoPensador, MetricStrip, NewRepoModal, OnboardingTutorial
-│   ├── search/                 # RepoSearchBox, SearchFilters, SearchResultsClient
-│   ├── shell/                  # AppShell, ThemeToggle
+│   ├── home/                   # RepositoryGrid, MetricStrip, NewRepoModal, OnboardingTutorial
+│   ├── pull-requests/          # PullRequestList, PullRequestCard, DiffView
+│   ├── docs/                   # editor/viewer Markdown e modais de geração
+│   ├── graph/                  # RepoGraph, RepoNode, RelationshipModal
+│   ├── repository/             # RepoHealthCard, ProjectStackCard, CoverageTokensSection
+│   ├── shell/                  # AppShell, ThemeToggle, tab bars, CommandPalette
 │   ├── icons/                  # MFIcon (ícones internos)
 │   └── ui/                     # Button, Input, Card, Alert, Tag, Toggle
 │
@@ -161,15 +169,15 @@ src/
 │   ├── tokens.ts               # design tokens (cores, fontes, raios)
 │   ├── cookies.ts              # helpers de cookie (server-only)
 │   ├── api/                    # clientes server-side e wrapper de fetch do browser
-│   ├── types/                  # interfaces auth, repository, organization, search
-│   ├── repository-analysis.ts  # agregações de métrica do Code Hub
-│   ├── search.ts               # parsing/normalização da query semântica
-│   └── search-stream.ts
+│   ├── types/                  # interfaces auth, repository, organization, pull_request, docs
+│   ├── repo-metrics.ts         # agregações de métrica do Code Hub
+│   ├── coverage.ts             # rótulos/variantes de status de sync e cobertura
+│   └── diff.ts                 # parser de unified diff
 │
 └── middleware.ts               # protege /(app)/** verificando access_token
 
 e2e/                            # Playwright specs
-plans/                          # specs de produto por feature (auth, codehub, semantic-search, code-review)
+plans/                          # specs de produto por feature
 ```
 
 ---
@@ -258,6 +266,21 @@ Tudo vive em `src/lib/tokens.ts` e nos componentes em `src/components/ui/`. Toke
 
 ## Segurança
 
+### Permissões na UI
+
+`src/lib/permissions.ts` espelha a hierarquia de papéis do backend
+(`viewer < developer < maintainer < admin`) e exporta capacidades nomeadas
+(`canCreateRepository`, `canDeleteRepository`, `canManageCoverageTokens`, …),
+uma por rota protegida em `internal/api/routes.go`.
+
+Isso é **só apresentação** — quem autoriza é a API. Esconder um controle que a
+API recusaria é conveniência; mostrar um que ela recusaria é o bug que esse
+módulo evita. Ao adicionar uma ação nova, use uma capacidade em vez de comparar
+o papel na mão, e mantenha o mapa em sincronia com o backend.
+
+O papel considerado é o da **associação à organização** (`organization.role`),
+que é o mesmo em que o backend gateia (`claims.OrganizationRole`).
+
 1. **HttpOnly cookies** — tokens fora do alcance de JS, mitiga XSS.
 2. **SameSite=Lax** — protege contra CSRF mantendo OAuth funcional.
 3. **Secure** em produção — exige HTTPS.
@@ -281,6 +304,6 @@ Tudo vive em `src/lib/tokens.ts` e nos componentes em `src/components/ui/`. Toke
 ## Documentação relacionada
 
 - `IMPLEMENTATION.md` — detalhes do fluxo de autenticação.
-- `plans/` — specs de produto por feature: `auth-flow.md`, `codehub-inicial-page.md`, `semantic-search.md`, `code-review-flow.md`.
+- `plans/` — specs de produto por feature: `auth-flow.md`, `codehub-inicial-page.md`. (`semantic-search.md` e `code-review-flow.md` descrevem features removidas e ficam só como registro histórico.)
 - `../backend/` — backend Go que serve a API consumida via BFF.
 - `../design/` — mid‑fis e protótipos JSX (`flow-shell.jsx`, `midfi-kit.jsx`, etc.) que guiam a UI.

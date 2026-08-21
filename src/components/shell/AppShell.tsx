@@ -4,7 +4,8 @@ import { CSSProperties, ReactNode, useCallback, useEffect, useMemo, useState } f
 import Link from 'next/link'
 import { UserInfo } from '@/lib/types/auth'
 import { T } from '@/lib/tokens'
-import { MFIcon, AISpark } from '@/components/icons/MFIcon'
+import { MFIcon } from '@/components/icons/MFIcon'
+import { Avatar } from '@/components/ui/Avatar'
 import { ThemeToggle } from '@/components/shell/ThemeToggle'
 import { CommandPalette, CommandPaletteAction } from '@/components/shell/CommandPalette'
 import { useSidebarPreference } from '@/components/shell/SidebarPreferenceProvider'
@@ -20,8 +21,6 @@ interface AppShellProps {
   breadcrumb?: Array<string | BreadcrumbItem>
   searchSlot?: ReactNode
   topRight?: ReactNode
-  aiPanel?: ReactNode
-  aiPanelWidth?: number
   children: ReactNode
 }
 
@@ -34,68 +33,31 @@ const HUBS = [
   { id: 'kb', label: 'Knowledge', icon: 'doc' },
 ]
 
-function MFAvatar({ name = 'M', size = 26 }: { name?: string; size?: number }) {
-  const colors = ['#d97757', '#7a4cc8', '#3a8c5a', '#3970bf', '#bf6940', '#52789e']
-  const idx = (name?.charCodeAt(0) || 77) % colors.length
-  const bg = colors[idx]
-
-  return (
-    <div
-      className="mf-avatar"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: bg,
-        color: '#fff',
-        fontSize: size * 0.42,
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        letterSpacing: 0,
-        flexShrink: 0,
-        fontFamily: T.font,
-      }}
-    >
-      {(name || 'M').slice(0, 1).toUpperCase()}
-    </div>
-  )
-}
-
 export function AppShell({
   user,
   activeHub = 'code',
   breadcrumb = [],
   searchSlot,
   topRight,
-  aiPanel,
-  aiPanelWidth = 320,
   children,
 }: AppShellProps) {
-  const [aiPanelMode, setAiPanelMode] = useState<'collapsed' | 'normal' | 'expanded'>('normal')
   const { mode: sidebarMode, setMode: setSidebarMode } = useSidebarPreference()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const normalizedBreadcrumb = breadcrumb.map((item) => (typeof item === 'string' ? { label: item } : item))
-  const resolvedAiPanelWidth = aiPanelMode === 'collapsed' ? 52 : aiPanelMode === 'expanded' ? 420 : aiPanelWidth
   const sidebarCollapsed = sidebarMode === 'collapsed'
   const sidebarWidth = sidebarCollapsed ? 56 : 220
 
   const toggleSidebar = () => setSidebarMode(sidebarCollapsed ? 'expanded' : 'collapsed')
 
-  const toggleAiPanel = useCallback(() => {
-    setAiPanelMode((current) => (current === 'collapsed' ? 'normal' : 'collapsed'))
-  }, [])
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return
       const key = event.key.toLowerCase()
-      if (key !== 'b' && key !== 'k' && key !== 'j') return
+      if (key !== 'b' && key !== 'k') return
 
-      // For Cmd+B and Cmd+J we don't want to fire while typing in an input. The
-      // command palette (Cmd+K) is allowed to open from anywhere — it's the
-      // canonical escape hatch.
+      // For Cmd+B we don't want to fire while typing in an input. The command
+      // palette (Cmd+K) is allowed to open from anywhere — it's the canonical
+      // escape hatch.
       const target = event.target as HTMLElement | null
       const inEditable =
         !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
@@ -111,17 +73,11 @@ export function AppShell({
       if (key === 'b') {
         event.preventDefault()
         toggleSidebar()
-        return
-      }
-
-      if (key === 'j') {
-        event.preventDefault()
-        toggleAiPanel()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [sidebarCollapsed, toggleAiPanel])
+  }, [sidebarCollapsed])
 
   const paletteActions: CommandPaletteAction[] = useMemo(
     () => [
@@ -131,14 +87,8 @@ export function AppShell({
         icon: sidebarCollapsed ? 'chevron-right' : 'chevron-left',
         onSelect: toggleSidebar,
       },
-      {
-        id: 'toggle-ai-panel',
-        label: aiPanelMode === 'collapsed' ? 'Abrir Co-pensador' : 'Recolher Co-pensador',
-        icon: 'star',
-        onSelect: toggleAiPanel,
-      },
     ],
-    [sidebarCollapsed, aiPanelMode, toggleAiPanel]
+    [sidebarCollapsed]
   )
 
   const containerStyle: CSSProperties = {
@@ -322,54 +272,6 @@ export function AppShell({
     minHeight: 0,
   }
 
-  const aiPanelStyle: CSSProperties = {
-    width: resolvedAiPanelWidth,
-    borderLeft: `1px solid ${T.border}`,
-    background: T.surface,
-    display: 'flex',
-    flexDirection: 'column',
-    flexShrink: 0,
-    position: 'relative',
-    transition: 'width 160ms ease',
-  }
-
-  const aiPanelControlsStyle: CSSProperties = {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 2,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-  }
-
-  const aiControlButtonStyle: CSSProperties = {
-    appearance: 'none',
-    border: `1px solid ${T.border}`,
-    borderRadius: 5,
-    background: T.surface,
-    color: T.ink3,
-    width: 24,
-    height: 24,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-  }
-
-  const collapsedAiStyle: CSSProperties = {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    writingMode: 'vertical-rl',
-    transform: 'rotate(180deg)',
-    gap: 8,
-    color: T.ink3,
-    fontSize: 12,
-    fontWeight: 600,
-  }
-
   return (
     <div style={containerStyle}>
       {/* Sidebar */}
@@ -455,7 +357,7 @@ export function AppShell({
         </div>
 
         <div style={userFooterStyle}>
-          <MFAvatar name={user.full_name} size={28} />
+          <Avatar name={user.full_name} size={28} />
           {!sidebarCollapsed && (
             <div style={userNameStyle}>
               <span style={userInitialStyle}>{user.full_name}</span>
@@ -544,48 +446,8 @@ export function AppShell({
           <MFIcon name="bell" size={16} color={T.ink3} />
         </div>
 
-        {/* Content + AI Panel */}
         <div style={contentWrapperStyle}>
           <div style={contentStyle}>{children}</div>
-          {aiPanel && (
-            <div style={aiPanelStyle} data-ai-panel-mode={aiPanelMode}>
-              {aiPanelMode === 'collapsed' ? (
-                <button
-                  type="button"
-                  aria-label="Expandir Co-pensador"
-                  style={{ ...collapsedAiStyle, border: 0, background: 'transparent', cursor: 'pointer' }}
-                  onClick={() => setAiPanelMode('normal')}
-                >
-                  <AISpark size={14} />
-                  Co-pensador
-                </button>
-              ) : (
-                <>
-                  <div style={aiPanelControlsStyle}>
-                    <button
-                      type="button"
-                      aria-label="Recolher Co-pensador"
-                      title="Recolher Co-pensador"
-                      style={aiControlButtonStyle}
-                      onClick={() => setAiPanelMode('collapsed')}
-                    >
-                      <MFIcon name="chevron-right" size={12} color="currentColor" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={aiPanelMode === 'expanded' ? 'Restaurar Co-pensador' : 'Expandir Co-pensador'}
-                      title={aiPanelMode === 'expanded' ? 'Restaurar Co-pensador' : 'Expandir Co-pensador'}
-                      style={aiControlButtonStyle}
-                      onClick={() => setAiPanelMode((current) => (current === 'expanded' ? 'normal' : 'expanded'))}
-                    >
-                      <MFIcon name={aiPanelMode === 'expanded' ? 'chevron-right' : 'chevron-down'} size={12} color="currentColor" />
-                    </button>
-                  </div>
-                  {aiPanel}
-                </>
-              )}
-            </div>
-          )}
         </div>
       </main>
 

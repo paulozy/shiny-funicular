@@ -1,25 +1,9 @@
+import { Scorecard } from '@/lib/types/scorecard'
+import { TeamRef } from '@/lib/types/teams'
+
 export type RepoProvider = 'github' | 'gitlab' | 'gitea' | 'custom'
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
-export type RepositoryAnalysisStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
 export type CoverageStatus = 'ok' | 'partial' | 'failed' | 'not_configured'
-export type EmbeddingsStatus = 'idle' | 'pending' | 'indexing' | 'indexed' | 'stale' | 'failed'
-
-export interface EmbeddingsState {
-  status: EmbeddingsStatus
-  count: number
-  indexed_at?: string
-  error?: string
-  /**
-   * Derived runtime flag set by the backend handler after looking up
-   * `OrganizationConfig.VoyageAPIKey`. Not persisted — toggling the key
-   * reflects immediately on the next read.
-   */
-  provider_configured: boolean
-}
-
-export function isTerminalEmbeddingsStatus(status: EmbeddingsStatus): boolean {
-  return status === 'indexed' || status === 'failed' || status === 'stale' || status === 'idle'
-}
 
 export interface RepositoryMetadata {
   pr_count?: number
@@ -37,21 +21,27 @@ export interface RepositoryMetadata {
   branch_count?: number
   commit_count?: number
   contributors?: number
+  /**
+   * Tri-state on the wire: true, false, or absent. Absent means sync never
+   * determined it — do not render that as "no".
+   */
   has_ci?: boolean
   has_tests?: boolean
+  ci_evidence?: string
+  test_evidence?: string
 }
 
 export interface RepositoryStats {
-  total_analyses: number
-  latest_quality_score: number
-  has_analysis: boolean
-  last_analyzed_at: string | null
-  // Coverage from the latest completed analysis. CoverageStatus is empty
-  // when no analysis has populated the metrics JSONB yet.
+  /**
+   * False when the repository's CI has never uploaded a coverage report.
+   * Distinguishes "not measured" from a genuine 0%.
+   */
+  has_coverage: boolean
   test_coverage?: number
   tested_lines?: number
   uncovered_lines?: number
   coverage_status?: CoverageStatus | ''
+  coverage_uploaded_at?: string | null
 }
 
 export interface RepositoryResponse {
@@ -68,12 +58,11 @@ export interface RepositoryResponse {
   sync_status?: SyncStatus
   sync_error?: string
   last_synced_at?: string
-  analysis_status?: RepositoryAnalysisStatus | string | null
-  analysis_error?: string
-  reviews_count?: number | null
+  /** The accountable team. Absent means unowned, which the catalog surfaces. */
+  owner_team?: TeamRef
   stats?: RepositoryStats
-  /** Pipeline state for semantic-search indexing (see migration 021). */
-  embeddings_state?: EmbeddingsState
+  /** Deterministic maturity checks, computed server-side on each read. */
+  scorecard?: Scorecard
   created_at: string
   updated_at: string
   organization_id: string
@@ -103,9 +92,8 @@ export interface BackendRepositoryResponse {
   sync_status?: SyncStatus
   sync_error?: string
   last_synced_at?: string
-  analysis_status?: RepositoryAnalysisStatus | string | null
-  analysis_error?: string
-  reviews_count?: number | null
+  owner_team?: TeamRef
+  scorecard?: Scorecard
   stats?: Partial<RepositoryStats> | null
   created_at: string
   updated_at: string

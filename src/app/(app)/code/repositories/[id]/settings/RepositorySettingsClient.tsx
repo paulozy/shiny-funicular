@@ -12,72 +12,21 @@ import { Alert } from '@/components/ui/Alert'
 import { Tag } from '@/components/ui/Tag'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { CoverageTokensSection } from '@/components/repository/CoverageTokensSection'
-import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
-import { embeddingsActionShape } from '@/components/embeddings/EmbeddingsActionButton'
+import { RepositoryOwnerSection } from '@/components/repository/RepositoryOwnerSection'
 
 interface RepositorySettingsClientProps {
   repo: RepositoryResponse
   orgConfig: OrganizationConfigResponse | null
-  canConfigureOrganization: boolean
-}
-
-type IndexState = 'idle' | 'queued' | 'in_progress' | 'unavailable' | 'forbidden' | 'error'
-
-function statusMessage(state: IndexState): { variant: 'ok' | 'warn' | 'danger'; text: string } | null {
-  switch (state) {
-    case 'queued':
-      return { variant: 'ok', text: 'Indexação na fila. Tente buscar novamente quando o processamento terminar.' }
-    case 'in_progress':
-      return { variant: 'warn', text: 'Já existe uma indexação em andamento para este repositório e branch.' }
-    case 'unavailable':
-      return { variant: 'warn', text: 'Provider de embeddings não configurado. Configure a Voyage API key nas configurações da organização.' }
-    case 'forbidden':
-      return { variant: 'danger', text: 'Você não tem permissão para gerar este índice.' }
-    case 'error':
-      return { variant: 'danger', text: 'Não foi possível gerar o índice. Tente novamente em alguns instantes.' }
-    default:
-      return null
-  }
+  canManageCoverageTokens: boolean
+  canAssignOwner: boolean
 }
 
 export function RepositorySettingsClient({
   repo,
   orgConfig,
-  canConfigureOrganization,
+  canManageCoverageTokens,
+  canAssignOwner,
 }: RepositorySettingsClientProps) {
-  const [branch, setBranch] = useState(repo.metadata?.default_branch || 'main')
-  const [indexState, setIndexState] = useState<IndexState>('idle')
-  const [loading, setLoading] = useState(false)
-  const providerStatusKnown = orgConfig !== null
-  const providerConfigured = orgConfig?.voyage_api_key_configured ?? false
-  const message = statusMessage(indexState)
-
-  const generateEmbeddings = async () => {
-    setLoading(true)
-    setIndexState('idle')
-
-    try {
-      await apiFetch(`/api/repositories/${repo.id}/embeddings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ branch: branch.trim() || undefined }),
-      })
-      setIndexState('queued')
-    } catch (err) {
-      const code = (err as any).code || 'server_error'
-      if (code === 'embeddings_in_progress') {
-        setIndexState('in_progress')
-      } else if (code === 'embeddings_unavailable') {
-        setIndexState('unavailable')
-      } else if (code === 'forbidden' || code === 'unauthorized' || code === 'authentication_failed') {
-        setIndexState('forbidden')
-      } else {
-        setIndexState('error')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const pageStyle: CSSProperties = {
     padding: '20px 24px 28px',
@@ -181,65 +130,11 @@ export function RepositorySettingsClient({
       <div style={layoutStyle}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <MFIcon name="search" size={15} color={T.ok} />
-            <span style={sectionTitleStyle}>Busca semântica</span>
-          </div>
-
-          <div style={statusRowStyle}>
-            <EmbeddingsStatusBadge state={repo.embeddings_state} />
-            <Tag variant={!providerStatusKnown ? 'default' : providerConfigured ? 'ok' : 'warn'}>
-              Voyage {!providerStatusKnown ? 'configurado pela organização' : providerConfigured ? 'configurado' : 'pendente'}
-            </Tag>
-            <Tag variant="default">{orgConfig?.embeddings_model || 'voyage-code-3'}</Tag>
-            <Tag variant="default">1024 dimensões</Tag>
-          </div>
-
-          <div style={descriptionStyle}>
-            {repo.embeddings_state?.status === 'indexed'
-              ? 'Este repositório já está indexado. Reindexe para incorporar mudanças recentes em outra branch.'
-              : 'Gere o índice semântico para a branch escolhida. A configuração de provider e chave fica nas configurações da organização.'}
-          </div>
-
-          {message && <Alert variant={message.variant}>{message.text}</Alert>}
-
-          {providerStatusKnown && !providerConfigured && canConfigureOrganization && (
-            <Alert variant="warn">
-              Configure a Voyage API key em <Link href="/settings" style={linkStyle}>Configurações</Link> antes de gerar o índice.
-            </Alert>
-          )}
-
-          <Input
-            label="Branch"
-            value={branch}
-            onChange={(event) => setBranch(event.target.value)}
-            placeholder="main"
-            hint="A indexação substitui os embeddings anteriores para o mesmo repositório, provider, modelo, dimensão e branch."
-          />
-
-          {(() => {
-            // Drive the button label/variant from the same state machine the
-            // header CTA uses (single source of truth). Falls back to the
-            // generic providerConfigured signal when the repo predates the
-            // embeddings_state field on the backend.
-            const shape = embeddingsActionShape(repo.embeddings_state, providerConfigured)
-            return (
-              <Button
-                variant={shape.variant}
-                size="md"
-                loading={loading}
-                onClick={generateEmbeddings}
-                disabled={loading || !branch.trim() || shape.disabled}
-              >
-                <MFIcon name={shape.icon} size={13} />
-                {shape.label}
-              </Button>
-            )
-          })()}
+          <RepositoryOwnerSection repo={repo} canAssign={canAssignOwner} />
         </section>
 
         <section style={sectionStyle}>
-          <CoverageTokensSection repo={repo} canManage={canConfigureOrganization} />
+          <CoverageTokensSection repo={repo} canManage={canManageCoverageTokens} />
         </section>
         </div>
 

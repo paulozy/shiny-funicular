@@ -12,7 +12,7 @@ interface PullRequestCardProps {
 }
 
 export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
-  const { pull_request: pr, latest_analysis: analysis } = item
+  const { pull_request: pr } = item
   const detailHref = `/code/repositories/${repoId}/pull-requests/${pr.number}`
 
   const cardStyle: CSSProperties = {
@@ -108,7 +108,7 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
     borderTop: `1px dashed ${T.border}`,
   }
 
-  const analysisRowStyle: CSSProperties = {
+  const footerRowStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
@@ -118,10 +118,6 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
     color: T.ink2,
     flexWrap: 'wrap',
   }
-
-  const criticalCount = analysis?.critical_count ?? 0
-  const errorCount = analysis?.error_count ?? 0
-  const warningCount = analysis?.warning_count ?? 0
 
   return (
     <article style={cardStyle} aria-label={`Pull request ${pr.number}: ${pr.title}`}>
@@ -171,35 +167,11 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
         </span>
       </div>
 
-      {analysis ? (
-        <div style={analysisRowStyle}>
-          <span style={{ color: T.ink3, fontWeight: 600 }}>Revisão da IA:</span>
-          {criticalCount > 0 && (
-            <span style={{ color: T.danger, fontWeight: 600 }}>
-              {criticalCount} críticos
-            </span>
-          )}
-          {errorCount > 0 && (
-            <span style={{ color: T.danger }}>{errorCount} erros</span>
-          )}
-          {warningCount > 0 && (
-            <span style={{ color: T.warn }}>{warningCount} avisos</span>
-          )}
-          {analysis.issue_count === 0 && (
-            <span style={{ color: T.ok }}>nenhum alerta</span>
-          )}
-          <Link href={detailHref} style={{ marginLeft: 'auto', color: T.accent, textDecoration: 'none', fontWeight: 600 }}>
-            Ver revisão →
-          </Link>
-        </div>
-      ) : (
-        <div style={analysisRowStyle}>
-          <span style={{ color: T.ink3 }}>Sem revisão ainda.</span>
-          <Link href={detailHref} style={{ marginLeft: 'auto', color: T.accent, textDecoration: 'none', fontWeight: 600 }}>
-            Revisar PR →
-          </Link>
-        </div>
-      )}
+      <div style={footerRowStyle}>
+        <Link href={detailHref} style={{ marginLeft: 'auto', color: T.accent, textDecoration: 'none', fontWeight: 600 }}>
+          Ver alterações →
+        </Link>
+      </div>
     </article>
   )
 }

@@ -7,16 +7,14 @@ import { RepositoryListResponse } from '@/lib/types/repository'
 import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
-import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
 
 interface RepositoryGridProps {
   repos: RepositoryListResponse
-  showCreateModal?: () => void
 }
 
 type FilterType = 'todos' | 'hot' | 'alertas'
 
-export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) {
+export function RepositoryGrid({ repos }: RepositoryGridProps) {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<FilterType>('todos')
   const [openMenuRepoId, setOpenMenuRepoId] = useState<string | null>(null)
@@ -199,12 +197,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
     textAlign: 'left',
   }
 
-  const navigateToRepoSearch = (repoId: string, branch: string) => {
-    const params = new URLSearchParams()
-    params.set('branch', branch)
-    router.push(`/code/repositories/${repoId}/search?${params.toString()}`)
-  }
-
   return (
     <div style={containerStyle}>
       <div>
@@ -245,7 +237,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
           {sorted.map((repo) => {
             const prCount = repo.metadata?.pr_count ?? 0
             const issueCount = openIssueCount(repo.metadata)
-            const defaultBranch = repo.metadata?.default_branch || 'main'
             const isMenuOpen = openMenuRepoId === repo.id
 
             return (
@@ -260,6 +251,29 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                     {repo.name}
                   </Link>
                   <span style={tagStyle}>{repo.provider}</span>
+                  {repo.scorecard && repo.scorecard.failing > 0 && (
+                    <span
+                      style={{ ...tagStyle, color: T.warn, borderColor: 'transparent', background: T.surfaceAlt }}
+                      title={repo.scorecard.verdicts
+                        .filter((v) => v.status === 'fail')
+                        .map((v) => v.title)
+                        .join(' · ')}
+                    >
+                      {repo.scorecard.failing} pendência(s)
+                    </span>
+                  )}
+                  {repo.owner_team ? (
+                    <span style={tagStyle} title={`Time responsável: ${repo.owner_team.name}`}>
+                      {repo.owner_team.name}
+                    </span>
+                  ) : (
+                    <span
+                      style={{ ...tagStyle, color: T.warn, borderColor: 'transparent', background: T.surfaceAlt }}
+                      title="Nenhum time é responsável por este repositório"
+                    >
+                      sem dono
+                    </span>
+                  )}
                   {prCount > 0 && (
                     <span
                       style={{
@@ -300,18 +314,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                         style={menuItemStyle}
                         onClick={() => {
                           setOpenMenuRepoId(null)
-                          navigateToRepoSearch(repo.id, defaultBranch)
-                        }}
-                      >
-                        <MFIcon name="search" size={13} color={T.ink3} />
-                        Buscar no repositório
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        style={menuItemStyle}
-                        onClick={() => {
-                          setOpenMenuRepoId(null)
                           router.push(`/code/repositories/${repo.id}/settings`)
                         }}
                       >
@@ -323,7 +325,6 @@ export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) 
                 </div>
                 <div style={descStyle}>{repo.description || 'Sem descrição'}</div>
                 <div style={{ ...footerStyle, marginTop: 10 }}>
-                  <EmbeddingsStatusBadge state={repo.embeddings_state} size="compact" />
                   <span style={{ color: prCount > 0 ? T.ink2 : T.faint, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <MFIcon name="pr" size={11} color={T.faint} /> {prCount} PRs
                   </span>

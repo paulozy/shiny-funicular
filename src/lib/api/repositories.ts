@@ -61,6 +61,26 @@ export async function backendGetRepositories(
   return normalizeRepositoryList(body)
 }
 
+export interface RepositorySyncResponse {
+  status: string
+  type: string
+  target: string
+}
+
+/** Enqueues a throttled background re-sync of the repository metadata. */
+export async function backendSyncRepository(
+  accessToken: string,
+  repoId: string
+): Promise<RepositorySyncResponse> {
+  const response = await fetch(getApiUrl(`/repositories/${repoId}/sync`), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  return handleResponse<RepositorySyncResponse>(response)
+}
+
 export async function backendCreateRepository(
   accessToken: string,
   body: CreateRepositoryRequest
@@ -94,14 +114,12 @@ export function normalizeRepositoryList(body: BackendRepositoryListResponse): Re
 
 function normalizeRepositoryStats(stats?: Partial<RepositoryStats> | null): RepositoryStats {
   return {
-    total_analyses: Number(stats?.total_analyses || 0),
-    latest_quality_score: Number(stats?.latest_quality_score || 0),
-    has_analysis: Boolean(stats?.has_analysis),
-    last_analyzed_at: stats?.last_analyzed_at || null,
+    has_coverage: Boolean(stats?.has_coverage),
     test_coverage: stats?.test_coverage,
     tested_lines: stats?.tested_lines,
     uncovered_lines: stats?.uncovered_lines,
     coverage_status: stats?.coverage_status,
+    coverage_uploaded_at: stats?.coverage_uploaded_at ?? null,
   }
 }
 
@@ -121,9 +139,8 @@ export function normalizeRepository(repo: BackendRepositoryResponse): Repository
     sync_status: repo.sync_status,
     sync_error: repo.sync_error,
     last_synced_at: repo.last_synced_at,
-    analysis_status: repo.analysis_status ?? null,
-    analysis_error: repo.analysis_error,
-    reviews_count: repo.reviews_count ?? null,
+    owner_team: repo.owner_team,
+    scorecard: repo.scorecard,
     stats: normalizeRepositoryStats(repo.stats),
     created_at: repo.created_at,
     updated_at: repo.updated_at,

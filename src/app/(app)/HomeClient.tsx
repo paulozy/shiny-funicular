@@ -10,12 +10,11 @@ import { AppShell } from '@/components/shell/AppShell'
 import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { MetricStrip } from '@/components/home/MetricStrip'
 import { RepositoryGrid } from '@/components/home/RepositoryGrid'
-import { CoPensador } from '@/components/home/CoPensador'
-import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { NewRepoModal } from '@/components/home/NewRepoModal'
 import { OnboardingTutorial } from '@/components/home/OnboardingTutorial'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { canConfigureOrganization, canCreateRepository } from '@/lib/permissions'
 
 interface HomeClientProps {
   user: UserInfo
@@ -27,9 +26,6 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
   const router = useRouter()
   const [repos, setRepos] = useState<RepositoryListResponse | null>(initialRepos)
   const [showNewRepoModal, setShowNewRepoModal] = useState(false)
-
-  // Tell the CoPensador it's looking at org-level context (cross-repo insights).
-  usePublishScope({ kind: 'org' }, [])
 
   const handleRepoCreated = useCallback((newRepo: RepositoryResponse) => {
     setRepos((prev) => {
@@ -51,6 +47,8 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
   }, [])
 
   const isEmpty = repos === null || repos.total === 0
+  const mayCreateRepo = canCreateRepository(user)
+  const mayConfigureOrg = canConfigureOrganization(user)
 
   const contentStyle: CSSProperties = {
     padding: '20px 24px 28px',
@@ -81,16 +79,18 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
 
   const topRightContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {user.role === 'admin' && (
+      {mayConfigureOrg && (
         <Button variant="default" size="md" onClick={() => router.push('/settings')}>
           <MFIcon name="gear" size={12} />
           Configurações
         </Button>
       )}
-      <Button variant="primary" size="md" onClick={handleShowNewRepoModal}>
-        <MFIcon name="plus" size={11} />
-        Novo repo
-      </Button>
+      {mayCreateRepo && (
+        <Button variant="primary" size="md" onClick={handleShowNewRepoModal}>
+          <MFIcon name="plus" size={11} />
+          Novo repo
+        </Button>
+      )}
     </div>
   )
 
@@ -100,10 +100,14 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
       activeHub="code"
       breadcrumb={[{ label: 'Code', href: '/' }, { label: isEmpty ? 'Onboarding' : 'todos os repositórios' }]}
       topRight={topRightContent}
-      aiPanel={!isEmpty && repos ? <CoPensador repos={repos} orgConfig={orgConfig} /> : undefined}
     >
       {isEmpty ? (
-        <OnboardingTutorial orgConfig={orgConfig} canConfigure={user.role === 'admin'} onImportRepo={handleShowNewRepoModal} />
+        <OnboardingTutorial
+          orgConfig={orgConfig}
+          canConfigure={mayConfigureOrg}
+          canImport={mayCreateRepo}
+          onImportRepo={handleShowNewRepoModal}
+        />
       ) : (
         <>
           <CodeHubTabBar activeTab="repositories" />
@@ -119,7 +123,7 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
           {repos && (
             <>
               <MetricStrip repos={repos} />
-              <RepositoryGrid repos={repos} showCreateModal={handleShowNewRepoModal} />
+              <RepositoryGrid repos={repos} />
             </>
           )}
           </div>

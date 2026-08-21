@@ -1,26 +1,11 @@
-// Types for GitHub pull requests + their AI review analyses exposed by the
-// backend.
+// Types for the GitHub pull requests exposed by the backend.
 //
 // Sources of truth (backend):
-// - integrations/github/pr.go: PullRequest, PRFile
-// - models/pull_request.go:    PullRequestResponse / PullRequestListItemResponse / PullRequestListResponse
-// - handlers/analysis_pull_requests.go: GET /repositories/:id/pull-requests
+// - integrations/github/pr.go:  PullRequest, PRFile
+// - models/pull_request_dto.go: PullRequestResponse / PullRequestListItemResponse / PullRequestListResponse
+// - handlers/pull_requests.go:  GET /repositories/:id/pull-requests
 
 export type PullRequestState = 'open' | 'closed' | 'merged'
-
-// Issue type from analysis (inlined from deleted analysis.ts)
-export interface CodeIssue {
-  severity: 'info' | 'warning' | 'error' | 'critical'
-  category: string
-  title: string
-  description: string
-  file?: string
-  line?: number
-  suggestion?: string
-  code?: string
-  is_ai_generated?: boolean
-  confidence?: number
-}
 
 export interface PullRequestResponse {
   id: number
@@ -44,30 +29,8 @@ export interface PullRequestResponse {
   merged_at?: string
 }
 
-export interface PullRequestReviewAnalysisResponse {
-  id: string
-  repository_id: string
-  pull_request_id: number
-  type: string
-  status: string
-  summary_text?: string
-  issues: CodeIssue[]
-  issue_count: number
-  critical_count: number
-  error_count: number
-  warning_count: number
-  info_count: number
-  ai_model?: string
-  tokens_used: number
-  processing_ms?: number
-  error_message?: string
-  created_at: string
-  updated_at: string
-}
-
 export interface PullRequestListItemResponse {
   pull_request: PullRequestResponse
-  latest_analysis?: PullRequestReviewAnalysisResponse
 }
 
 export interface PullRequestListResponse {
@@ -93,24 +56,4 @@ export interface PullRequestFilesResponse {
 export interface PullRequestDetailResponse {
   pull_request: PullRequestResponse
   files: PullRequestFileResponse[]
-  latest_analysis?: PullRequestReviewAnalysisResponse
-}
-
-export interface PullRequestReviewCommentInput {
-  path: string
-  line: number
-  side?: string
-  body: string
-}
-
-export interface CreatePullRequestReviewRequest {
-  event: string
-  body?: string
-  comments?: PullRequestReviewCommentInput[]
-}
-
-export interface CreatePullRequestReviewResult {
-  review_id: number
-  event: string
-  status: string
 }

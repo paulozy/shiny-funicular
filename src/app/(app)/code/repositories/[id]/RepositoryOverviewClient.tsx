@@ -4,16 +4,13 @@ import { MFIcon } from '@/components/icons/MFIcon'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
-import { GenerateTemplateModal } from '@/components/templates/GenerateTemplateModal'
-import { EmbeddingsActionButton } from '@/components/embeddings/EmbeddingsActionButton'
-import { EmbeddingsStatusBadge } from '@/components/embeddings/EmbeddingsStatusBadge'
 import { ProjectStackCard } from '@/components/repository/ProjectStackCard'
 import { RepoHealthCard } from '@/components/repository/RepoHealthCard'
-import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
+import { ScorecardCard } from '@/components/repository/ScorecardCard'
 import { syncStatusLabel, syncStatusVariant } from '@/lib/coverage'
 import { openIssueCount } from '@/lib/repo-metrics'
 import { T } from '@/lib/tokens'
-import { EmbeddingsState, RepositoryResponse, isTerminalEmbeddingsStatus } from '@/lib/types/repository'
+import { RepositoryResponse } from '@/lib/types/repository'
 import { apiFetch } from '@/lib/api/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -21,6 +18,12 @@ import { CSSProperties, useCallback, useEffect, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
+  /**
+   * Whether the viewer's role may trigger a sync. Without this the background
+   * re-sync below would fire a request the API answers with 403 on every page
+   * load for read-only members.
+   */
+  canSync?: boolean
 }
 
 function formatDate(value: string): string {
@@ -32,52 +35,17 @@ function formatDate(value: string): string {
   })
 }
 
-export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
-  const router = useRouter()
-  const [templateModalOpen, setTemplateModalOpen] = useState(false)
-  // Local mirror of the embeddings state — the poller updates this without
-  // forcing a full server refetch of the overview.
-  const [embeddingsState, setEmbeddingsState] = useState<EmbeddingsState | undefined>(repo.embeddings_state)
-
-  usePublishScope({ kind: 'repo-overview', repoId: repo.id }, [repo.id])
-
-  const triggerEmbeddings = useCallback(async () => {
-    try {
-      await apiFetch(`/api/repositories/${repo.id}/embeddings`, { method: 'POST' })
-      // Optimistically flip to `pending` so the badge updates without waiting
-      // for the next poll. The server-side state will overwrite this in ~5s.
-      setEmbeddingsState((prev) => ({
-        status: 'pending',
-        count: prev?.count ?? 0,
-        indexed_at: prev?.indexed_at,
-        provider_configured: prev?.provider_configured ?? true,
-      }))
-    } catch {
-      // apiFetch surfaces a toast/error already; leave the badge as-is.
-    }
-  }, [repo.id])
-
-  // Poll while the embedding pipeline is mid-flight. The repo endpoint
-  // returns the full state on each call so we just mirror it locally.
+export function RepositoryOverviewClient({ repo, canSync = false }: RepositoryOverviewClientProps) {
+  // Kick a throttled background re-sync when the repo is opened so metadata
+  // (open PR/issue counts, stars, branches, …) converges after PRs are
+  // merged/closed. Fire-and-forget — the backend throttles repeated calls.
   useEffect(() => {
-    if (!embeddingsState) return
-    if (isTerminalEmbeddingsStatus(embeddingsState.status)) return
+    if (!canSync) return
+    apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' }).catch(() => {})
+  }, [repo.id, canSync])
 
-    const handle = setInterval(async () => {
-      try {
-        const next = await apiFetch<RepositoryResponse>(`/api/repositories/${repo.id}`, { method: 'GET' })
-        if (next.embeddings_state) {
-          setEmbeddingsState(next.embeddings_state)
-        }
-      } catch {
-        /* swallow — next tick retries */
-      }
-    }, 5000)
-    return () => clearInterval(handle)
-  }, [repo.id, embeddingsState])
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'
-  const searchHref = `/code/repositories/${repo.id}/search?branch=${encodeURIComponent(branch)}`
   const settingsHref = `/code/repositories/${repo.id}/settings`
 
   const issueCount = openIssueCount(metadata)
@@ -96,14 +64,6 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
     ['Stars', metadata.star_count ?? '-'],
     ['Forks', metadata.fork_count ?? '-'],
   ]
-
-  // Header CTA is only meaningful when the user actually has to do something
-  // (idle/stale/failed). When the index is healthy or in progress, the
-  // EmbeddingsStatusBadge already communicates the state — the button just
-  // adds noise.
-  const embeddingsNeedsAction =
-    !embeddingsState ||
-    ['idle', 'stale', 'failed'].includes(embeddingsState.status)
 
   const pageStyle: CSSProperties = {
     padding: '20px 24px 28px',
@@ -235,7 +195,6 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
             <Tag>{repo.provider}</Tag>
             <Tag variant={repo.is_private ? 'warn' : 'ok'}>{repo.is_private ? 'privado' : 'público'}</Tag>
             <Tag variant={syncStatusVariant(repo.sync_status)}>{syncStatusLabel(repo.sync_status)}</Tag>
-            <EmbeddingsStatusBadge state={embeddingsState} />
           </div>
           <div style={subtitleStyle}>
             <span style={{ fontFamily: T.mono }}>{repo.full_name}</span>
@@ -246,19 +205,6 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
           </div>
         </div>
         <div style={actionRowStyle}>
-          <Link href={searchHref} style={linkButtonStyle}>
-            <Button variant="primary" size="md">
-              <MFIcon name="search" size={13} />
-              Buscar no repositório
-            </Button>
-          </Link>
-          {embeddingsNeedsAction && (
-            <EmbeddingsActionButton state={embeddingsState} onTrigger={triggerEmbeddings} size="md" />
-          )}
-          <Button variant="default" size="md" onClick={() => setTemplateModalOpen(true)}>
-            <MFIcon name="sparkles" size={13} />
-            Gerar template
-          </Button>
           <Link href={settingsHref} style={linkButtonStyle}>
             <Button variant="default" size="md">
               <MFIcon name="gear" size={13} />
@@ -275,13 +221,6 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
           )}
         </div>
       </div>
-
-      <GenerateTemplateModal
-        isOpen={templateModalOpen}
-        onClose={() => setTemplateModalOpen(false)}
-        repoId={repo.id}
-        onSuccess={(response) => router.push(`/templates/${response.id}`)}
-      />
 
       <div style={metricGridStyle}>
         {metrics.map((metric) => {
@@ -336,7 +275,11 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
           frameworks={metadata.frameworks}
           topics={metadata.topics}
         />
-        <RepoHealthCard repo={repo} embeddingsState={embeddingsState} />
+        <RepoHealthCard repo={repo} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <ScorecardCard scorecard={repo.scorecard} />
       </div>
 
       <section style={cardStyle}>
@@ -352,11 +295,29 @@ export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps
         ))}
         <div style={rowStyle}>
           <span style={{ color: T.faint }}>CI</span>
-          <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>{metadata.has_ci ? 'Configurado' : 'Não detectado'}</Tag>
+          {/* Three states, not two: an absent signal means sync never
+              determined it, which is not the same as "there is no CI". */}
+          {metadata.has_ci === undefined ? (
+            <Tag variant="default">Não verificado</Tag>
+          ) : (
+            <span title={metadata.ci_evidence}>
+              <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>
+                {metadata.has_ci ? 'Configurado' : 'Não encontrado'}
+              </Tag>
+            </span>
+          )}
         </div>
         <div style={{ ...rowStyle, borderBottom: 0 }}>
           <span style={{ color: T.faint }}>Testes</span>
-          <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>{metadata.has_tests ? 'Detectados' : 'Não detectados'}</Tag>
+          {metadata.has_tests === undefined ? (
+            <Tag variant="default">Não verificado</Tag>
+          ) : (
+            <span title={metadata.test_evidence}>
+              <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>
+                {metadata.has_tests ? 'Detectados' : 'Não encontrados'}
+              </Tag>
+            </span>
+          )}
         </div>
       </section>
     </div>

@@ -15,6 +15,8 @@ interface RelationshipDrawerProps {
   selectedEdge: RepositoryGraphEdge | null
   nodes: RepositoryGraphNode[]
   edges: RepositoryGraphEdge[]
+  /** Hides the mutating controls when the caller's role cannot manage edges. */
+  canManage?: boolean
   onCreateRelationship: () => void
   onEditRelationship: (edge: RepositoryGraphEdge) => void
   onDeleteRelationship: (edge: RepositoryGraphEdge) => void
@@ -26,6 +28,7 @@ export function RelationshipDrawer({
   selectedEdge,
   nodes,
   edges,
+  canManage = false,
   onCreateRelationship,
   onEditRelationship,
   onDeleteRelationship,
@@ -120,42 +123,44 @@ export function RelationshipDrawer({
               {selectedEdge.source}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-            <button
-              type="button"
-              onClick={() => onEditRelationship(selectedEdge)}
-              style={{
-                flex: 1,
-                appearance: 'none',
-                border: `1px solid ${T.border}`,
-                borderRadius: T.radius.button,
-                background: T.surface,
-                color: T.ink,
-                padding: '8px 10px',
-                fontSize: 12.5,
-                cursor: 'pointer',
-              }}
-            >
-              Editar
-            </button>
-            <button
-              type="button"
-              onClick={() => onDeleteRelationship(selectedEdge)}
-              style={{
-                flex: 1,
-                appearance: 'none',
-                border: `1px solid ${T.dangerBorder}`,
-                borderRadius: T.radius.button,
-                background: T.dangerBg,
-                color: T.danger,
-                padding: '8px 10px',
-                fontSize: 12.5,
-                cursor: 'pointer',
-              }}
-            >
-              Remover
-            </button>
-          </div>
+          {canManage && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+              <button
+                type="button"
+                onClick={() => onEditRelationship(selectedEdge)}
+                style={{
+                  flex: 1,
+                  appearance: 'none',
+                  border: `1px solid ${T.border}`,
+                  borderRadius: T.radius.button,
+                  background: T.surface,
+                  color: T.ink,
+                  padding: '8px 10px',
+                  fontSize: 12.5,
+                  cursor: 'pointer',
+                }}
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteRelationship(selectedEdge)}
+                style={{
+                  flex: 1,
+                  appearance: 'none',
+                  border: `1px solid ${T.dangerBorder}`,
+                  borderRadius: T.radius.button,
+                  background: T.dangerBg,
+                  color: T.danger,
+                  padding: '8px 10px',
+                  fontSize: 12.5,
+                  cursor: 'pointer',
+                }}
+              >
+                Remover
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     )
@@ -225,24 +230,26 @@ export function RelationshipDrawer({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={onCreateRelationship}
-            style={{
-              marginTop: 'auto',
-              appearance: 'none',
-              border: 0,
-              borderRadius: T.radius.button,
-              background: T.accent,
-              color: T.inkInverse,
-              padding: '8px 12px',
-              fontSize: 12.5,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            + Nova relação a partir daqui
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={onCreateRelationship}
+              style={{
+                marginTop: 'auto',
+                appearance: 'none',
+                border: 0,
+                borderRadius: T.radius.button,
+                background: T.accent,
+                color: T.inkInverse,
+                padding: '8px 12px',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              + Nova relação a partir daqui
+            </button>
+          )}
         </div>
       </aside>
     )

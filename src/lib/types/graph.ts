@@ -1,4 +1,4 @@
-import { RepoProvider, RepositoryAnalysisStatus, RepositoryMetadata, SyncStatus } from '@/lib/types/repository'
+import { RepoProvider, RepositoryMetadata, SyncStatus } from '@/lib/types/repository'
 
 export type RelationshipKind =
   | 'http'
@@ -44,7 +44,6 @@ export interface RepositoryGraphNode {
   url: string
   type: RepoProvider
   metadata?: RepositoryMetadata
-  analysis_status?: RepositoryAnalysisStatus | string | null
   sync_status?: SyncStatus
 }
 

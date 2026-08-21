@@ -10,22 +10,19 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }))
 
-jest.mock('@/components/home/CoPensador', () => ({
-  CoPensador: () => null,
-}))
-
-const baseUser: UserInfo = {
-  id: 'user-1',
-  email: 'user@example.com',
-  full_name: 'User One',
-  role: 'admin',
-  organization: {
-    id: 'org-1',
-    name: 'Org',
-    slug: 'org',
-    role: 'admin',
-  },
+// The API authorizes on the organization membership role and mints both fields
+// from the same value, so the fixture keeps them in step.
+function userWithRole(role: UserInfo['role']): UserInfo {
+  return {
+    id: 'user-1',
+    email: 'user@example.com',
+    full_name: 'User One',
+    role,
+    organization: { id: 'org-1', name: 'Org', slug: 'org', role },
+  }
 }
+
+const baseUser: UserInfo = userWithRole('admin')
 
 const repos: RepositoryListResponse = {
   repositories: [
@@ -36,13 +33,10 @@ const repos: RepositoryListResponse = {
       url: 'https://github.com/org/web',
       provider: 'github',
       is_private: false,
-      analysis_status: 'completed',
-      reviews_count: 5,
       stats: {
-        total_analyses: 10,
-        latest_quality_score: 85,
-        has_analysis: true,
-        last_analyzed_at: '2026-04-30T14:23:15.123Z',
+        has_coverage: true,
+        test_coverage: 76,
+        coverage_status: 'ok' as const,
       },
       organization_id: 'org-1',
       created_at: '2026-01-01T00:00:00Z',
@@ -68,9 +62,23 @@ describe('HomeClient', () => {
   })
 
   it('does not show the settings action for non-admin users', () => {
-    render(<HomeClient user={{ ...baseUser, role: 'developer' }} initialRepos={repos} orgConfig={null} />)
+    render(<HomeClient user={userWithRole('developer')} initialRepos={repos} orgConfig={null} />)
 
     expect(screen.queryByRole('button', { name: /configurações/i })).not.toBeInTheDocument()
+  })
+
+  // The API gates repository creation at developer. A viewer that still sees
+  // the button would only discover the restriction by clicking it.
+  it('hides "Novo repo" from a viewer', () => {
+    render(<HomeClient user={userWithRole('viewer')} initialRepos={repos} orgConfig={null} />)
+
+    expect(screen.queryByRole('button', { name: /novo repo/i })).not.toBeInTheDocument()
+  })
+
+  it('shows "Novo repo" to a developer', () => {
+    render(<HomeClient user={userWithRole('developer')} initialRepos={repos} orgConfig={null} />)
+
+    expect(screen.getByRole('button', { name: /novo repo/i })).toBeInTheDocument()
   })
 
   it('opens the repository actions menu and navigates to repository settings', () => {
@@ -82,13 +90,15 @@ describe('HomeClient', () => {
     expect(push).toHaveBeenCalledWith('/code/repositories/repo-1/settings')
   })
 
-  it('navigates from the repository actions menu to semantic search', () => {
+  // Semantic search is gone, so its menu entry must not linger and route the
+  // user to a dead page.
+  it('offers no semantic-search entry in the repository actions menu', () => {
     render(<HomeClient user={baseUser} initialRepos={repos} orgConfig={null} />)
 
     fireEvent.click(screen.getByRole('button', { name: /abrir menu de web/i }))
-    fireEvent.click(screen.getByRole('menuitem', { name: /buscar no repositório/i }))
 
-    expect(push).toHaveBeenCalledWith('/code/repositories/repo-1/search?branch=main')
+    expect(screen.queryByRole('menuitem', { name: /buscar no repositório/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /configurações/i })).toBeInTheDocument()
   })
 
   it('links repository names to the overview page', () => {
@@ -132,13 +142,8 @@ describe('HomeClient', () => {
               id: 'repo-2',
               name: 'api',
               full_name: 'org/api',
-              analysis_status: null,
-              reviews_count: null,
               stats: {
-                total_analyses: 0,
-                latest_quality_score: 0,
-                has_analysis: false,
-                last_analyzed_at: null,
+                has_coverage: false,
               },
             },
           ],
