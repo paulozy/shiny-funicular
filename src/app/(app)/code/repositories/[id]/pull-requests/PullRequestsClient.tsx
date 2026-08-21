@@ -58,7 +58,7 @@ export function PullRequestsClient({ items, repo, loadError }: PullRequestsClien
         <h1 style={titleStyle}>Pull Requests de {repo.name}</h1>
         <span style={subtitleStyle}>
           {loadError
-            ? 'Não foi possível listar os PRs do GitHub.'
+            ? 'Não foi possível listar os PRs do provedor.'
             : `${totalLabel} · clique em um PR para revisar pela IDP.`}
         </span>
       </div>
