@@ -10,10 +10,6 @@ describe('organization api', () => {
       anthropic_api_key_configured: true,
       anthropic_tokens_per_hour: 30000,
       github_token_configured: false,
-      github_pr_review_enabled: true,
-      embeddings_provider: 'voyage',
-      voyage_api_key_configured: false,
-      embeddings_model: 'voyage-code-3',
       github_client_id_configured: false,
       github_client_secret_configured: false,
       gitlab_client_id_configured: false,
@@ -29,7 +25,6 @@ describe('organization api', () => {
 
     const result = await backendUpdateOrganizationConfig('token', {
       anthropic_tokens_per_hour: 30000,
-      github_pr_review_enabled: true,
     })
 
     expect(result).toEqual(response)
@@ -41,7 +36,6 @@ describe('organization api', () => {
       },
       body: JSON.stringify({
         anthropic_tokens_per_hour: 30000,
-        github_pr_review_enabled: true,
       }),
     })
   })

@@ -61,65 +61,19 @@ describe('PullRequestCard', () => {
     expect(screen.getByText('5 commits')).toBeInTheDocument()
   })
 
-  it('renders the latest review summary and a link to the review when present', () => {
-    const withAnalysis: PullRequestListItemResponse = {
-      ...baseItem,
-      latest_analysis: {
-        id: 'a1',
-        repository_id: 'r1',
-        pull_request_id: 42,
-        type: 'code_review',
-        status: 'completed',
-        issues: [],
-        issue_count: 3,
-        critical_count: 1,
-        error_count: 0,
-        warning_count: 2,
-        info_count: 0,
-        tokens_used: 1000,
-        created_at: '2026-05-18T21:00:00Z',
-        updated_at: '2026-05-18T21:00:00Z',
-      },
-    }
-    render(<PullRequestCard item={withAnalysis} repoId="r1" />)
-    expect(screen.getByText('1 críticos')).toBeInTheDocument()
-    expect(screen.getByText('2 avisos')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /ver revisão/i })).toHaveAttribute(
-      'href',
-      '/code/repositories/r1/pull-requests/42'
-    )
-  })
-
-  it('offers a "Revisar PR" link when there is no review yet', () => {
+  it('links to the PR detail page', () => {
     render(<PullRequestCard item={baseItem} repoId="r1" />)
-    expect(screen.getByText('Sem revisão ainda.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /revisar pr/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /ver alterações/i })).toHaveAttribute(
       'href',
       '/code/repositories/r1/pull-requests/42'
     )
   })
 
-  it('shows "nenhum alerta" when a review exists but has zero issues', () => {
-    const clean: PullRequestListItemResponse = {
-      ...baseItem,
-      latest_analysis: {
-        id: 'a1',
-        repository_id: 'r1',
-        pull_request_id: 42,
-        type: 'code_review',
-        status: 'completed',
-        issues: [],
-        issue_count: 0,
-        critical_count: 0,
-        error_count: 0,
-        warning_count: 0,
-        info_count: 0,
-        tokens_used: 1000,
-        created_at: '2026-05-18T21:00:00Z',
-        updated_at: '2026-05-18T21:00:00Z',
-      },
-    }
-    render(<PullRequestCard item={clean} repoId="r1" />)
-    expect(screen.getByText('nenhum alerta')).toBeInTheDocument()
+  // The AI review pipeline is gone: the card must not advertise reviews or
+  // finding counts anymore.
+  it('shows no review affordance', () => {
+    render(<PullRequestCard item={baseItem} repoId="r1" />)
+    expect(screen.queryByText(/revisão/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /revisar pr/i })).not.toBeInTheDocument()
   })
 })

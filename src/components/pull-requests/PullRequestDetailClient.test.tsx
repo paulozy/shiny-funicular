@@ -1,22 +1,6 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { PullRequestDetailClient } from '@/app/(app)/code/repositories/[id]/pull-requests/[pr_number]/PullRequestDetailClient'
 import { PullRequestDetailResponse } from '@/lib/types/pull_request'
-import { apiFetch } from '@/lib/api/client'
-
-jest.mock('@/lib/api/client', () => ({
-  apiFetch: jest.fn(),
-  AuthError: class AuthError extends Error {
-    code: string
-    status?: number
-    constructor(code: string, message: string, status?: number) {
-      super(message)
-      this.code = code
-      this.status = status
-    }
-  },
-}))
-
-const mockApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>
 
 const basePR: PullRequestDetailResponse['pull_request'] = {
   id: 1,
@@ -43,131 +27,68 @@ function detail(overrides: Partial<PullRequestDetailResponse> = {}): PullRequest
 }
 
 describe('PullRequestDetailClient', () => {
-  beforeEach(() => mockApiFetch.mockReset())
-
-  it('shows an empty state with a "Revisar PR" button when there is no review', () => {
+  it('renders the PR identity and branch flow', () => {
     render(
       <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
     )
-    expect(screen.getByText(/ainda não foi revisado/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /revisar pr/i })).toBeInTheDocument()
+    expect(screen.getByText('Refactor auth middleware')).toBeInTheDocument()
+    expect(screen.getByText('#42')).toBeInTheDocument()
+    expect(screen.getByText('feat/auth')).toBeInTheDocument()
+    expect(screen.getByText('main')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /abrir no github/i })).toHaveAttribute(
+      'href',
+      'https://github.com/owner/repo/pull/42'
+    )
   })
 
-  it('renders the summary and findings when a completed review exists', () => {
-    const withReview = detail({
-      latest_analysis: {
-        id: 'a1',
-        repository_id: 'r1',
-        pull_request_id: 42,
-        type: 'code_review',
-        status: 'completed',
-        summary_text: 'Revisão concluída com pontos de atenção.',
-        issues: [
-          {
-            severity: 'critical',
-            category: 'security',
-            title: 'SQL injection possível',
-            description: 'Query concatena input do usuário.',
-            file: 'internal/db/user.go',
-            line: 88,
-            suggestion: 'Use query parametrizada.',
-          },
-        ],
-        issue_count: 1,
-        critical_count: 1,
-        error_count: 0,
-        warning_count: 0,
-        info_count: 0,
-        tokens_used: 1200,
-        created_at: '2026-05-18T21:00:00Z',
-        updated_at: '2026-05-18T21:00:00Z',
-      },
-    })
-    render(
-      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={withReview} loadError={null} />
-    )
-    expect(screen.getByText(/Revisão concluída com pontos de atenção/i)).toBeInTheDocument()
-    expect(screen.getByText('SQL injection possível')).toBeInTheDocument()
-    expect(screen.getByText('internal/db/user.go:88')).toBeInTheDocument()
-    expect(screen.getByText(/Use query parametrizada/i)).toBeInTheDocument()
-  })
-
-  it('shows a load error state', () => {
-    render(
-      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={null} loadError="503" />
-    )
-    expect(screen.getByRole('alert')).toHaveTextContent(/não foi possível carregar/i)
-  })
-
-  it('triggers a review via the analyze endpoint and flips to "Revisando…"', async () => {
-    mockApiFetch.mockResolvedValueOnce({ status: 'queued' } as never)
-    render(
-      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
-    )
-    fireEvent.click(screen.getByRole('button', { name: /revisar pr/i }))
-
-    await waitFor(() =>
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        '/api/repositories/r1/pull-requests/42/analyze',
-        { method: 'POST' }
-      )
-    )
-    expect(await screen.findByRole('button', { name: /revisando/i })).toBeInTheDocument()
-  })
-
-  it('shows the diff even before any review has run', () => {
+  it('renders the diff for each changed file', () => {
     const withFiles = detail({
       files: [
         {
-          sha: 's',
-          filename: 'a.go',
+          sha: 's1',
+          filename: 'internal/auth/middleware.go',
           status: 'modified',
-          additions: 1,
-          deletions: 0,
-          changes: 1,
-          patch: ['@@ -1,1 +1,2 @@', ' ctx', '+new line here'].join('\n'),
+          additions: 2,
+          deletions: 1,
+          changes: 3,
+          patch: ['@@ -1,2 +1,3 @@', ' context line', '+added line'].join('\n'),
         },
       ],
     })
     render(
       <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={withFiles} loadError={null} />
     )
-    expect(screen.getByText(/Alterações/)).toBeInTheDocument()
-    expect(screen.getByText(/new line here/)).toBeInTheDocument()
-    // and the review section still invites a first review
-    expect(screen.getByText(/ainda não foi revisado/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 arquivo/)).toBeInTheDocument()
+    expect(screen.getByText('internal/auth/middleware.go')).toBeInTheDocument()
+    expect(screen.getByText(/added line/)).toBeInTheDocument()
   })
 
-  it('stops polling and warns after consecutive errors', async () => {
-    jest.useFakeTimers()
-    try {
-      mockApiFetch.mockImplementation((url: unknown) => {
-        if (typeof url === 'string' && url.endsWith('/analyze')) {
-          return Promise.resolve({ status: 'queued' } as never)
-        }
-        // every poll (GET detail) fails
-        return Promise.reject(new Error('network down'))
-      })
+  it('reports when the PR carries no diff', () => {
+    render(
+      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
+    )
+    expect(screen.getByText(/Nenhum diff disponível/i)).toBeInTheDocument()
+  })
 
-      render(
-        <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
-      )
-      fireEvent.click(screen.getByRole('button', { name: /revisar pr/i }))
+  it('shows a load error state', () => {
+    render(
+      <PullRequestDetailClient
+        repoId="r1"
+        prNumber={42}
+        initialDetail={null}
+        loadError="github indisponível"
+      />
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent(/github indisponível/i)
+  })
 
-      // flush the POST so `reviewing` flips on and the polling interval is set
-      await act(async () => {})
-
-      // three failed polls (4s each) → stop with a warning, not a 3-min silent wait
-      for (let i = 0; i < 3; i++) {
-        await act(async () => {
-          await jest.advanceTimersByTimeAsync(4000)
-        })
-      }
-
-      expect(screen.getByText(/não foi possível verificar/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /revisar pr/i })).toBeInTheDocument()
-    } finally {
-      jest.useRealTimers()
-    }
+  // The AI review pipeline is gone: nothing on this page should offer to
+  // review the PR or surface findings.
+  it('offers no AI review affordance', () => {
+    render(
+      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
+    )
+    expect(screen.queryByRole('button', { name: /revisar/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/revisão da ia/i)).not.toBeInTheDocument()
   })
 })

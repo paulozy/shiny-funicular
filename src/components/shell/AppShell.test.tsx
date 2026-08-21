@@ -104,23 +104,6 @@ describe('AppShell sidebar', () => {
     expect(screen.getByText('busca').closest('a')).toBeNull()
   })
 
-  it('can collapse and expand the AI panel', () => {
-    renderShell(
-      <AppShell user={user} activeHub="code" aiPanel={<div>AI content</div>}>
-        <div>content</div>
-      </AppShell>
-    )
-
-    expect(screen.getByText('AI content')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /recolher co-pensador/i }))
-    expect(screen.queryByText('AI content')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /expandir co-pensador/i })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /expandir co-pensador/i }))
-    expect(screen.getByText('AI content')).toBeInTheDocument()
-  })
-
   describe('collapsible sidebar', () => {
     beforeEach(() => {
       clearSidebarCookie()

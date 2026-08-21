@@ -3,8 +3,8 @@ import NextTopLoader from 'nextjs-toploader'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'idp.ai — Plataforma de Desenvolvimento',
-  description: 'Plataforma integrada para observabilidade, análise e co-pensador IA',
+  title: 'IDP — Plataforma de Desenvolvimento',
+  description: 'Catálogo de repositórios, pull requests, grafo de dependências e documentação',
 }
 
 export default function RootLayout({

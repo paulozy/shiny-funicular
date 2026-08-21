@@ -12,7 +12,7 @@ describe('RepoTabBar', () => {
     mockPathname = '/code/repositories/repo-1'
   })
 
-  it('renders the four repository sections with correct hrefs', () => {
+  it('renders the repository sections with correct hrefs', () => {
     render(<RepoTabBar repoId="repo-1" />)
 
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('href', '/code/repositories/repo-1')
@@ -20,12 +20,12 @@ describe('RepoTabBar', () => {
       'href',
       '/code/repositories/repo-1/pull-requests'
     )
-    expect(screen.getByRole('link', { name: 'Buscar' })).toHaveAttribute('href', '/code/repositories/repo-1/search')
     expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute(
       'href',
       '/code/repositories/repo-1/settings'
     )
-    // Removed for the MVP (analysis/stub):
+    // Routes that no longer exist must not be linked:
+    expect(screen.queryByRole('link', { name: 'Buscar' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Alertas' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Arquivos' })).not.toBeInTheDocument()
   })
@@ -41,13 +41,6 @@ describe('RepoTabBar', () => {
     render(<RepoTabBar repoId="repo-1" />)
 
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
-  })
-
-  it('marks the search tab as active for any nested search path', () => {
-    mockPathname = '/code/repositories/repo-1/search'
-    render(<RepoTabBar repoId="repo-1" />)
-
-    expect(screen.getByRole('link', { name: 'Buscar' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('respects the activeTab override when the pathname is ambiguous', () => {

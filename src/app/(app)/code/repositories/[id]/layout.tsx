@@ -1,13 +1,9 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { CoPensador } from '@/components/home/CoPensador'
-import { RepoSearchBox } from '@/components/search/RepoSearchBox'
 import { AppShell } from '@/components/shell/AppShell'
 import { StickyRepoTabBar } from '@/components/shell/StickyRepoTabBar'
 import { backendGetMe } from '@/lib/api/auth'
-import { backendGetOrganizationConfig } from '@/lib/api/organization'
 import { backendGetRepositories } from '@/lib/api/repositories'
-import { getDefaultSearchBranch } from '@/lib/search'
 
 interface RepoLayoutProps {
   children: React.ReactNode
@@ -41,19 +37,12 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
     redirect('/login')
   }
 
-  const [repos, orgConfig] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
-    user.role === 'admin'
-      ? backendGetOrganizationConfig(accessToken).catch(() => null)
-      : Promise.resolve(null),
-  ])
+  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
 
   const repo = repos?.repositories.find((item) => item.id === id)
   if (!repo || !repos) {
     notFound()
   }
-
-  const branch = getDefaultSearchBranch(repo)
 
   return (
     <AppShell
@@ -63,8 +52,6 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
         { label: 'Code', href: '/' },
         { label: repo.name, href: `/code/repositories/${repo.id}` },
       ]}
-      searchSlot={<RepoSearchBox repoId={repo.id} defaultBranch={branch} />}
-      aiPanel={<CoPensador repos={repos} orgConfig={orgConfig} focusedRepo={repo} />}
     >
       <StickyRepoTabBar repoId={repo.id} />
       {children}

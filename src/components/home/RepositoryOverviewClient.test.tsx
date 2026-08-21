@@ -14,13 +14,10 @@ const repo: RepositoryResponse = {
   url: 'https://github.com/org/web',
   provider: 'github',
   is_private: false,
-  analysis_status: 'completed',
-  reviews_count: 5,
   stats: {
-    total_analyses: 10,
-    latest_quality_score: 85,
-    has_analysis: true,
-    last_analyzed_at: '2026-04-30T14:23:15.123Z',
+    has_coverage: true,
+    test_coverage: 76,
+    coverage_status: 'ok' as const,
   },
   metadata: {
     default_branch: 'develop',
@@ -50,21 +47,21 @@ describe('RepositoryOverviewClient', () => {
     expect(screen.getByText('PRs abertos')).toBeInTheDocument()
     expect(screen.getByText('Issues')).toBeInTheDocument()
     expect(screen.getByText('Contribuidores')).toBeInTheDocument()
-    // analysis-derived UI is gone (no quality score, analysis status or coverage)
+    // AI-derived UI is gone: no quality score, no analysis status, no
+    // semantic-search entry point.
     expect(screen.queryByText('85/100')).not.toBeInTheDocument()
     expect(screen.queryByText(/concluída/i)).not.toBeInTheDocument()
-    expect(screen.queryByText('76%')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /buscar no repositório/i })).toHaveAttribute(
-      'href',
-      '/code/repositories/repo-1/search?branch=develop'
-    )
+    expect(screen.queryByRole('link', { name: /buscar no repositório/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /gerar template/i })).not.toBeInTheDocument()
+    // coverage survives — it comes from the CI upload, not from an analysis
+    expect(screen.getByLabelText('Coverage: 76.0%')).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /configurações/i }).some((link) => link.getAttribute('href') === '/code/repositories/repo-1/settings')).toBe(true)
   })
 
   it('renders stack and metadata fallbacks safely', () => {
     render(
       <RepositoryOverviewClient
-        repo={{ ...repo, analysis_status: null, reviews_count: null, stats: undefined, metadata: {} }}
+        repo={{ ...repo, stats: undefined, metadata: {} }}
       />
     )
 

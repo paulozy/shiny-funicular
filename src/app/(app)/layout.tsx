@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers'
 import { COOKIE_SIDEBAR_STATE } from '@/lib/auth/edge-cookies'
-import { CoPensadorScopeProvider } from '@/components/shell/CoPensadorScopeProvider'
 import {
   SidebarMode,
   SidebarPreferenceProvider,
@@ -15,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarPreferenceProvider initialMode={initialMode}>
-      <CoPensadorScopeProvider>{children}</CoPensadorScopeProvider>
+      {children}
     </SidebarPreferenceProvider>
   )
 }

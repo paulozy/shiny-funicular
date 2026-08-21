@@ -3,7 +3,6 @@
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 import { PullRequestList } from '@/components/pull-requests/PullRequestList'
-import { usePublishScope } from '@/components/shell/CoPensadorScopeProvider'
 import { PullRequestListItemResponse } from '@/lib/types/pull_request'
 import { RepositoryResponse } from '@/lib/types/repository'
 
@@ -14,7 +13,6 @@ interface PullRequestsClientProps {
 }
 
 export function PullRequestsClient({ items, repo, loadError }: PullRequestsClientProps) {
-  usePublishScope({ kind: 'repo-pulls', repoId: repo.id }, [repo.id])
 
   const pageStyle: CSSProperties = {
     padding: '24px 28px 32px',

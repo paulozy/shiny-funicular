@@ -53,12 +53,14 @@ export function RepoNode({ data, selected }: NodeProps) {
     gap: 6,
   }
 
+  // The dot reflects sync health — the only per-repo pipeline status left now
+  // that analysis is gone.
   const statusTone =
-    node.analysis_status === 'completed'
+    node.sync_status === 'synced'
       ? T.ok
-      : node.analysis_status === 'failed'
+      : node.sync_status === 'error'
         ? T.danger
-        : node.analysis_status === 'in_progress'
+        : node.sync_status === 'syncing'
           ? T.accent
           : T.faint
 

@@ -107,7 +107,6 @@ export function OnboardingTutorial({ orgConfig, canConfigure = false, onImportRe
                 {[
                   { key: 'GitHub Token', value: orgConfig.github_token_configured },
                   { key: 'Chave Anthropic', value: orgConfig.anthropic_api_key_configured },
-                  { key: 'Chave Voyage', value: orgConfig.voyage_api_key_configured },
                 ].map((item) => (
                   <div key={item.key} style={configKeyStyle(!!item.value)}>
                     <MFIcon name={item.value ? 'check' : 'x'} size={12} color={item.value ? T.ok : T.danger} />
@@ -118,7 +117,7 @@ export function OnboardingTutorial({ orgConfig, canConfigure = false, onImportRe
                 ))}
               </div>
             ) : (
-              <div style={stepTextStyle}>Configure as chaves e features da organização antes de ativar os fluxos com IA.</div>
+              <div style={stepTextStyle}>Configure as chaves e integrações da organização antes de importar repositórios.</div>
             )}
             <Button variant="default" size="sm" onClick={() => router.push('/settings')}>
               Configurar Organização
