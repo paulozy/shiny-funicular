@@ -21,6 +21,7 @@ import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { DocMarkdownEditor } from '@/components/docs/DocMarkdownEditor'
 import { OrgDocsTemplateModal } from '@/components/docs/OrgDocsTemplateModal'
+import { canGenerateOrgDocs } from '@/lib/permissions'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
 
@@ -43,7 +44,7 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
 
-  const canManage = user.organization?.role === 'admin'
+  const canManage = canGenerateOrgDocs(user)
 
   // Reset edit mode whenever the user switches docs or types — saving
   // mid-switch would otherwise leak the previous type's draft.

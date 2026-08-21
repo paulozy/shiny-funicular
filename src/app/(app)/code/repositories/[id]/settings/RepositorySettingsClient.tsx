@@ -16,13 +16,13 @@ import { CoverageTokensSection } from '@/components/repository/CoverageTokensSec
 interface RepositorySettingsClientProps {
   repo: RepositoryResponse
   orgConfig: OrganizationConfigResponse | null
-  canConfigureOrganization: boolean
+  canManageCoverageTokens: boolean
 }
 
 export function RepositorySettingsClient({
   repo,
   orgConfig,
-  canConfigureOrganization,
+  canManageCoverageTokens,
 }: RepositorySettingsClientProps) {
 
   const pageStyle: CSSProperties = {
@@ -127,7 +127,7 @@ export function RepositorySettingsClient({
       <div style={layoutStyle}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <section style={sectionStyle}>
-          <CoverageTokensSection repo={repo} canManage={canConfigureOrganization} />
+          <CoverageTokensSection repo={repo} canManage={canManageCoverageTokens} />
         </section>
         </div>
 

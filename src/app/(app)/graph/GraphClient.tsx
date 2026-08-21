@@ -19,6 +19,7 @@ import { RelationshipDrawer } from '@/components/graph/RelationshipDrawer'
 import { RelationshipModal } from '@/components/graph/RelationshipModal'
 import { KIND_STYLES } from '@/lib/graph/edge-styles'
 import { Button } from '@/components/ui/Button'
+import { canManageRelationships } from '@/lib/permissions'
 import { MFIcon } from '@/components/icons/MFIcon'
 
 interface GraphClientProps {
@@ -129,12 +130,15 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
     background: T.bg,
   }
 
+  const mayManage = canManageRelationships(user)
+
   return (
     <AppShell
       user={user}
       activeHub="code"
       breadcrumb={[{ label: 'Code', href: '/' }, { label: 'Grafo' }]}
       topRight={
+        mayManage ? (
         <Button
           variant="primary"
           size="md"
@@ -145,6 +149,7 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
           <MFIcon name="plus" size={12} />
           Nova relação
         </Button>
+        ) : undefined
       }
     >
       <CodeHubTabBar activeTab="graph" />
@@ -207,6 +212,7 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
           selectedEdge={selectedEdge}
           nodes={nodes}
           edges={edges}
+              canManage={mayManage}
           onCreateRelationship={() =>
             setModalState({
               open: true,

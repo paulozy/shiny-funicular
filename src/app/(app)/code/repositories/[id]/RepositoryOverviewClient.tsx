@@ -17,6 +17,12 @@ import { CSSProperties, useCallback, useEffect, useState } from 'react'
 
 interface RepositoryOverviewClientProps {
   repo: RepositoryResponse
+  /**
+   * Whether the viewer's role may trigger a sync. Without this the background
+   * re-sync below would fire a request the API answers with 403 on every page
+   * load for read-only members.
+   */
+  canSync?: boolean
 }
 
 function formatDate(value: string): string {
@@ -28,13 +34,14 @@ function formatDate(value: string): string {
   })
 }
 
-export function RepositoryOverviewClient({ repo }: RepositoryOverviewClientProps) {
+export function RepositoryOverviewClient({ repo, canSync = false }: RepositoryOverviewClientProps) {
   // Kick a throttled background re-sync when the repo is opened so metadata
   // (open PR/issue counts, stars, branches, …) converges after PRs are
   // merged/closed. Fire-and-forget — the backend throttles repeated calls.
   useEffect(() => {
+    if (!canSync) return
     apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' }).catch(() => {})
-  }, [repo.id])
+  }, [repo.id, canSync])
 
   const metadata = repo.metadata || {}
   const branch = metadata.default_branch || 'main'

@@ -10,12 +10,11 @@ import { MFIcon } from '@/components/icons/MFIcon'
 
 interface RepositoryGridProps {
   repos: RepositoryListResponse
-  showCreateModal?: () => void
 }
 
 type FilterType = 'todos' | 'hot' | 'alertas'
 
-export function RepositoryGrid({ repos, showCreateModal }: RepositoryGridProps) {
+export function RepositoryGrid({ repos }: RepositoryGridProps) {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<FilterType>('todos')
   const [openMenuRepoId, setOpenMenuRepoId] = useState<string | null>(null)

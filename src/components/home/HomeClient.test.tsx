@@ -10,18 +10,19 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }))
 
-const baseUser: UserInfo = {
-  id: 'user-1',
-  email: 'user@example.com',
-  full_name: 'User One',
-  role: 'admin',
-  organization: {
-    id: 'org-1',
-    name: 'Org',
-    slug: 'org',
-    role: 'admin',
-  },
+// The API authorizes on the organization membership role and mints both fields
+// from the same value, so the fixture keeps them in step.
+function userWithRole(role: UserInfo['role']): UserInfo {
+  return {
+    id: 'user-1',
+    email: 'user@example.com',
+    full_name: 'User One',
+    role,
+    organization: { id: 'org-1', name: 'Org', slug: 'org', role },
+  }
 }
+
+const baseUser: UserInfo = userWithRole('admin')
 
 const repos: RepositoryListResponse = {
   repositories: [
@@ -61,9 +62,23 @@ describe('HomeClient', () => {
   })
 
   it('does not show the settings action for non-admin users', () => {
-    render(<HomeClient user={{ ...baseUser, role: 'developer' }} initialRepos={repos} orgConfig={null} />)
+    render(<HomeClient user={userWithRole('developer')} initialRepos={repos} orgConfig={null} />)
 
     expect(screen.queryByRole('button', { name: /configurações/i })).not.toBeInTheDocument()
+  })
+
+  // The API gates repository creation at developer. A viewer that still sees
+  // the button would only discover the restriction by clicking it.
+  it('hides "Novo repo" from a viewer', () => {
+    render(<HomeClient user={userWithRole('viewer')} initialRepos={repos} orgConfig={null} />)
+
+    expect(screen.queryByRole('button', { name: /novo repo/i })).not.toBeInTheDocument()
+  })
+
+  it('shows "Novo repo" to a developer', () => {
+    render(<HomeClient user={userWithRole('developer')} initialRepos={repos} orgConfig={null} />)
+
+    expect(screen.getByRole('button', { name: /novo repo/i })).toBeInTheDocument()
   })
 
   it('opens the repository actions menu and navigates to repository settings', () => {

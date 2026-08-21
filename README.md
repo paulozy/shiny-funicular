@@ -266,6 +266,21 @@ Tudo vive em `src/lib/tokens.ts` e nos componentes em `src/components/ui/`. Toke
 
 ## Segurança
 
+### Permissões na UI
+
+`src/lib/permissions.ts` espelha a hierarquia de papéis do backend
+(`viewer < developer < maintainer < admin`) e exporta capacidades nomeadas
+(`canCreateRepository`, `canDeleteRepository`, `canManageCoverageTokens`, …),
+uma por rota protegida em `internal/api/routes.go`.
+
+Isso é **só apresentação** — quem autoriza é a API. Esconder um controle que a
+API recusaria é conveniência; mostrar um que ela recusaria é o bug que esse
+módulo evita. Ao adicionar uma ação nova, use uma capacidade em vez de comparar
+o papel na mão, e mantenha o mapa em sincronia com o backend.
+
+O papel considerado é o da **associação à organização** (`organization.role`),
+que é o mesmo em que o backend gateia (`claims.OrganizationRole`).
+
 1. **HttpOnly cookies** — tokens fora do alcance de JS, mitiga XSS.
 2. **SameSite=Lax** — protege contra CSRF mantendo OAuth funcional.
 3. **Secure** em produção — exige HTTPS.
