@@ -88,6 +88,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   session_expired: 'Sessão expirada, faça login novamente',
   oauth_authentication_failed: 'Autenticação OAuth falhou',
   unauthorized: 'Não autorizado',
+  forbidden: 'Seu papel na organização não permite esta ação',
   unknown_error: 'Erro desconhecido',
 }
 

@@ -80,6 +80,9 @@ describe('getErrorMessage', () => {
       'E-mail ou senha incorretos'
     )
     expect(getErrorMessage('invalid_request')).toBe('Dados inválidos')
+    expect(getErrorMessage('forbidden')).toBe(
+      'Seu papel na organização não permite esta ação'
+    )
   })
 
   test('returns fallback for unknown codes', () => {
