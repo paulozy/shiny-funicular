@@ -295,11 +295,29 @@ export function RepositoryOverviewClient({ repo, canSync = false }: RepositoryOv
         ))}
         <div style={rowStyle}>
           <span style={{ color: T.faint }}>CI</span>
-          <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>{metadata.has_ci ? 'Configurado' : 'Não detectado'}</Tag>
+          {/* Three states, not two: an absent signal means sync never
+              determined it, which is not the same as "there is no CI". */}
+          {metadata.has_ci === undefined ? (
+            <Tag variant="default">Não verificado</Tag>
+          ) : (
+            <span title={metadata.ci_evidence}>
+              <Tag variant={metadata.has_ci ? 'ok' : 'warn'}>
+                {metadata.has_ci ? 'Configurado' : 'Não encontrado'}
+              </Tag>
+            </span>
+          )}
         </div>
         <div style={{ ...rowStyle, borderBottom: 0 }}>
           <span style={{ color: T.faint }}>Testes</span>
-          <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>{metadata.has_tests ? 'Detectados' : 'Não detectados'}</Tag>
+          {metadata.has_tests === undefined ? (
+            <Tag variant="default">Não verificado</Tag>
+          ) : (
+            <span title={metadata.test_evidence}>
+              <Tag variant={metadata.has_tests ? 'ok' : 'warn'}>
+                {metadata.has_tests ? 'Detectados' : 'Não encontrados'}
+              </Tag>
+            </span>
+          )}
         </div>
       </section>
     </div>

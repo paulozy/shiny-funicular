@@ -47,6 +47,8 @@ const RepositoryMetadataSchema: z.ZodType<RepositoryMetadata> = z.object({
   commit_count: z.number().optional(),
   contributors: z.number().optional(),
   has_ci: z.boolean().optional(),
+  ci_evidence: z.string().optional(),
+  test_evidence: z.string().optional(),
   has_tests: z.boolean().optional(),
 })
 

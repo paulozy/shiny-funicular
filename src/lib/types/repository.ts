@@ -21,8 +21,14 @@ export interface RepositoryMetadata {
   branch_count?: number
   commit_count?: number
   contributors?: number
+  /**
+   * Tri-state on the wire: true, false, or absent. Absent means sync never
+   * determined it — do not render that as "no".
+   */
   has_ci?: boolean
   has_tests?: boolean
+  ci_evidence?: string
+  test_evidence?: string
 }
 
 export interface RepositoryStats {
