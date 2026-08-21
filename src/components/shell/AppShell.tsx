@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { UserInfo } from '@/lib/types/auth'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { Avatar } from '@/components/ui/Avatar'
 import { ThemeToggle } from '@/components/shell/ThemeToggle'
 import { CommandPalette, CommandPaletteAction } from '@/components/shell/CommandPalette'
 import { useSidebarPreference } from '@/components/shell/SidebarPreferenceProvider'
@@ -31,35 +32,6 @@ const HUBS = [
   { id: 'obs', label: 'Observability', icon: 'star' },
   { id: 'kb', label: 'Knowledge', icon: 'doc' },
 ]
-
-function MFAvatar({ name = 'M', size = 26 }: { name?: string; size?: number }) {
-  const colors = ['#d97757', '#7a4cc8', '#3a8c5a', '#3970bf', '#bf6940', '#52789e']
-  const idx = (name?.charCodeAt(0) || 77) % colors.length
-  const bg = colors[idx]
-
-  return (
-    <div
-      className="mf-avatar"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: bg,
-        color: '#fff',
-        fontSize: size * 0.42,
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        letterSpacing: 0,
-        flexShrink: 0,
-        fontFamily: T.font,
-      }}
-    >
-      {(name || 'M').slice(0, 1).toUpperCase()}
-    </div>
-  )
-}
 
 export function AppShell({
   user,
@@ -385,7 +357,7 @@ export function AppShell({
         </div>
 
         <div style={userFooterStyle}>
-          <MFAvatar name={user.full_name} size={28} />
+          <Avatar name={user.full_name} size={28} />
           {!sidebarCollapsed && (
             <div style={userNameStyle}>
               <span style={userInitialStyle}>{user.full_name}</span>

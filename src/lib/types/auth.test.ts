@@ -83,6 +83,9 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage('forbidden')).toBe(
       'Seu papel na organização não permite esta ação'
     )
+    expect(getErrorMessage('organization_requires_invite')).toContain('Peça um convite')
+    expect(getErrorMessage('invite_rejected')).toContain('Convite inválido')
+    expect(getErrorMessage('last_admin')).toContain('pelo menos um admin')
   })
 
   test('returns fallback for unknown codes', () => {

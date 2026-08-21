@@ -10,6 +10,7 @@ import { AppShell } from '@/components/shell/AppShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
+import { MembersSection } from '@/components/organization/MembersSection'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -248,7 +249,7 @@ function GitLabCallbackTutorial() {
   )
 }
 
-type Tab = 'ia' | 'github' | 'oauth'
+type Tab = 'ia' | 'github' | 'oauth' | 'members'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
@@ -594,13 +595,15 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
             <h1 style={titleStyle}>Configurações</h1>
           </div>
           <div style={{ flex: 1 }} />
-          <div style={headerButtonGroupStyle}>
-            {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
-            <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
-              <MFIcon name="check" size={12} />
-              Salvar
-            </Button>
-          </div>
+          {activeTab !== 'members' && (
+            <div style={headerButtonGroupStyle}>
+              {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
+              <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
+                <MFIcon name="check" size={12} />
+                Salvar
+              </Button>
+            </div>
+          )}
         </div>
 
         <div style={tabBarStyle}>
@@ -612,6 +615,9 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           </button>
           <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
             OAuth
+          </button>
+          <button style={tabStyle(activeTab === 'members')} onClick={() => setActiveTab('members')}>
+            Membros
           </button>
         </div>
 
@@ -690,6 +696,12 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 onChange={(value) => setSecret('github_token', value)}
                 onClear={() => clearSecret('github_token')}
               />
+            </section>
+          )}
+
+          {activeTab === 'members' && (
+            <section style={sectionStyle}>
+              <MembersSection user={user} />
             </section>
           )}
 

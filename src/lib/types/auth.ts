@@ -89,6 +89,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_authentication_failed: 'Autenticação OAuth falhou',
   unauthorized: 'Não autorizado',
   forbidden: 'Seu papel na organização não permite esta ação',
+  organization_requires_invite:
+    'Já existe uma organização com esse nome. Peça um convite a um admin para entrar.',
+  invite_rejected: 'Convite inválido, expirado, já usado, ou emitido para outro e-mail',
+  already_member: 'Esse e-mail já faz parte da organização',
+  last_admin: 'A organização precisa manter pelo menos um admin',
+  self_change_not_allowed: 'Você não pode alterar ou remover a si mesmo',
+  invalid_email: 'Informe um e-mail válido',
+  invalid_role: 'Papel inválido',
   unknown_error: 'Erro desconhecido',
 }
 

@@ -54,4 +54,5 @@ export const canDeleteRepository = (user: Actor) => hasRole(user, 'maintainer')
 export const canManageCoverageTokens = (user: Actor) => hasRole(user, 'maintainer')
 
 export const canConfigureOrganization = (user: Actor) => hasRole(user, 'admin')
+export const canManageMembers = (user: Actor) => hasRole(user, 'admin')
 export const canGenerateOrgDocs = (user: Actor) => hasRole(user, 'admin')
