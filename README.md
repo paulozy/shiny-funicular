@@ -223,6 +223,10 @@ cd ../backend && make e2e-stack   # deixa a stack aberta em :3000 (Ctrl-C encerr
 cd ../frontend && npm run e2e
 ```
 
+Se as specs falharem com o formulário recarregando vazio, apague o `.next`: um
+build de produção deixado na pasta faz o dev server servir chunks 404, a página
+não hidrata, e o form vira submit nativo.
+
 Filtrar suíte específica:
 
 ```bash

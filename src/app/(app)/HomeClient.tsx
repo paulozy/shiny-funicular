@@ -102,6 +102,13 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
       breadcrumb={[{ label: 'Code', href: '/' }, { label: isEmpty ? 'Onboarding' : 'todos os repositórios' }]}
       topRight={topRightContent}
     >
+      {/* Above the branch on purpose: an organization with no repositories yet
+          is exactly when someone is most likely to be onboarding, and inside
+          the non-empty branch the banner would never reach them. */}
+      <div style={{ padding: '16px 28px 0' }}>
+        <OnboardingBanner />
+      </div>
+
       {isEmpty ? (
         <SetupChecklist
           orgConfig={orgConfig}
@@ -113,9 +120,6 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
         <>
           <CodeHubTabBar activeTab="repositories" />
           <div style={contentStyle}>
-          {/* Renders itself only while a required step is pending, so most
-              people never see it. */}
-          <OnboardingBanner />
           <div style={headerStyle}>
             <div>
               <div style={eyebrowStyle}>Code Hub · {repos?.total || 0} repos</div>

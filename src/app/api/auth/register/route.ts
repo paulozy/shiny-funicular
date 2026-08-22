@@ -17,11 +17,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!body.organization_name) {
+    // Registration has two shapes: create an organization, which needs a name,
+    // or join one with an invite, which needs the token and no name at all.
+    // Requiring the name unconditionally — as this did, from before invites
+    // existed — made accepting an invite through the UI impossible.
+    if (!body.invite_token && !body.organization_name) {
       return NextResponse.json(
         {
           error: 'invalid_request',
-          message: 'Nome da organização é obrigatório',
+          message: 'Informe o nome da organização ou um convite',
         },
         { status: 400 }
       )

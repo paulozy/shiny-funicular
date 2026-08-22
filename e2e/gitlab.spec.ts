@@ -36,14 +36,19 @@ async function register(page: Page) {
   const org = uniqueOrg()
 
   await page.goto('/register')
-  await page.getByLabel('Nome completo').fill(org.fullName)
-  await page.getByLabel('E-mail').fill(org.email)
-  await page.getByLabel('Senha', { exact: false }).first().fill(org.password)
-  await page.getByLabel('Nome da organização').fill(org.orgName)
-  await page.getByRole('button', { name: /criar conta|registrar|cadastrar/i }).click()
 
-  // Landing anywhere inside the app means the session cookie was set.
-  await expect(page).not.toHaveURL(/\/register/, { timeout: 20_000 })
+  // Retried as a whole: before React attaches its submit handler the button
+  // performs a native GET submit, which reloads /register with the fields
+  // cleared — so refilling is part of the retry.
+  await expect(async () => {
+    await page.getByLabel('Nome completo').fill(org.fullName)
+    await page.getByLabel('E-mail').fill(org.email)
+    await page.getByLabel('Senha', { exact: false }).first().fill(org.password)
+    await page.getByLabel('Nome da organização').fill(org.orgName)
+    await page.getByRole('button', { name: /criar conta|registrar|cadastrar/i }).click()
+    // Landing anywhere inside the app means the session cookie was set.
+    await expect(page).not.toHaveURL(/\/register/, { timeout: 5_000 })
+  }).toPass({ timeout: 60_000 })
   return org
 }
 
