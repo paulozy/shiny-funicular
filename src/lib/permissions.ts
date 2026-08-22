@@ -54,7 +54,12 @@ export const canDeleteRepository = (user: Actor) => hasRole(user, 'maintainer')
 export const canManageCoverageTokens = (user: Actor) => hasRole(user, 'maintainer')
 export const canAssignRepositoryOwner = (user: Actor) => hasRole(user, 'maintainer')
 export const canManageTeams = (user: Actor) => hasRole(user, 'maintainer')
+export const canManageGlossary = (user: Actor) => hasRole(user, 'maintainer')
+// Assigning an onboarding is the same bar as putting someone on a team;
+// composing the flows themselves is an admin concern, like membership.
+export const canAssignOnboarding = (user: Actor) => hasRole(user, 'maintainer')
 
 export const canConfigureOrganization = (user: Actor) => hasRole(user, 'admin')
 export const canManageMembers = (user: Actor) => hasRole(user, 'admin')
 export const canGenerateOrgDocs = (user: Actor) => hasRole(user, 'admin')
+export const canManageOnboarding = (user: Actor) => hasRole(user, 'admin')

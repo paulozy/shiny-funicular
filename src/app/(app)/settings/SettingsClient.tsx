@@ -12,10 +12,13 @@ import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { MembersSection } from '@/components/organization/MembersSection'
 import { TeamsSection } from '@/components/organization/TeamsSection'
+import { OnboardingFlowsSection } from '@/components/organization/OnboardingFlowsSection'
+import { GlossarySection } from '@/components/organization/GlossarySection'
 import { Tag } from '@/components/ui/Tag'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { MFIcon } from '@/components/icons/MFIcon'
+import { canManageGlossary, canManageOnboarding } from '@/lib/permissions'
 
 interface SettingsClientProps {
   user: UserInfo
@@ -301,7 +304,7 @@ function GitLabCallbackTutorial() {
   )
 }
 
-type Tab = 'ia' | 'github' | 'gitlab' | 'oauth' | 'members' | 'teams'
+type Tab = 'ia' | 'github' | 'gitlab' | 'oauth' | 'members' | 'teams' | 'onboarding' | 'glossary'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
@@ -675,6 +678,12 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           <button style={tabStyle(activeTab === 'members')} onClick={() => setActiveTab('members')}>
             Membros
           </button>
+          <button style={tabStyle(activeTab === 'onboarding')} onClick={() => setActiveTab('onboarding')}>
+            Onboarding
+          </button>
+          <button style={tabStyle(activeTab === 'glossary')} onClick={() => setActiveTab('glossary')}>
+            Glossário
+          </button>
           <button style={tabStyle(activeTab === 'teams')} onClick={() => setActiveTab('teams')}>
             Times
           </button>
@@ -789,6 +798,26 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'teams' && (
             <section style={sectionStyle}>
               <TeamsSection />
+            </section>
+          )}
+
+          {activeTab === 'onboarding' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="flag" size={15} color={T.accent} />
+                <span style={sectionTitleStyle}>Fluxos de onboarding</span>
+              </div>
+              <OnboardingFlowsSection canEdit={canManageOnboarding(user)} />
+            </section>
+          )}
+
+          {activeTab === 'glossary' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="doc" size={15} color={T.accent} />
+                <span style={sectionTitleStyle}>Glossário</span>
+              </div>
+              <GlossarySection canEdit={canManageGlossary(user)} />
             </section>
           )}
 

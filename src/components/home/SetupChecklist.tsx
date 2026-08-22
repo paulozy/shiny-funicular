@@ -1,5 +1,15 @@
 'use client'
 
+/**
+ * The admin's platform setup checklist, shown on an empty home: configure the
+ * organization's keys, import the first repository.
+ *
+ * Not to be confused with the member onboarding in `@/components/onboarding` —
+ * different audience (the person setting the platform up, not the person
+ * learning the company) and different content. It was called
+ * OnboardingTutorial, which made the two impossible to tell apart.
+ */
+
 import { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
@@ -7,19 +17,19 @@ import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 
-interface OnboardingTutorialProps {
+interface SetupChecklistProps {
   orgConfig?: OrganizationConfigResponse | null
   canConfigure?: boolean
   canImport?: boolean
   onImportRepo: () => void
 }
 
-export function OnboardingTutorial({
+export function SetupChecklist({
   orgConfig,
   canConfigure = false,
   canImport = false,
   onImportRepo,
-}: OnboardingTutorialProps) {
+}: SetupChecklistProps) {
   const router = useRouter()
   const containerStyle: CSSProperties = {
     padding: '40px 60px',

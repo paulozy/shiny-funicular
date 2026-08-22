@@ -11,7 +11,8 @@ import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { MetricStrip } from '@/components/home/MetricStrip'
 import { RepositoryGrid } from '@/components/home/RepositoryGrid'
 import { NewRepoModal } from '@/components/home/NewRepoModal'
-import { OnboardingTutorial } from '@/components/home/OnboardingTutorial'
+import { SetupChecklist } from '@/components/home/SetupChecklist'
+import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { canConfigureOrganization, canCreateRepository } from '@/lib/permissions'
@@ -101,8 +102,15 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
       breadcrumb={[{ label: 'Code', href: '/' }, { label: isEmpty ? 'Onboarding' : 'todos os repositórios' }]}
       topRight={topRightContent}
     >
+      {/* Above the branch on purpose: an organization with no repositories yet
+          is exactly when someone is most likely to be onboarding, and inside
+          the non-empty branch the banner would never reach them. */}
+      <div style={{ padding: '16px 28px 0' }}>
+        <OnboardingBanner />
+      </div>
+
       {isEmpty ? (
-        <OnboardingTutorial
+        <SetupChecklist
           orgConfig={orgConfig}
           canConfigure={mayConfigureOrg}
           canImport={mayCreateRepo}

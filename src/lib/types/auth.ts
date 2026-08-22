@@ -42,6 +42,13 @@ export interface RegisterRequest {
   password: string
   organization_name?: string
   organization_slug?: string
+  /**
+   * Required to join an organization that already exists. Registration either
+   * creates one — with a name — or joins one with an invite; the type was
+   * missing this field, which is why the BFF could reject the invite path
+   * without anything failing to compile.
+   */
+  invite_token?: string
 }
 
 export interface SelectOrganizationRequest {
