@@ -132,6 +132,25 @@ GITLAB_CALLBACK_URL=http://localhost:3001/auth/callback/gitlab
 
 ---
 
+## Onboarding
+
+Um fluxo de onboarding é conteúdo configurável, não código: um admin monta os
+passos em **Configurações → Onboarding**, o convite escolhe qual fluxo a pessoa
+percorre (ou usa o marcado como padrão), e `/onboarding` é o runner.
+
+O que vale saber ao mexer nessa área:
+
+- **Passo é lente sobre dado vivo.** Passos de repositório, time, documentação,
+  arquitetura e glossário guardam apenas a referência; o servidor resolve na hora,
+  em `GET /api/onboarding/me`. Nada de copiar prosa que envelhece.
+- **Referência pode desaparecer.** Quando some, o passo continua renderizando e
+  explica (`unavailable`). Não é erro, é estado.
+- **`completion_mode` vem do servidor.** É ele que decide se a UI diz "marcado por
+  você" ou "verificado" — não reimplemente essa regra no cliente.
+- **Verificação pendente não é reprovada.** `pending` significa que a plataforma
+  não conseguiu olhar (provedor sem token, pessoa que nunca entrou por ele).
+  Renderizar como falha seria mentira.
+
 ## Estrutura de pastas
 
 ```

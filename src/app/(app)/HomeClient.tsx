@@ -11,7 +11,8 @@ import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { MetricStrip } from '@/components/home/MetricStrip'
 import { RepositoryGrid } from '@/components/home/RepositoryGrid'
 import { NewRepoModal } from '@/components/home/NewRepoModal'
-import { OnboardingTutorial } from '@/components/home/OnboardingTutorial'
+import { SetupChecklist } from '@/components/home/SetupChecklist'
+import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { canConfigureOrganization, canCreateRepository } from '@/lib/permissions'
@@ -102,7 +103,7 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
       topRight={topRightContent}
     >
       {isEmpty ? (
-        <OnboardingTutorial
+        <SetupChecklist
           orgConfig={orgConfig}
           canConfigure={mayConfigureOrg}
           canImport={mayCreateRepo}
@@ -112,6 +113,9 @@ export function HomeClient({ user, initialRepos, orgConfig }: HomeClientProps) {
         <>
           <CodeHubTabBar activeTab="repositories" />
           <div style={contentStyle}>
+          {/* Renders itself only while a required step is pending, so most
+              people never see it. */}
+          <OnboardingBanner />
           <div style={headerStyle}>
             <div>
               <div style={eyebrowStyle}>Code Hub · {repos?.total || 0} repos</div>
