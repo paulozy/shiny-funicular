@@ -135,8 +135,8 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
           href={pr.html_url}
           target="_blank"
           rel="noopener noreferrer"
-          title="Abrir no GitHub"
-          aria-label="Abrir no GitHub"
+          title="Abrir no provedor"
+          aria-label="Abrir no provedor"
           style={{ display: 'inline-flex', alignItems: 'center', color: T.faint, flexShrink: 0 }}
         >
           <MFIcon name="arrow-right" size={13} color="currentColor" />

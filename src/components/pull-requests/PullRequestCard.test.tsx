@@ -25,16 +25,16 @@ const baseItem: PullRequestListItemResponse = {
 }
 
 describe('PullRequestCard', () => {
-  it('links the title to the in-IDP detail page and keeps a GitHub link', () => {
+  it('links the title to the in-IDP detail page and keeps a link to the provider', () => {
     render(<PullRequestCard item={baseItem} repoId="r1" />)
     expect(screen.getByText('#42')).toBeInTheDocument()
 
     const title = screen.getByRole('link', { name: 'Refactor auth middleware' })
     expect(title).toHaveAttribute('href', '/code/repositories/r1/pull-requests/42')
 
-    const github = screen.getByRole('link', { name: 'Abrir no GitHub' })
-    expect(github).toHaveAttribute('href', 'https://github.com/owner/repo/pull/42')
-    expect(github).toHaveAttribute('target', '_blank')
+    const providerLink = screen.getByRole('link', { name: 'Abrir no provedor' })
+    expect(providerLink).toHaveAttribute('href', 'https://github.com/owner/repo/pull/42')
+    expect(providerLink).toHaveAttribute('target', '_blank')
   })
 
   it('shows "Open" tag for non-draft PRs', () => {

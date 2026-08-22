@@ -35,7 +35,7 @@ describe('PullRequestDetailClient', () => {
     expect(screen.getByText('#42')).toBeInTheDocument()
     expect(screen.getByText('feat/auth')).toBeInTheDocument()
     expect(screen.getByText('main')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /abrir no github/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /abrir no provedor/i })).toHaveAttribute(
       'href',
       'https://github.com/owner/repo/pull/42'
     )

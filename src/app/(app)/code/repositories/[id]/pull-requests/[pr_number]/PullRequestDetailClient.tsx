@@ -100,7 +100,7 @@ export function PullRequestDetailClient({
           <a href={pr.html_url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
             <Button variant="default" size="md">
               <MFIcon name="arrow-right" size={13} />
-              Abrir no GitHub
+              Abrir no provedor
             </Button>
           </a>
         </div>

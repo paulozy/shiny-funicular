@@ -26,6 +26,7 @@ interface SettingsClientProps {
 type SecretKey =
   | 'anthropic_api_key'
   | 'github_token'
+  | 'gitlab_token'
   | 'github_client_id'
   | 'github_client_secret'
   | 'gitlab_client_id'
@@ -36,6 +37,7 @@ type SecretState = Record<SecretKey, string>
 const SECRET_LABELS: Record<SecretKey, string> = {
   anthropic_api_key: 'Anthropic API key',
   github_token: 'GitHub token',
+  gitlab_token: 'GitLab token',
   github_client_id: 'GitHub client ID',
   github_client_secret: 'GitHub client secret',
   gitlab_client_id: 'GitLab client ID',
@@ -56,6 +58,7 @@ const LANGUAGE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 const EMPTY_SECRETS: SecretState = {
   anthropic_api_key: '',
   github_token: '',
+  gitlab_token: '',
   github_client_id: '',
   github_client_secret: '',
   gitlab_client_id: '',
@@ -67,6 +70,7 @@ function defaultConfig(config: OrganizationConfigResponse | null): OrganizationC
     anthropic_api_key_configured: config?.anthropic_api_key_configured ?? false,
     anthropic_tokens_per_hour: config?.anthropic_tokens_per_hour ?? 20000,
     github_token_configured: config?.github_token_configured ?? false,
+    gitlab_token_configured: config?.gitlab_token_configured ?? false,
     github_client_id_configured: config?.github_client_id_configured ?? false,
     github_client_secret_configured: config?.github_client_secret_configured ?? false,
     github_callback_url: config?.github_callback_url ?? '',
@@ -83,6 +87,8 @@ function configured(config: OrganizationConfigResponse, key: SecretKey): boolean
       return config.anthropic_api_key_configured
     case 'github_token':
       return config.github_token_configured
+    case 'gitlab_token':
+      return config.gitlab_token_configured
     case 'github_client_id':
       return config.github_client_id_configured
     case 'github_client_secret':
@@ -183,6 +189,51 @@ function GitHubTokenTutorial() {
   )
 }
 
+function GitLabTokenTutorial() {
+  const linkStyle: CSSProperties = { color: T.accent, fontWeight: 500, textDecoration: 'none' }
+  return (
+    <div>
+      <div style={{ fontWeight: 600, color: T.ink, marginBottom: 6, fontSize: 12.5 }}>
+        Como gerar um GitLab token
+      </div>
+      <ol style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
+        <li>
+          Abra{' '}
+          <a
+            href="https://gitlab.com/-/user_settings/personal_access_tokens"
+            target="_blank"
+            rel="noreferrer noopener"
+            style={linkStyle}
+          >
+            gitlab.com/-/user_settings/personal_access_tokens
+          </a>{' '}
+          e clique em <strong>Add new token</strong>.
+        </li>
+        <li>
+          Dê um nome (ex.: <span style={tokenCodeStyle}>IDP</span>) e defina uma expiração.
+        </li>
+        <li>
+          Marque o escopo <span style={tokenCodeStyle}>api</span> — cobre leitura do projeto, merge
+          requests, webhooks e a criação dos MRs de documentação.
+        </li>
+        <li>
+          Clique em <strong>Create personal access token</strong> e copie o valor (começa com{' '}
+          <span style={tokenCodeStyle}>glpat-</span>).
+        </li>
+        <li>Cole no campo abaixo. O GitLab não mostra o token novamente.</li>
+      </ol>
+      <a
+        href="https://gitlab.com/-/user_settings/personal_access_tokens"
+        target="_blank"
+        rel="noreferrer noopener"
+        style={{ ...linkStyle, display: 'inline-block', marginTop: 8 }}
+      >
+        Abrir criação do token →
+      </a>
+    </div>
+  )
+}
+
 // Small helper trigger that opens a Tooltip with step-by-step guidance,
 // rendered above the related input. Keeps the "how do I fill this?" affordance
 // consistent across the settings tabs.
@@ -250,7 +301,7 @@ function GitLabCallbackTutorial() {
   )
 }
 
-type Tab = 'ia' | 'github' | 'oauth' | 'members' | 'teams'
+type Tab = 'ia' | 'github' | 'gitlab' | 'oauth' | 'members' | 'teams'
 
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
@@ -266,6 +317,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   const summaryItems = [
     { label: 'Anthropic', ready: config.anthropic_api_key_configured },
     { label: 'GitHub token', ready: config.github_token_configured },
+    { label: 'GitLab token', ready: config.gitlab_token_configured },
     { label: 'OAuth GitHub', ready: config.github_client_id_configured && config.github_client_secret_configured },
     { label: 'OAuth GitLab', ready: config.gitlab_client_id_configured && config.gitlab_client_secret_configured },
   ]
@@ -614,6 +666,9 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           <button style={tabStyle(activeTab === 'github')} onClick={() => setActiveTab('github')}>
             GitHub
           </button>
+          <button style={tabStyle(activeTab === 'gitlab')} onClick={() => setActiveTab('gitlab')}>
+            GitLab
+          </button>
           <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
             OAuth
           </button>
@@ -699,6 +754,28 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
                 isConfigured={configured(config, 'github_token')}
                 onChange={(value) => setSecret('github_token', value)}
                 onClear={() => clearSecret('github_token')}
+              />
+            </section>
+          )}
+
+          {activeTab === 'gitlab' && (
+            <section style={sectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <MFIcon name="branch" size={15} color={T.accent} />
+                <span style={sectionTitleStyle}>GitLab</span>
+              </div>
+              <div style={statusRowStyle}>
+                <Tag variant={configured(config, 'gitlab_token') ? 'ok' : 'warn'}>
+                  Token {configured(config, 'gitlab_token') ? 'configurado' : 'pendente'}
+                </Tag>
+              </div>
+              <HelpHint label="Como gerar um GitLab token?" content={<GitLabTokenTutorial />} />
+              <SecretField
+                name="gitlab_token"
+                value={secrets.gitlab_token}
+                isConfigured={configured(config, 'gitlab_token')}
+                onChange={(value) => setSecret('gitlab_token', value)}
+                onClear={() => clearSecret('gitlab_token')}
               />
             </section>
           )}

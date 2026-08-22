@@ -194,6 +194,16 @@ plans/                          # specs de produto por feature
 | `npm run test:watch` | Jest em modo watch |
 | `npm run e2e` | Playwright E2E (sobe o dev server automaticamente) |
 
+O Playwright sobe o dev server sozinho, mas **não** sobe o backend. As specs em
+`e2e/` rodam contra a stack determinística do repo do backend — Postgres e Redis
+descartáveis, um GitLab falso servindo payloads capturados do gitlab.com, e o
+servidor real:
+
+```bash
+cd ../backend && make e2e-stack   # deixa a stack aberta em :3000 (Ctrl-C encerra)
+cd ../frontend && npm run e2e
+```
+
 Filtrar suíte específica:
 
 ```bash

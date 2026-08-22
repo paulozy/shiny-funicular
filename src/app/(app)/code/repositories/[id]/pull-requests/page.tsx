@@ -26,7 +26,7 @@ export default async function PullRequestsPage({ params }: PullRequestsPageProps
   const [repos, prsResponse] = await Promise.all([
     backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
     backendListPullRequests(accessToken, id).catch((err) => {
-      // Backend returns 503 when the org has no GitHub token configured —
+      // Backend returns 503 when the org has no token for this repository's provider —
       // we surface that as "service unavailable" in the client rather than
       // a 404. Other errors collapse to "couldn't load".
       return { error: err as Error }

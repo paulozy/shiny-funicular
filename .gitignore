@@ -6,3 +6,9 @@ out
 .env.local
 plans/
 coverage/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
