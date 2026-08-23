@@ -107,19 +107,28 @@ describe('PullRequestDrawer review actions', () => {
     expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
   })
 
-  it('offers both verdicts on GitHub', async () => {
+  // The drawer is a triage surface: three actions, and approve is the only
+  // verdict. Requesting changes needs a written argument, which nobody can
+  // produce well without the diff on screen — so it lives on the PR page.
+  it('offers exactly three actions, with approve as the only verdict', async () => {
     render(
       <PullRequestDrawer target={{ ...target, provider: 'github' }} onClose={() => {}} canReview />
     )
     await waitFor(() => expect(apiFetch).toHaveBeenCalled())
 
+    expect(screen.getByRole('button', { name: 'Ver alterações' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Aprovar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Solicitar mudanças' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abrir no provedor' })).toBeInTheDocument()
+
+    expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comentar' })).not.toBeInTheDocument()
+    // "Ver depois" did nothing the ✕, Escape and the backdrop did not already do.
+    expect(screen.queryByRole('button', { name: 'Ver depois' })).not.toBeInTheDocument()
   })
 
-  // GitLab can approve but has no portable "request changes", so offering the
-  // button would guarantee a 501. Approve must still be available.
-  it('hides only "request changes" on GitLab', async () => {
+  // Approve is provider-independent, so it shows on GitLab too — and "request
+  // changes" is absent there for two reasons now, not one.
+  it('offers approve on GitLab as well', async () => {
     render(
       <PullRequestDrawer target={{ ...target, provider: 'gitlab' }} onClose={() => {}} canReview />
     )
@@ -129,11 +138,13 @@ describe('PullRequestDrawer review actions', () => {
     expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
   })
 
-  // An unknown provider is treated as incapable rather than assumed capable.
-  it('hides "request changes" when the provider is unknown', async () => {
-    render(<PullRequestDrawer target={target} onClose={() => {}} canReview />)
+  // Closing still works without a dedicated button.
+  it('closes on Escape with no "Ver depois" button present', async () => {
+    const onClose = jest.fn()
+    render(<PullRequestDrawer target={target} onClose={onClose} canReview />)
     await waitFor(() => expect(apiFetch).toHaveBeenCalled())
 
-    expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalled()
   })
 })

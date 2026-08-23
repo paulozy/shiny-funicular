@@ -20,6 +20,7 @@ import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { DocMarkdownEditor } from '@/components/docs/DocMarkdownEditor'
 import { OrgDocsTemplateModal } from '@/components/docs/OrgDocsTemplateModal'
+import { NewDocModal } from '@/components/docs/NewDocModal'
 import { canGenerateOrgDocs } from '@/lib/permissions'
 import { Button } from '@/components/ui/Button'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -40,6 +41,7 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [activeType, setActiveType] = useState<DocType | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [showNewDoc, setShowNewDoc] = useState(false)
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
 
@@ -70,6 +72,9 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
             organization_id: updated.organization_id,
             scope: 'org',
             template_id: updated.template_id,
+            // Editing does not change where a document came from — the backend
+            // inherits provenance onto the new version and reports it here.
+            source: updated.source,
             status: updated.status,
             types: updated.types,
             tokens_used: updated.tokens_used,
@@ -155,6 +160,12 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
     return () => clearInterval(handle)
   }, [docs, selectedDocId])
 
+  // A manual document arrives complete — nothing to poll for.
+  const handleManualCreated = useCallback((created: DocGenerationSummary) => {
+    setDocs((prev) => [created, ...prev])
+    setSelectedDocId(created.id)
+  }, [])
+
   const handleGenerated = useCallback((response: DocGenerationAcceptedResponse) => {
     // Add an optimistic stub at the top of the list so the user immediately
     // sees the new generation row. The poller will fill in the rest.
@@ -162,6 +173,8 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
       id: response.id,
       organization_id: user.organization?.id ?? '',
       scope: 'org',
+      // This stub stands in for a generation that was just requested.
+      source: 'ai',
       status: response.status,
       types: [],
       tokens_used: 0,
@@ -225,21 +238,28 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
       user={user}
       activeHub="code"
       codeTab="docs"
-      topRight={
-        canManage && (
-          <Button variant="primary" size="md" onClick={() => setShowModal(true)}>
-            Gerar documentação
-          </Button>
-        )
-      }
     >
       <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Documentação</h1>
       <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 20px' }}>
         Gerada a partir do código pelos agentes da organização.
       </p>
 
+      {/* Actions sit on the content's own row, beside the scope tabs, rather
+          than in the shell's page-action slot — same reasoning as the repo
+          view, and it keeps the two screens consistent. */}
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
         <DocsScopeTabs active="org" />
+        {canManage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <Button variant="primary" size="md" onClick={() => setShowNewDoc(true)}>
+              + Nova documentação
+            </Button>
+            <Button variant="default" size="md" onClick={() => setShowModal(true)}>
+              <MFIcon name="sparkles" size={13} color={T.ai} />
+              Gerar com IA
+            </Button>
+          </div>
+        )}
       </div>
 
       <div style={splitStyle}>
@@ -348,6 +368,13 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
           </div>
         </main>
       </div>
+
+      <NewDocModal
+        isOpen={showNewDoc}
+        onClose={() => setShowNewDoc(false)}
+        scope="org"
+        onCreated={handleManualCreated}
+      />
 
       <OrgDocsTemplateModal
         isOpen={showModal}

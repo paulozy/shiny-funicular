@@ -1,12 +1,12 @@
 'use client'
 
-import { CSSProperties, FormEvent, useState } from 'react'
+import { CSSProperties, FormEvent, useEffect, useState } from 'react'
 import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
 import {
-  DOC_TYPES,
-  DOC_TYPE_LABELS,
   DocGenerationAcceptedResponse,
+  DocGenerationSummary,
+  DocTemplate,
   DocType,
   GenerateDocsRequest,
 } from '@/lib/types/docs'
@@ -14,12 +14,18 @@ import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
+import { DocTemplateCard, DocTemplateDetail } from '@/components/docs/DocTemplateCard'
 
 interface GenerateDocsModalProps {
   isOpen: boolean
   onClose: () => void
   repoId: string
   defaultBranch?: string
+  /**
+   * What this repository already has, so each type can say whether generating
+   * would create or replace. The callers already hold this list.
+   */
+  existingDocs?: DocGenerationSummary[]
   onSuccess: (response: DocGenerationAcceptedResponse) => void
 }
 
@@ -28,22 +34,74 @@ export function GenerateDocsModal({
   onClose,
   repoId,
   defaultBranch,
+  existingDocs = [],
   onSuccess,
 }: GenerateDocsModalProps) {
-  const [selected, setSelected] = useState<Set<DocType>>(new Set(DOC_TYPES))
+  // Selection is keyed by template **id**, not by type.
+  //
+  // Type is not a key: the four org ADR templates all carry `type: 'adr'`, so
+  // keying on it made one click select every card sharing a type. That was
+  // invisible while this gallery only ever saw one template per type, and
+  // became visible the moment an unfiltered list reached it.
+  //
+  // Nothing pre-selected, deliberately. A pre-checked option reads as a
+  // recommendation, and the worker makes one Claude call per selected type
+  // against the organization's hourly budget — so a default of "all four"
+  // spends four calls on documents the reader has not been told about, and
+  // lands four files (including a root CONTRIBUTING.md) in one pull request.
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [branch, setBranch] = useState(defaultBranch ?? '')
+  const [templates, setTemplates] = useState<DocTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    // Scope is explicit: without it the registry returns org templates too,
+    // and this gallery would offer documents that have no repository to land in.
+    apiFetch<DocTemplate[]>('/api/docs/templates?scope=repo')
+      .then((response) => {
+        // Filtered again here, not out of distrust of the query but because the
+        // endpoint answers with everything when it does not recognize the
+        // parameter — which is exactly what an older server does. A document
+        // with no repository to land in must never be offered on this screen.
+        if (!cancelled) setTemplates(response.filter((t) => t.scope === 'repo'))
+      })
+      .catch(() => {
+        // The gallery degrades to nothing rather than to unlabelled checkboxes:
+        // offering a choice with no explanation is the state this replaced.
+        if (!cancelled) setError('Não foi possível carregar os tipos de documentação.')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen])
+
+  // Reset between openings so a cancelled selection does not come back.
+  useEffect(() => {
+    if (!isOpen) {
+      setSelected(new Set())
+      setError(null)
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
-  const toggle = (type: DocType) => {
+  const toggle = (templateID: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (next.has(type)) next.delete(type)
-      else next.add(type)
+      if (next.has(templateID)) next.delete(templateID)
+      else next.add(templateID)
       return next
     })
+  }
+
+  // The API takes types, so the selected ids are mapped back and deduped —
+  // two templates of the same type would otherwise ask for it twice.
+  const selectedTypes = (): DocType[] => {
+    const types = templates.filter((t) => selected.has(t.id)).map((t) => t.type as DocType)
+    return Array.from(new Set(types))
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -56,7 +114,7 @@ export function GenerateDocsModal({
     setLoading(true)
     try {
       const body: GenerateDocsRequest = {
-        types: Array.from(selected),
+        types: selectedTypes(),
         branch: branch.trim() || undefined,
       }
       const response = await apiFetch<DocGenerationAcceptedResponse>(
@@ -87,28 +145,25 @@ export function GenerateDocsModal({
   }
 
   const modalStyle: CSSProperties = {
-    width: 480,
+    width: 560,
     maxHeight: '90vh',
     background: T.surfaceOverlay,
     border: `1px solid ${T.borderStrong}`,
-    borderRadius: 12,
+    borderRadius: T.radius.dialog,
     boxShadow: T.shadow,
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
   }
 
-  const checkboxRowStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '8px 0',
-    fontSize: 13,
-    cursor: 'pointer',
-  }
-
   return (
-    <div style={overlayStyle} onClick={onClose} role="dialog" aria-modal="true" aria-label="Gerar documentação">
+    <div
+      style={overlayStyle}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Gerar documentação"
+    >
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         <div
           style={{
@@ -141,25 +196,36 @@ export function GenerateDocsModal({
 
         <div style={{ padding: 20, overflow: 'auto', flex: 1 }}>
           {error && <Alert variant="danger">{error}</Alert>}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <span style={{ fontSize: 12, color: T.ink2, fontWeight: 500 }}>Tipos *</span>
-              {DOC_TYPES.map((type) => (
-                <label key={type} style={checkboxRowStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selected.has(type)}
-                    onChange={() => toggle(type)}
-                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: T.accent }}
-                  />
-                  <span>{DOC_TYPE_LABELS[type]}</span>
-                  <span style={{ fontSize: 11, color: T.faint, fontFamily: T.mono }}>{type}</span>
-                </label>
+
+          <p style={{ fontSize: 12.5, color: T.ink3, margin: '0 0 14px', lineHeight: 1.5 }}>
+            Cada tipo selecionado gera um arquivo, entregue como pull request no repositório.
+          </p>
+
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {templates.map((template) => (
+                <DocTemplateCard
+                  key={template.id}
+                  template={template}
+                  selected={selected.has(template.id)}
+                  onSelect={() => toggle(template.id)}
+                  trailing={
+                    <ExistingBadge
+                      hasDoc={hasGeneratedType(existingDocs, template.type as DocType)}
+                    />
+                  }
+                >
+                  <DocTemplateDetail template={template} />
+                </DocTemplateCard>
               ))}
             </div>
+
             <Input
               label="Branch (opcional)"
-              placeholder="main"
+              placeholder={defaultBranch || 'main'}
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
             />
@@ -176,6 +242,11 @@ export function GenerateDocsModal({
             justifyContent: 'flex-end',
           }}
         >
+          <span style={{ fontSize: 12, color: T.faint, marginRight: 'auto' }}>
+            {selected.size === 0
+              ? 'Nenhum tipo selecionado'
+              : `${selected.size} ${selected.size === 1 ? 'arquivo' : 'arquivos'} neste PR`}
+          </span>
           <Button variant="default" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
@@ -185,5 +256,35 @@ export function GenerateDocsModal({
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Whether this repository already has a generated document of this type.
+ *
+ * Read off the generations the caller already loaded, so it costs no request.
+ * It answers the question the reader actually has — "do I already have this?" —
+ * which the old checkbox list could not.
+ */
+function hasGeneratedType(docs: DocGenerationSummary[], type: DocType): boolean {
+  return docs.some((doc) => doc.types?.includes(type))
+}
+
+function ExistingBadge({ hasDoc }: { hasDoc: boolean }) {
+  return (
+    <span
+      style={{
+        fontSize: 10.5,
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        color: hasDoc ? T.ink3 : T.accent700,
+        background: hasDoc ? T.surfaceAlt : T.accentBg,
+        borderRadius: T.radius.tag,
+        padding: '2px 6px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {hasDoc ? 'Substitui o atual' : 'Faltando'}
+    </span>
   )
 }

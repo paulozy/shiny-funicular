@@ -211,3 +211,71 @@ describe('ReviewActions message', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 })
+
+// The drawer is a triage surface. Requesting changes requires writing what
+// needs to change, and that is not something anyone does well without the diff
+// on screen — so the vocabulary is narrowed there rather than in the component.
+describe('ReviewActions approve-only mode', () => {
+  beforeEach(() => {
+    toast.mockReset()
+    global.fetch = jest.fn()
+  })
+
+  it('offers approve and nothing else', () => {
+    render(
+      <ReviewActions repoId="r1" number={42} provider="github" canReview mode="approve-only" />
+    )
+
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comentar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('still approves, with an empty message', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValue(jsonResponse(204, null))
+    const onReviewed = jest.fn()
+
+    render(
+      <ReviewActions
+        repoId="r1"
+        number={42}
+        provider="github"
+        canReview
+        mode="approve-only"
+        onReviewed={onReviewed}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
+
+    await waitFor(() => expect(onReviewed).toHaveBeenCalled())
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0]
+    expect(JSON.parse(init.body)).toEqual({ body: '' })
+  })
+
+  // A blocked PR is still blocked here; the reason just has fewer controls to
+  // disable.
+  it('respects a blocked reason', () => {
+    render(
+      <ReviewActions
+        repoId="r1"
+        number={42}
+        provider="github"
+        canReview
+        mode="approve-only"
+        blockedReason="self_authored"
+      />
+    )
+
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeDisabled()
+    expect(screen.getByText(/Você abriu este PR/)).toBeInTheDocument()
+  })
+
+  // The full surface is unchanged — narrowing one caller must not narrow both.
+  it('leaves the full mode intact', () => {
+    render(<ReviewActions repoId="r1" number={42} provider="github" canReview />)
+
+    expect(screen.getByRole('button', { name: 'Solicitar mudanças' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Comentar' })).toBeInTheDocument()
+  })
+})

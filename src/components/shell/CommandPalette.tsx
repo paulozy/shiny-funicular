@@ -188,7 +188,10 @@ export function CommandPalette({ open, onClose, actions = [] }: CommandPalettePr
         <Command.List style={listStyle}>
           <Command.Empty style={emptyStyle}>Nenhum resultado.</Command.Empty>
 
-          <Command.Group heading="Navegar" style={{ padding: 0 }}>
+          {/* No `heading` prop: cmdk would render its own label on top of the
+              styled one below, which is why this group showed "Navegar" twice.
+              The other two groups already do it this way. */}
+          <Command.Group style={{ padding: 0 }}>
             <div style={headingStyle}>Navegar</div>
             <Command.Item
               value="code-hub home repositórios"
