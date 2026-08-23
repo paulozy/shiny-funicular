@@ -2,11 +2,12 @@ import 'server-only'
 import {
   CreateTeamRequest,
   Team,
+  UpdateTeamRequest,
   TeamListResponse,
   TeamMemberListResponse,
   TeamRole,
 } from '@/lib/types/teams'
-import { getApiUrl, handleResponse } from './_shared'
+import { backendFetch, getApiUrl, handleResponse } from './_shared'
 
 function authHeaders(accessToken: string, json = false): HeadersInit {
   const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` }
@@ -15,7 +16,7 @@ function authHeaders(accessToken: string, json = false): HeadersInit {
 }
 
 export async function backendListTeams(accessToken: string): Promise<TeamListResponse> {
-  const response = await fetch(getApiUrl('/teams'), {
+  const response = await backendFetch(getApiUrl('/teams'), {
     method: 'GET',
     headers: authHeaders(accessToken),
   })
@@ -26,7 +27,7 @@ export async function backendCreateTeam(
   accessToken: string,
   body: CreateTeamRequest
 ): Promise<Team> {
-  const response = await fetch(getApiUrl('/teams'), {
+  const response = await backendFetch(getApiUrl('/teams'), {
     method: 'POST',
     headers: authHeaders(accessToken, true),
     body: JSON.stringify(body),
@@ -34,8 +35,21 @@ export async function backendCreateTeam(
   return handleResponse<Team>(response)
 }
 
+export async function backendUpdateTeam(
+  accessToken: string,
+  teamID: string,
+  body: UpdateTeamRequest
+): Promise<Team> {
+  const response = await backendFetch(getApiUrl(`/teams/${teamID}`), {
+    method: 'PATCH',
+    headers: authHeaders(accessToken, true),
+    body: JSON.stringify(body),
+  })
+  return handleResponse<Team>(response)
+}
+
 export async function backendDeleteTeam(accessToken: string, teamID: string): Promise<void> {
-  const response = await fetch(getApiUrl(`/teams/${teamID}`), {
+  const response = await backendFetch(getApiUrl(`/teams/${teamID}`), {
     method: 'DELETE',
     headers: authHeaders(accessToken),
   })
@@ -46,7 +60,7 @@ export async function backendListTeamMembers(
   accessToken: string,
   teamID: string
 ): Promise<TeamMemberListResponse> {
-  const response = await fetch(getApiUrl(`/teams/${teamID}/members`), {
+  const response = await backendFetch(getApiUrl(`/teams/${teamID}/members`), {
     method: 'GET',
     headers: authHeaders(accessToken),
   })
@@ -59,7 +73,7 @@ export async function backendAddTeamMember(
   userID: string,
   role?: TeamRole
 ): Promise<void> {
-  const response = await fetch(getApiUrl(`/teams/${teamID}/members`), {
+  const response = await backendFetch(getApiUrl(`/teams/${teamID}/members`), {
     method: 'POST',
     headers: authHeaders(accessToken, true),
     body: JSON.stringify({ user_id: userID, role }),
@@ -72,7 +86,7 @@ export async function backendRemoveTeamMember(
   teamID: string,
   userID: string
 ): Promise<void> {
-  const response = await fetch(getApiUrl(`/teams/${teamID}/members/${userID}`), {
+  const response = await backendFetch(getApiUrl(`/teams/${teamID}/members/${userID}`), {
     method: 'DELETE',
     headers: authHeaders(accessToken),
   })
@@ -85,7 +99,7 @@ export async function backendSetRepositoryOwner(
   repoID: string,
   teamID: string | null
 ): Promise<void> {
-  const response = await fetch(getApiUrl(`/repositories/${repoID}/owner`), {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoID}/owner`), {
     method: 'PUT',
     headers: authHeaders(accessToken, true),
     body: JSON.stringify({ team_id: teamID }),
