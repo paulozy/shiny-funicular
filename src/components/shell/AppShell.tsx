@@ -41,10 +41,13 @@ interface AppShellProps {
 // A hub with no `href` renders disabled as "Em breve". Arquitetura has one
 // because the domain shipped: the graph carries repositories, APIs and resources,
 // so leaving the label greyed out would tell people the feature does not exist.
+// Ordered so the hubs that work come first. A hub with no `href` renders disabled
+// as "Em breve", and leaving a placeholder between two live ones makes the row
+// read as if the gap were the feature.
 const HUBS = [
   { id: 'code', label: 'Code', href: '/' },
-  { id: 'infra', label: 'Infra' },
   { id: 'arch', label: 'Arquitetura', href: '/graph' },
+  { id: 'infra', label: 'Infra' },
   { id: 'deploy', label: 'Deploys' },
   { id: 'obs', label: 'Observability' },
   { id: 'kb', label: 'Knowledge' },
