@@ -19,13 +19,43 @@ const repo: RepositoryResponse = {
   updated_at: '2026-01-01T00:00:00Z',
 }
 
+/**
+ * The section now renders the setup panel, which fetches its own endpoint. Routing
+ * the mock by URL rather than by call order is deliberate: the two effects fire
+ * independently, so `mockResolvedValueOnce` chains would depend on an ordering
+ * React does not guarantee.
+ */
+const setupFacts = {
+  base_url: 'https://idp.example.com',
+  ingest_url: 'https://idp.example.com/api/v1/repositories/repo-1/coverage',
+  repository_id: 'repo-1',
+  reachable: true,
+  provider: 'github',
+  has_ci: true,
+  ci_config_path: '.github/workflows/ci.yml',
+  default_branch: 'main',
+  suggestion: { language: 'go', format: 'go', report_path: 'coverage.out' },
+  formats: ['go', 'lcov', 'cobertura', 'jacoco'],
+  secret_env_name: 'IDP_COVERAGE_TOKEN',
+  headers: { format: 'X-Coverage-Format', commit: 'X-Commit-SHA', branch: 'X-Coverage-Branch' },
+  has_active_token: true,
+}
+
+function mockAPI(tokens: unknown) {
+  ;(apiFetch as jest.Mock).mockImplementation((url: string) => {
+    if (url.endsWith('/coverage/setup')) return Promise.resolve(setupFacts)
+    if (url.endsWith('/coverage/tokens')) return Promise.resolve(tokens)
+    return Promise.resolve(undefined)
+  })
+}
+
 beforeEach(() => {
   ;(apiFetch as jest.Mock).mockReset()
 })
 
 describe('CoverageTokensSection', () => {
   it('shows empty state when no tokens exist', async () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([])
+    mockAPI([])
 
     render(<CoverageTokensSection repo={repo} canManage={true} />)
 
@@ -34,7 +64,7 @@ describe('CoverageTokensSection', () => {
   })
 
   it('lists existing tokens', async () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([
+    mockAPI([
       {
         id: 't-1',
         name: 'github-actions',
@@ -51,7 +81,7 @@ describe('CoverageTokensSection', () => {
   })
 
   it('hides the new-token button when canManage is false', async () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([])
+    mockAPI([])
 
     render(<CoverageTokensSection repo={repo} canManage={false} />)
 
@@ -68,7 +98,7 @@ describe('CoverageTokensSection', () => {
   })
 
   it('shows the repository ID for CI configuration', () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([])
+    mockAPI([])
 
     render(<CoverageTokensSection repo={repo} canManage={true} />)
 
@@ -76,7 +106,7 @@ describe('CoverageTokensSection', () => {
   })
 
   it('marks revoked tokens as inactive', async () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([
+    mockAPI([
       {
         id: 't-2',
         name: 'old-token',
@@ -92,7 +122,7 @@ describe('CoverageTokensSection', () => {
   })
 
   it('opens the new-token modal when the button is clicked', async () => {
-    ;(apiFetch as jest.Mock).mockResolvedValueOnce([])
+    mockAPI([])
 
     render(<CoverageTokensSection repo={repo} canManage={true} />)
 

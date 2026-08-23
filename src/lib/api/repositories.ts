@@ -10,6 +10,7 @@ import {
 import { BackendRepositoryListResponseSchema } from '@/lib/types/repository.schema'
 import { backendFetch, parseOrThrow } from './_shared'
 import {
+  CoverageSetup,
   CoverageToken,
   CoverageTokenWithSecret,
   CreateCoverageTokenRequest,
@@ -65,6 +66,11 @@ export interface RepositorySyncResponse {
   status: string
   type: string
   target: string
+  /**
+   * Set when a throttle declined the request, so the UI can say "again in 40s"
+   * instead of leaving the person to guess whether the button works.
+   */
+  retry_after_seconds?: number
 }
 
 /** Enqueues a throttled background re-sync of the repository metadata. */
@@ -159,6 +165,18 @@ export async function backendListCoverageTokens(
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   return handleResponse<CoverageToken[]>(response)
+}
+
+/** Facts for the "how to configure your CI" panel — see CoverageSetup. */
+export async function backendGetCoverageSetup(
+  accessToken: string,
+  repoID: string
+): Promise<CoverageSetup> {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoID}/coverage/setup`), {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  return handleResponse<CoverageSetup>(response)
 }
 
 export async function backendCreateCoverageToken(

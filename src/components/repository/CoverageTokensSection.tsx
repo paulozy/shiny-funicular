@@ -12,13 +12,12 @@ import { RepositoryResponse } from '@/lib/types/repository'
 import { copyText } from '@/lib/clipboard'
 import { NewCoverageTokenModal } from './NewCoverageTokenModal'
 import { CoverageTokenCreatedModal } from './CoverageTokenCreatedModal'
+import { CoverageSetupPanel } from './CoverageSetupPanel'
 
 interface CoverageTokensSectionProps {
   repo: RepositoryResponse
   canManage: boolean
 }
-
-const apiBaseEnvName = 'IDP_BASE_URL'
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '—'
@@ -36,6 +35,10 @@ export function CoverageTokensSection({ repo, canManage }: CoverageTokensSection
   const [createdToken, setCreatedToken] = useState<CoverageTokenWithSecret | null>(null)
   const [revoking, setRevoking] = useState<string | null>(null)
   const [copiedRepoID, setCopiedRepoID] = useState(false)
+  // Bumped after a token is created so the panel re-reads the facts — a fresh
+  // token flips has_active_token, and the panel's "create one first" state has to
+  // clear without a page reload.
+  const [setupRefreshKey, setSetupRefreshKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -68,6 +71,7 @@ export function CoverageTokensSection({ repo, canManage }: CoverageTokensSection
     ])
     setCreateOpen(false)
     setCreatedToken(token)
+    setSetupRefreshKey((n) => n + 1)
   }
 
   const handleRevoke = async (id: string) => {
@@ -177,12 +181,6 @@ export function CoverageTokensSection({ repo, canManage }: CoverageTokensSection
             {copiedRepoID ? 'Copiado' : 'Copiar'}
           </Button>
         </div>
-        <p style={{ ...subtitleStyle, marginTop: 6 }}>
-          Configure também os secrets{' '}
-          <code style={{ fontFamily: T.mono, fontSize: 11 }}>{apiBaseEnvName}</code> e{' '}
-          <code style={{ fontFamily: T.mono, fontSize: 11 }}>IDP_COVERAGE_TOKEN</code> no
-          seu CI.
-        </p>
       </div>
 
       {loadError && <Alert variant="danger">{loadError}</Alert>}
@@ -246,6 +244,17 @@ export function CoverageTokensSection({ repo, canManage }: CoverageTokensSection
         </div>
       )}
 
+      {/* The instructions live in the same box as the tokens because they
+          reference one: putting "what do I do with this" in a separate card is how
+          the snippet ended up reachable only from a modal shown once. */}
+      <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+        <CoverageSetupPanel
+          repo={repo}
+          hasToken={visibleTokens.some((t) => !t.revoked_at)}
+          refreshKey={setupRefreshKey}
+        />
+      </div>
+
       {canManage && (
         <NewCoverageTokenModal
           isOpen={createOpen}
@@ -254,11 +263,7 @@ export function CoverageTokensSection({ repo, canManage }: CoverageTokensSection
           onCreated={handleCreated}
         />
       )}
-      <CoverageTokenCreatedModal
-        token={createdToken}
-        repoID={repo.id}
-        onClose={() => setCreatedToken(null)}
-      />
+      <CoverageTokenCreatedModal token={createdToken} onClose={() => setCreatedToken(null)} />
     </section>
   )
 }
