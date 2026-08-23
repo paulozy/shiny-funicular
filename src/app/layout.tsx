@@ -1,6 +1,17 @@
 import type { Metadata } from 'next'
+import { Figtree } from 'next/font/google'
 import NextTopLoader from 'nextjs-toploader'
+import { ToastProvider } from '@/components/ui/Toast'
 import './globals.css'
+
+// The v3 design system sets both body copy and headings in Figtree; the
+// weights below are the only ones the mockup uses (400 / 600 / 700).
+const figtree = Figtree({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-figtree',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'IDP — Plataforma de Desenvolvimento',
@@ -27,7 +38,7 @@ export default function RootLayout({
   `
 
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className={figtree.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
@@ -38,14 +49,19 @@ export default function RootLayout({
           but is hardcoded — the lib needs a literal value at mount time.
         */}
         <NextTopLoader
-          color="#d97757"
+          color="#146b62"
           height={2}
           showSpinner={false}
           crawlSpeed={200}
           easing="ease"
           shadow={false}
         />
-        {children}
+        {/*
+          Mounted at the root so any route can confirm an action without each
+          shell wiring up its own channel — the mockup uses one toast, in one
+          place, across the whole app.
+        */}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   )

@@ -6,7 +6,7 @@ import {
   MemberListResponse,
 } from '@/lib/types/organization-members'
 import { UserRole } from '@/lib/types/auth'
-import { getApiUrl, handleResponse } from './_shared'
+import { backendFetch, getApiUrl, handleResponse } from './_shared'
 
 function authHeaders(accessToken: string, json = false): HeadersInit {
   const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` }
@@ -15,7 +15,7 @@ function authHeaders(accessToken: string, json = false): HeadersInit {
 }
 
 export async function backendListMembers(accessToken: string): Promise<MemberListResponse> {
-  const response = await fetch(getApiUrl('/organizations/members'), {
+  const response = await backendFetch(getApiUrl('/organizations/members'), {
     method: 'GET',
     headers: authHeaders(accessToken),
   })
@@ -27,7 +27,7 @@ export async function backendUpdateMemberRole(
   userID: string,
   role: UserRole
 ): Promise<void> {
-  const response = await fetch(getApiUrl(`/organizations/members/${userID}`), {
+  const response = await backendFetch(getApiUrl(`/organizations/members/${userID}`), {
     method: 'PATCH',
     headers: authHeaders(accessToken, true),
     body: JSON.stringify({ role }),
@@ -36,7 +36,7 @@ export async function backendUpdateMemberRole(
 }
 
 export async function backendRemoveMember(accessToken: string, userID: string): Promise<void> {
-  const response = await fetch(getApiUrl(`/organizations/members/${userID}`), {
+  const response = await backendFetch(getApiUrl(`/organizations/members/${userID}`), {
     method: 'DELETE',
     headers: authHeaders(accessToken),
   })
@@ -44,7 +44,7 @@ export async function backendRemoveMember(accessToken: string, userID: string): 
 }
 
 export async function backendListInvites(accessToken: string): Promise<InviteListResponse> {
-  const response = await fetch(getApiUrl('/organizations/invites'), {
+  const response = await backendFetch(getApiUrl('/organizations/invites'), {
     method: 'GET',
     headers: authHeaders(accessToken),
   })
@@ -55,7 +55,7 @@ export async function backendCreateInvite(
   accessToken: string,
   body: CreateInviteRequest
 ): Promise<CreateInviteResult> {
-  const response = await fetch(getApiUrl('/organizations/invites'), {
+  const response = await backendFetch(getApiUrl('/organizations/invites'), {
     method: 'POST',
     headers: authHeaders(accessToken, true),
     body: JSON.stringify(body),
@@ -64,7 +64,7 @@ export async function backendCreateInvite(
 }
 
 export async function backendRevokeInvite(accessToken: string, inviteID: string): Promise<void> {
-  const response = await fetch(getApiUrl(`/organizations/invites/${inviteID}`), {
+  const response = await backendFetch(getApiUrl(`/organizations/invites/${inviteID}`), {
     method: 'DELETE',
     headers: authHeaders(accessToken),
   })

@@ -1,42 +1,32 @@
 'use client'
 
-import { CSSProperties } from 'react'
+import { CSSProperties, useState } from 'react'
 import { T } from '@/lib/tokens'
-import { PullRequestList } from '@/components/pull-requests/PullRequestList'
+import { PullRequestList, PullRequestFilter } from '@/components/pull-requests/PullRequestList'
 import { PullRequestListItemResponse } from '@/lib/types/pull_request'
 import { RepositoryResponse } from '@/lib/types/repository'
+import { Segmented } from '@/components/ui/Segmented'
+import {
+  PullRequestDrawer,
+  PullRequestDrawerTarget,
+} from '@/components/pull-requests/PullRequestDrawer'
 
 interface PullRequestsClientProps {
   items: PullRequestListItemResponse[]
   repo: RepositoryResponse
   loadError: string | null
+  /** Whether the viewer's role allows submitting a review verdict. */
+  canReview?: boolean
 }
 
-export function PullRequestsClient({ items, repo, loadError }: PullRequestsClientProps) {
-
-  const pageStyle: CSSProperties = {
-    padding: '24px 28px 32px',
-  }
-
-  const headerStyle: CSSProperties = {
-    marginBottom: 22,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  }
-
-  const titleStyle: CSSProperties = {
-    fontSize: 20,
-    fontWeight: 600,
-    color: T.ink,
-    margin: 0,
-    letterSpacing: '-0.01em',
-  }
-
-  const subtitleStyle: CSSProperties = {
-    fontSize: 12.5,
-    color: T.ink3,
-  }
+export function PullRequestsClient({
+  items,
+  repo,
+  loadError,
+  canReview = false,
+}: PullRequestsClientProps) {
+  const [filter, setFilter] = useState<PullRequestFilter>('open')
+  const [target, setTarget] = useState<PullRequestDrawerTarget | null>(null)
 
   const errorStyle: CSSProperties = {
     padding: '14px 16px',
@@ -48,28 +38,49 @@ export function PullRequestsClient({ items, repo, loadError }: PullRequestsClien
     marginBottom: 18,
   }
 
-  const totalLabel = `${items.length} PR${items.length === 1 ? '' : 's'} aberto${
-    items.length === 1 ? '' : 's'
-  }`
+  if (loadError) {
+    return (
+      <div style={errorStyle} role="alert">
+        Não foi possível carregar os PRs de {repo.name}: {loadError}
+      </div>
+    )
+  }
 
   return (
-    <div style={pageStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>Pull Requests de {repo.name}</h1>
-        <span style={subtitleStyle}>
-          {loadError
-            ? 'Não foi possível listar os PRs do provedor.'
-            : `${totalLabel} · clique em um PR para revisar pela IDP.`}
-        </span>
-      </div>
+    <div>
+      <Segmented
+        name="repo-pr-filter"
+        ariaLabel="Filtrar pull requests"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: 'open', label: 'Abertos' },
+          { value: 'draft', label: 'Draft' },
+          { value: 'all', label: 'Todos' },
+        ]}
+        style={{ marginBottom: 18 }}
+      />
 
-      {loadError && (
-        <div style={errorStyle} role="alert">
-          Não foi possível carregar os PRs: {loadError}
-        </div>
-      )}
+      <PullRequestList
+        items={items}
+        repoId={repo.id}
+        filter={filter}
+        onSelect={(pr) =>
+          setTarget({
+            repoId: repo.id,
+            number: pr.number,
+            title: pr.title,
+            repoName: repo.name,
+            provider: repo.provider ?? repo.type,
+          })
+        }
+      />
 
-      {!loadError && <PullRequestList items={items} repoId={repo.id} />}
+      <PullRequestDrawer
+        target={target}
+        onClose={() => setTarget(null)}
+        canReview={canReview}
+      />
     </div>
   )
 }

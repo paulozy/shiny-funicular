@@ -8,6 +8,42 @@ export function getApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`
 }
 
+/** Above this, a single upstream call is the reason a page felt slow. */
+const SLOW_REQUEST_MS = 800
+
+/**
+ * `fetch` against the backend, timed.
+ *
+ * Every helper in this folder goes through here so the server log carries one
+ * line per upstream call with its duration. That is what answers "is the page
+ * slow because of us or because of the API?" without guessing: count the lines
+ * for one navigation, then read the milliseconds.
+ */
+export async function backendFetch(url: string, init?: RequestInit): Promise<Response> {
+  const startedAt = performance.now()
+  const method = init?.method ?? 'GET'
+  // The base URL is noise in a log line; the path is what identifies the call.
+  const path = url.startsWith(API_BASE_URL) ? url.slice(API_BASE_URL.length) : url
+
+  try {
+    const response = await fetch(url, init)
+    const ms = Math.round(performance.now() - startedAt)
+    const line = { method, path, status: response.status, ms }
+    if (ms >= SLOW_REQUEST_MS) {
+      logger.warn(line, 'backend_request_slow')
+    } else {
+      logger.debug(line, 'backend_request')
+    }
+    return response
+  } catch (error) {
+    logger.error(
+      { method, path, ms: Math.round(performance.now() - startedAt), err: String(error) },
+      'backend_request_failed'
+    )
+    throw error
+  }
+}
+
 /**
  * Typed error thrown by the backend helpers. Carries the HTTP status (or the
  * synthetic 502 we use for schema mismatches) and the parsed backend error

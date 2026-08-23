@@ -13,14 +13,12 @@ import {
 import { apiFetch } from '@/lib/api/client'
 import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
-import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { RepoGraph } from '@/components/graph/RepoGraph'
 import { RelationshipDrawer } from '@/components/graph/RelationshipDrawer'
 import { RelationshipModal } from '@/components/graph/RelationshipModal'
 import { KIND_STYLES } from '@/lib/graph/edge-styles'
 import { Button } from '@/components/ui/Button'
 import { canManageRelationships } from '@/lib/permissions'
-import { MFIcon } from '@/components/icons/MFIcon'
 
 interface GraphClientProps {
   user: UserInfo
@@ -35,6 +33,7 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
   const [kindFilters, setKindFilters] = useState<Set<RelationshipKind>>(
     new Set(RELATIONSHIP_KINDS)
   )
+  const [expanded, setExpanded] = useState(false)
   const [modalState, setModalState] = useState<
     | { open: false }
     | { open: true; mode: 'create'; sourceId?: string | null }
@@ -97,10 +96,8 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
   const headerStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    padding: '10px 20px',
-    borderBottom: `1px solid ${T.border}`,
-    background: T.surface,
+    gap: 8,
+    marginBottom: 16,
     flexWrap: 'wrap',
   }
 
@@ -109,34 +106,135 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    padding: '4px 10px',
+    padding: '5px 12px',
     border: `1px solid ${active ? color : T.border}`,
-    borderRadius: T.radius.tag,
-    background: active ? T.surface : T.surfaceAlt,
+    borderRadius: 999,
+    background: active ? T.surface : 'transparent',
     color: active ? T.ink : T.faint,
-    fontSize: 11.5,
+    fontSize: 12.5,
     cursor: 'pointer',
   })
 
   const splitStyle: CSSProperties = {
-    flex: 1,
-    display: 'flex',
-    minHeight: 0,
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) 300px',
+    gap: 20,
+    alignItems: 'stretch',
   }
 
+  // The canvas is the page. It takes the viewport minus the shell chrome and
+  // the header above it, with a floor so a short window still shows a graph
+  // and not a strip.
   const graphContainerStyle: CSSProperties = {
-    flex: 1,
     minWidth: 0,
-    background: T.bg,
+    position: 'relative',
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    overflow: 'hidden',
+    height: expanded ? '100%' : 'clamp(520px, calc(100vh - 300px), 900px)',
+  }
+
+  const placeholderStyle: CSSProperties = {
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: 18,
+    fontSize: 13.5,
+    color: T.faint,
+    lineHeight: 1.55,
+    alignSelf: 'start',
   }
 
   const mayManage = canManageRelationships(user)
+
+  const expandButtonStyle: CSSProperties = {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 5,
+    font: 'inherit',
+    fontSize: 12.5,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.button,
+    color: T.ink3,
+    padding: '5px 10px',
+    cursor: 'pointer',
+  }
+
+  const graphCanvas = (
+    <div style={graphContainerStyle}>
+      <button type="button" style={expandButtonStyle} onClick={() => setExpanded((open) => !open)}>
+        {expanded ? 'Sair da tela cheia' : 'Tela cheia'}
+      </button>
+      {nodes.length === 0 ? (
+        <div
+          style={{
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: T.faint,
+            fontSize: 13,
+          }}
+        >
+          Crie repositórios para visualizá-los no grafo.
+        </div>
+      ) : (
+        <RepoGraph
+          nodes={nodes}
+          edges={visibleEdges}
+          showMiniMap={expanded}
+          onNodeSelect={(node) => {
+            setSelectedNode(node)
+            setSelectedEdge(null)
+          }}
+          onEdgeSelect={(edge) => {
+            setSelectedEdge(edge)
+            setSelectedNode(null)
+          }}
+        />
+      )}
+    </div>
+  )
+
+  const detailsColumn = (
+    <>
+      {!selectedNode && !selectedEdge && (
+        <div style={placeholderStyle}>
+          Clique em um nó ou em uma aresta para ver os detalhes da relação.
+        </div>
+      )}
+
+      <RelationshipDrawer
+        selectedNode={selectedNode}
+        selectedEdge={selectedEdge}
+        nodes={nodes}
+        edges={edges}
+        canManage={mayManage}
+        onCreateRelationship={() =>
+          setModalState({
+            open: true,
+            mode: 'create',
+            sourceId: selectedNode?.id ?? null,
+          })
+        }
+        onEditRelationship={(edge) => setModalState({ open: true, mode: 'edit', edge })}
+        onDeleteRelationship={handleDelete}
+        onClose={() => {
+          setSelectedNode(null)
+          setSelectedEdge(null)
+        }}
+      />
+    </>
+  )
 
   return (
     <AppShell
       user={user}
       activeHub="code"
-      breadcrumb={[{ label: 'Code', href: '/' }, { label: 'Grafo' }]}
+      codeTab="graph"
       topRight={
         mayManage ? (
         <Button
@@ -146,16 +244,17 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
           disabled={nodes.length < 2}
           title={nodes.length < 2 ? 'Crie pelo menos 2 repositórios primeiro' : undefined}
         >
-          <MFIcon name="plus" size={12} />
           Nova relação
         </Button>
         ) : undefined
       }
     >
-      <CodeHubTabBar activeTab="graph" />
+      <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Grafo de dependências</h1>
+      <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 18px' }}>
+        {nodes.length} repositórios · {visibleEdges.length} de {edges.length} relações visíveis.
+      </p>
 
       <div style={headerStyle}>
-        <span style={{ fontSize: 11.5, color: T.faint, fontWeight: 500 }}>Filtrar por tipo:</span>
         {RELATIONSHIP_KINDS.map((kind) => {
           const active = kindFilters.has(kind)
           const color = KIND_STYLES[kind].stroke
@@ -171,63 +270,38 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
             </button>
           )
         })}
-        <span style={{ marginLeft: 'auto', fontSize: 11.5, color: T.faint }}>
-          {nodes.length} repositórios · {visibleEdges.length}/{edges.length} relações visíveis
-        </span>
       </div>
 
-      <div style={splitStyle}>
-        <div style={graphContainerStyle}>
-          {nodes.length === 0 ? (
-            <div
-              style={{
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: T.faint,
-                fontSize: 13,
-              }}
-            >
-              Crie repositórios para visualizá-los no grafo.
-            </div>
-          ) : (
-            <RepoGraph
-              nodes={nodes}
-              edges={visibleEdges}
-              onNodeSelect={(node) => {
-                setSelectedNode(node)
-                setSelectedEdge(null)
-              }}
-              onEdgeSelect={(edge) => {
-                setSelectedEdge(edge)
-                setSelectedNode(null)
-              }}
-            />
-          )}
+      {/* One canvas at a time: mounting the inline graph behind the overlay
+          would run two React Flow instances over the same data. */}
+      {!expanded && (
+        <div style={splitStyle}>
+          {graphCanvas}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+            {detailsColumn}
+          </div>
         </div>
+      )}
 
-        <RelationshipDrawer
-          selectedNode={selectedNode}
-          selectedEdge={selectedEdge}
-          nodes={nodes}
-          edges={edges}
-              canManage={mayManage}
-          onCreateRelationship={() =>
-            setModalState({
-              open: true,
-              mode: 'create',
-              sourceId: selectedNode?.id ?? null,
-            })
-          }
-          onEditRelationship={(edge) => setModalState({ open: true, mode: 'edit', edge })}
-          onDeleteRelationship={handleDelete}
-          onClose={() => {
-            setSelectedNode(null)
-            setSelectedEdge(null)
+      {expanded && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            background: T.bg,
+            padding: 16,
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) 320px',
+            gap: 16,
           }}
-        />
-      </div>
+        >
+          {graphCanvas}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflow: 'auto' }}>
+            {detailsColumn}
+          </div>
+        </div>
+      )}
 
       <RelationshipModal
         isOpen={modalState.open}

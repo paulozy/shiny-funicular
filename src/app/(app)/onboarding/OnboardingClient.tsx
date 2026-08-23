@@ -7,7 +7,6 @@ import { apiFetch } from '@/lib/api/client'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { UserInfo } from '@/lib/types/auth'
 import {
   OnboardingRun,
@@ -18,6 +17,20 @@ import {
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
 import { OnboardingStepActions } from '@/components/onboarding/OnboardingStepActions'
 import { OnboardingStepBody } from '@/components/onboarding/OnboardingStepBody'
+
+const STEP_KIND_LABELS: Record<string, string> = {
+  markdown: 'leitura',
+  repository: 'repositório',
+  team: 'time',
+  doc: 'documentação',
+  architecture: 'arquitetura',
+  glossary: 'glossário',
+  contacts: 'pessoas',
+  checklist: 'checklist',
+  link: 'link',
+  verified: 'verificação',
+  task: 'tarefa',
+}
 
 interface OnboardingClientProps {
   user: UserInfo
@@ -121,11 +134,27 @@ export function OnboardingClient({ user, initialRuns }: OnboardingClientProps) {
     }
   }
 
-  const pageStyle: CSSProperties = { padding: '24px 28px', maxWidth: 1100, margin: '0 auto' }
-  const layoutStyle: CSSProperties = { display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 }
-  const railStyle: CSSProperties = { display: 'grid', gap: 4, alignContent: 'start' }
+  const pageStyle: CSSProperties = {}
+  const layoutStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '280px minmax(0, 1fr)',
+    gap: 26,
+    alignItems: 'start',
+  }
+  const railStyle: CSSProperties = {
+    display: 'grid',
+    gap: 2,
+    alignContent: 'start',
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: 10,
+    position: 'sticky',
+    // Clears the shell header (56 identity + 40 hubs + 40 section tabs).
+    top: 152,
+  }
   const panelStyle: CSSProperties = {
-    padding: '20px 22px',
+    padding: '18px 20px',
     borderRadius: T.radius.card,
     border: `1px solid ${T.border}`,
     background: T.surface,
@@ -133,25 +162,41 @@ export function OnboardingClient({ user, initialRuns }: OnboardingClientProps) {
 
   const railItemStyle = (step: OnboardingRunStep, active: boolean): CSSProperties => ({
     display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '8px 10px',
-    borderRadius: T.radius.input,
-    border: `1px solid ${active ? T.ink : 'transparent'}`,
-    background: active ? T.surface : 'transparent',
+    alignItems: 'flex-start',
+    gap: 11,
+    padding: '10px 11px',
+    borderRadius: T.radius.tag,
+    border: 0,
+    background: active ? T.accentBg : 'transparent',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
     fontFamily: T.font,
-    fontSize: 13,
+    fontSize: 13.5,
+    lineHeight: 1.35,
     color: step.status === 'done' ? T.ink3 : T.ink,
+  })
+
+  const railMarkStyle = (step: OnboardingRunStep): CSSProperties => ({
+    width: 22,
+    height: 22,
+    borderRadius: '50%',
+    background: step.status === 'done' ? T.accent : 'transparent',
+    border: `1px solid ${step.status === 'done' ? T.accent : T.border}`,
+    color: step.status === 'done' ? T.inkInverse : T.faint,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 11.5,
+    fontWeight: 600,
+    flexShrink: 0,
   })
 
   if (!run) {
     return (
-      <AppShell user={user} activeHub="code" breadcrumb={[{ label: 'Onboarding' }]}>
+      <AppShell user={user} activeHub="code" codeTab="onboarding">
         <div style={pageStyle}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>Nenhum onboarding atribuído</h1>
+          <h1 style={{ fontSize: 26, marginBottom: 8 }}>Nenhum onboarding atribuído</h1>
           <p style={{ fontSize: 13.5, color: T.ink3, maxWidth: 560 }}>
             Quando alguém te atribuir um fluxo — no convite ou depois — ele aparece aqui. Um admin pode montar
             fluxos em Configurações → Onboarding.
@@ -162,14 +207,47 @@ export function OnboardingClient({ user, initialRuns }: OnboardingClientProps) {
   }
 
   return (
-    <AppShell user={user} activeHub="code" breadcrumb={[{ label: 'Onboarding' }, { label: run.flow_name }]}>
+    <AppShell user={user} activeHub="code" codeTab="onboarding">
       <div style={pageStyle}>
-        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{run.flow_name}</h1>
-          {run.status === 'completed' && <Tag variant="ok">Concluído</Tag>}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 24,
+            flexWrap: 'wrap',
+            marginBottom: 22,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 11.5,
+                letterSpacing: '.08em',
+                textTransform: 'uppercase',
+                color: T.faint,
+              }}
+            >
+              Meu onboarding
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+              <h1 style={{ fontSize: 26, margin: 0 }}>{run.flow_name}</h1>
+              {run.status === 'completed' && <Tag variant="ok">Concluído</Tag>}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 220, maxWidth: 420 }}>
+            <OnboardingProgress
+              done={run.steps_done}
+              total={run.steps_total}
+              requiredRemaining={run.required_remaining}
+              totalMinutes={run.total_minutes}
+            />
+          </div>
         </div>
+
         {run.flow_summary && (
-          <p style={{ fontSize: 13.5, color: T.ink3, margin: '0 0 14px', maxWidth: 700 }}>{run.flow_summary}</p>
+          <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 18px', maxWidth: '70ch' }}>
+            {run.flow_summary}
+          </p>
         )}
 
         {runs.length > 1 && (
@@ -190,13 +268,6 @@ export function OnboardingClient({ user, initialRuns }: OnboardingClientProps) {
           </div>
         )}
 
-        <OnboardingProgress
-          done={run.steps_done}
-          total={run.steps_total}
-          requiredRemaining={run.required_remaining}
-          totalMinutes={run.total_minutes}
-        />
-
         {error && (
           <div style={{ marginBottom: 14 }}>
             <Alert variant="danger">{error}</Alert>
@@ -213,17 +284,23 @@ export function OnboardingClient({ user, initialRuns }: OnboardingClientProps) {
                 onClick={() => setActiveStepId(step.id)}
                 aria-current={step.id === activeStep?.id}
               >
-                <span style={{ width: 16, display: 'inline-flex', justifyContent: 'center' }}>
-                  {step.status === 'done' ? (
-                    <MFIcon name="check" size={12} color={T.ok} />
-                  ) : step.status === 'skipped' ? (
-                    <MFIcon name="x" size={11} color={T.faint} />
-                  ) : (
-                    <span style={{ fontSize: 11.5, color: T.faint }}>{index + 1}</span>
-                  )}
+                <span style={railMarkStyle(step)} aria-hidden="true">
+                  {step.status === 'done' ? '✓' : step.status === 'skipped' ? '–' : index + 1}
                 </span>
-                <span style={{ flex: 1 }}>{step.title}</span>
-                {step.is_required && !step.status && <span style={{ color: T.warn, fontSize: 11 }}>•</span>}
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontWeight: step.id === activeStep?.id ? 600 : 500,
+                    }}
+                  >
+                    {step.title}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 11.5, color: T.faint, marginTop: 2 }}>
+                    {STEP_KIND_LABELS[step.kind] ?? step.kind}
+                    {step.is_required && !step.status ? ' · obrigatório' : ''}
+                  </span>
+                </span>
               </button>
             ))}
           </nav>

@@ -3,9 +3,7 @@
 import { useEffect, useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthShell } from '@/components/auth/AuthShell'
-import { Card } from '@/components/ui/Card'
 import { Alert } from '@/components/ui/Alert'
-import { Button } from '@/components/ui/Button'
 import { Tag } from '@/components/ui/Tag'
 import { apiFetch } from '@/lib/api/client'
 import { OrganizationInfo } from '@/lib/types/auth'
@@ -55,35 +53,33 @@ export default function SelectOrganizationPage() {
     }
   }
 
-  const orgCardStyle: CSSProperties = {
-    padding: '14px 16px',
-    marginBottom: '10px',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
+  const orgRowStyle: CSSProperties = {
+    textAlign: 'left',
+    cursor: loading ? 'progress' : 'pointer',
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    backgroundColor: T.surface,
+    padding: '14px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    font: 'inherit',
+    color: 'inherit',
+    transition: 'background-color .15s ease, border-color .15s ease',
   }
 
   const orgNameStyle: CSSProperties = {
-    fontSize: '13.5px',
+    display: 'block',
     fontWeight: 600,
+    fontSize: '15px',
     color: T.ink,
-    marginBottom: '4px',
-    fontFamily: T.mono,
   }
 
   const orgSlugStyle: CSSProperties = {
+    display: 'block',
+    fontFamily: T.mono,
     fontSize: '12px',
     color: T.faint,
-    fontFamily: T.mono,
-    marginBottom: '8px',
-  }
-
-  const orgFooterStyle: CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: '2px',
   }
 
   if (organizations.length === 0) {
@@ -91,38 +87,38 @@ export default function SelectOrganizationPage() {
   }
 
   return (
-    <AuthShell title="Selecionar organização" subtitle="Você pertence a múltiplas organizações">
+    <AuthShell
+      variant="centered"
+      title="Selecionar organização"
+      subtitle="Você pertence a mais de uma organização."
+    >
       {error && <Alert variant="danger">{error}</Alert>}
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {organizations.map((org) => (
-          <div
+          <button
             key={org.id}
+            type="button"
+            disabled={loading}
+            onClick={() => handleSelect(org.id)}
             style={{
-              ...orgCardStyle,
+              ...orgRowStyle,
               backgroundColor: selected === org.id ? T.accentBg : T.surface,
               borderColor: selected === org.id ? T.accent : T.border,
             }}
-            onClick={() => !loading && handleSelect(org.id)}
           >
-            <div style={orgNameStyle}>{org.name}</div>
-            <div style={orgSlugStyle}>{org.slug}</div>
-            <div style={orgFooterStyle}>
-              <Tag variant={org.role === 'admin' ? 'accent' : 'default'}>
-                {org.role}
-              </Tag>
-              {selected === org.id && loading && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                  <path d="M22 12a10 10 0 1 1-20 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              )}
-            </div>
-          </div>
+            <span>
+              <span style={orgNameStyle}>{org.name}</span>
+              <span style={orgSlugStyle}>{org.slug}</span>
+            </span>
+            <span style={{ flex: 1 }} />
+            <Tag variant={org.role === 'admin' ? 'accent' : 'default'}>{org.role}</Tag>
+            <span style={{ color: T.faint }} aria-hidden="true">
+              {selected === org.id && loading ? '…' : '→'}
+            </span>
+          </button>
         ))}
       </div>
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </AuthShell>
   )
 }

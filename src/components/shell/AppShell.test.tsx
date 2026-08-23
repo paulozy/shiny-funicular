@@ -1,17 +1,12 @@
-import { ReactElement } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { AppShell } from './AppShell'
-import {
-  SidebarMode,
-  SidebarPreferenceProvider,
-} from './SidebarPreferenceProvider'
 import { UserInfo } from '@/lib/types/auth'
 
-// AppShell now embeds the CommandPalette, which relies on `useRouter` from
-// Next.js navigation. We mock it here so component tests can render without a
-// real router context.
+// AppShell embeds the CommandPalette and the user menu, both of which use
+// `useRouter`. Mocked here so component tests render without a real router.
+const push = jest.fn()
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push }),
 }))
 
 beforeAll(() => {
@@ -34,49 +29,35 @@ const user: UserInfo = {
   },
 }
 
-function renderShell(
-  ui: ReactElement,
-  options: { initialMode?: SidebarMode } = {}
-) {
-  const initialMode = options.initialMode ?? 'expanded'
-  return render(
-    <SidebarPreferenceProvider initialMode={initialMode}>{ui}</SidebarPreferenceProvider>
-  )
-}
-
-function clearSidebarCookie() {
-  // jsdom's `document.cookie` setter only adds/overwrites; setting an expired
-  // Max-Age effectively removes the cookie between tests.
-  document.cookie = 'sidebar_state=; Path=/; Max-Age=0'
-}
-
-describe('AppShell sidebar', () => {
-  it('renders Code as the primary hub link and removes Início', () => {
-    renderShell(
+describe('AppShell header', () => {
+  it('renders Code as the primary hub link', () => {
+    render(
       <AppShell user={user} activeHub="code">
         <div>content</div>
       </AppShell>
     )
 
     expect(screen.queryByText('Início')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Code' }).some((link) => link.getAttribute('href') === '/')).toBe(true)
+    const codeHub = screen.getByRole('link', { name: 'Code' })
+    expect(codeHub).toHaveAttribute('href', '/')
+    expect(codeHub).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'idp.ai' })).toHaveAttribute('href', '/')
   })
 
   it('keeps unavailable hubs disabled instead of linking to missing pages', () => {
-    renderShell(
+    render(
       <AppShell user={user} activeHub="code">
         <div>content</div>
       </AppShell>
     )
 
     expect(screen.queryByRole('link', { name: 'Infra' })).not.toBeInTheDocument()
-    expect(screen.getByText('Infra').closest('[aria-disabled="true"]')).toBeInTheDocument()
-    expect(screen.getByText('Arquitetura').closest('[aria-disabled="true"]')).toBeInTheDocument()
+    expect(screen.getByLabelText('Infra — Em breve')).toBeInTheDocument()
+    expect(screen.getByLabelText('Arquitetura — Em breve')).toBeInTheDocument()
   })
 
-  it('links organization settings from the footer', () => {
-    renderShell(
+  it('links organization settings from the header', () => {
+    render(
       <AppShell user={user} activeHub="settings">
         <div>content</div>
       </AppShell>
@@ -88,91 +69,77 @@ describe('AppShell sidebar', () => {
     )
   })
 
-  it('renders clickable breadcrumb ancestors and keeps the current item as text', () => {
-    renderShell(
-      <AppShell
-        user={user}
-        activeHub="code"
-        breadcrumb={[{ label: 'Code', href: '/' }, { label: 'web', href: '/code/repositories/repo-1' }, { label: 'busca' }]}
-      >
+  it('opens the user menu with the account actions', () => {
+    render(
+      <AppShell user={user} activeHub="code">
         <div>content</div>
       </AppShell>
     )
 
-    expect(screen.getAllByRole('link', { name: 'Code' }).some((link) => link.getAttribute('href') === '/')).toBe(true)
-    expect(screen.getByRole('link', { name: 'web' })).toHaveAttribute('href', '/code/repositories/repo-1')
-    expect(screen.getByText('busca').closest('a')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu do usuário' }))
+
+    expect(screen.getByText('user@example.com · admin')).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Meu onboarding' })).toHaveAttribute(
+      'href',
+      '/onboarding'
+    )
+    expect(screen.getByRole('menuitem', { name: 'Sair' })).toBeInTheDocument()
   })
 
-  describe('collapsible sidebar', () => {
-    beforeEach(() => {
-      clearSidebarCookie()
-    })
+  it('offers switching organizations from the org chip', () => {
+    render(
+      <AppShell user={user} activeHub="code">
+        <div>content</div>
+      </AppShell>
+    )
 
-    it('starts expanded by default and toggles to collapsed via the toggle button (writing the cookie)', () => {
-      renderShell(
-        <AppShell user={user} activeHub="code">
-          <div>content</div>
-        </AppShell>
-      )
+    fireEvent.click(screen.getByRole('button', { name: /^Org/ }))
 
-      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
-      expect(screen.getByRole('link', { name: 'idp.ai' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Trocar de organização' })).toHaveAttribute(
+      'href',
+      '/select-organization'
+    )
+  })
 
-      const toggle = screen.getByRole('button', { name: /recolher menu lateral/i })
-      fireEvent.click(toggle)
+  it('renders the page action slot next to the search field', () => {
+    render(
+      <AppShell user={user} activeHub="code" topRight={<button type="button">Novo repositório</button>}>
+        <div>content</div>
+      </AppShell>
+    )
 
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
-      // When collapsed, the textual logo link is hidden — only the icons remain.
-      expect(screen.queryByRole('link', { name: 'idp.ai' })).not.toBeInTheDocument()
-      // Sidebar preference persisted in the cookie (read by the server next time).
-      expect(document.cookie).toContain('sidebar_state=collapsed')
-    })
+    expect(screen.getByRole('button', { name: 'Novo repositório' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abrir paleta de comandos' })).toBeInTheDocument()
+  })
 
-    it('toggles via the Ctrl/Cmd+B keyboard shortcut', () => {
-      renderShell(
-        <AppShell user={user} activeHub="code">
-          <div>content</div>
-        </AppShell>
-      )
+  // Regression guard. The content wrapper is a flex item of a column, where an
+  // `auto` cross-axis margin suppresses `align-items: stretch`. With
+  // `margin: 0 auto` and no explicit width the box collapsed to shrink-to-fit,
+  // so every page rendered as a narrow column instead of filling the 1400px
+  // container the header already used — measured at 162px against the header's
+  // 1400px. jsdom computes no layout, so this asserts the declaration that
+  // prevents it.
+  it('lets the content wrapper fill the container rather than shrink to its content', () => {
+    render(
+      <AppShell user={user} activeHub="code">
+        <div data-testid="page">content</div>
+      </AppShell>
+    )
 
-      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
+    const wrapper = screen.getByTestId('page').parentElement as HTMLElement
+    expect(wrapper).toHaveStyle({ width: '100%', maxWidth: '1400px', margin: '0px auto' })
+  })
 
-      fireEvent.keyDown(window, { key: 'b', ctrlKey: true })
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
+  it('gives the header rows the same width as the content, so the two align', () => {
+    const { container } = render(
+      <AppShell user={user} activeHub="code">
+        <div data-testid="page">content</div>
+      </AppShell>
+    )
 
-      fireEvent.keyDown(window, { key: 'b', ctrlKey: true })
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'expanded')
-    })
-
-    it('respects the initial sidebar mode passed by the server layout', () => {
-      renderShell(
-        <AppShell user={user} activeHub="code">
-          <div>content</div>
-        </AppShell>,
-        { initialMode: 'collapsed' }
-      )
-
-      const sidebar = screen.getByRole('complementary', { name: 'Navegação principal' })
-      expect(sidebar).toHaveAttribute('data-sidebar-mode', 'collapsed')
-      // The expand toggle button is present (label flips to "expandir").
-      expect(screen.getByRole('button', { name: /expandir menu lateral/i })).toBeInTheDocument()
-    })
-
-    it('keeps hub icons accessible while collapsed via aria-label', () => {
-      renderShell(
-        <AppShell user={user} activeHub="code">
-          <div>content</div>
-        </AppShell>,
-        { initialMode: 'collapsed' }
-      )
-
-      // Code hub is the only enabled hub today — its link still exposes the label.
-      expect(screen.getByRole('link', { name: 'Code' })).toBeInTheDocument()
-      // Disabled hubs keep their aria-label too, with "Em breve" suffix.
-      expect(screen.getByLabelText('Infra — Em breve')).toBeInTheDocument()
-    })
+    const headerRow = container.querySelector('header > div') as HTMLElement
+    const wrapper = screen.getByTestId('page').parentElement as HTMLElement
+    expect(headerRow).toHaveStyle({ maxWidth: '1400px', padding: '0px 28px' })
+    expect(wrapper).toHaveStyle({ maxWidth: '1400px' })
   })
 })

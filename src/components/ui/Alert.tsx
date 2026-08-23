@@ -15,16 +15,18 @@ export function Alert({ variant, children }: AlertProps) {
     danger: { bg: T.dangerBg, border: T.dangerBorder, color: T.danger },
   }
 
-  const { bg, border, color } = variantStyles[variant]
+  const { bg, color } = variantStyles[variant]
 
+  // v3 tints the whole block instead of hanging a rule off its left edge —
+  // the same treatment the inline alerts in the mockup use.
   const style: CSSProperties = {
     backgroundColor: bg,
-    borderLeft: `3px solid ${border}`,
     color: color,
-    padding: '12px 14px',
-    borderRadius: '4px',
+    padding: '10px 12px',
+    borderRadius: T.radius.button,
     fontSize: '13px',
-    marginBottom: '16px',
+    lineHeight: 1.5,
+    marginBottom: '14px',
   }
 
   return <div style={style}>{children}</div>

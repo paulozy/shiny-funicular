@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/api/_shared'
 import { OrganizationConfigResponse, UpdateOrganizationConfigRequest } from '@/lib/types/organization'
 import { ErrorResponse } from '@/lib/types/auth'
 
@@ -28,7 +29,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function backendGetOrganizationConfig(
   accessToken: string
 ): Promise<OrganizationConfigResponse> {
-  const response = await fetch(getApiUrl('/organizations/configs'), {
+  const response = await backendFetch(getApiUrl('/organizations/configs'), {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -42,7 +43,7 @@ export async function backendUpdateOrganizationConfig(
   accessToken: string,
   body: UpdateOrganizationConfigRequest
 ): Promise<OrganizationConfigResponse> {
-  const response = await fetch(getApiUrl('/organizations/configs'), {
+  const response = await backendFetch(getApiUrl('/organizations/configs'), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

@@ -28,7 +28,7 @@ export function ScorecardCard({ scorecard }: ScorecardCardProps) {
     background: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: 14,
+    padding: 20,
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
@@ -51,8 +51,7 @@ export function ScorecardCard({ scorecard }: ScorecardCardProps) {
   return (
     <section style={cardStyle} aria-label="Conformidade do repositório">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <MFIcon name="shield" size={14} color={T.accent} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Conformidade</span>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: T.ink, margin: 0 }}>Conformidade</h2>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 12, color: allDone ? T.ok : T.ink3, fontWeight: 600 }}>
           {scorecard.passing} de {scorecard.total}

@@ -1,6 +1,8 @@
 import { T } from '@/lib/tokens'
 
-const AVATAR_COLORS = ['#d97757', '#7a4cc8', '#3a8c5a', '#3970bf', '#bf6940', '#52789e']
+// Tinted from the v3 ramps (teal accent + clay secondary + supporting hues on
+// the same lightness step) so a wall of avatars still reads as one palette.
+const AVATAR_COLORS = ['#146b62', '#8a5a3c', '#1c7a4f', '#3a5f7a', '#6f5a8a', '#9a6a10']
 
 interface AvatarProps {
   name?: string

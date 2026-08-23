@@ -40,6 +40,8 @@ interface TabBarProps {
    * which kept getting lost just below the app's main topbar.
    */
   variant?: TabBarVariant
+  /** Merged into the container — used by the shell to seat the row in the header. */
+  style?: CSSProperties
 }
 
 export function TabBar({
@@ -47,60 +49,44 @@ export function TabBar({
   flush = false,
   ariaLabel = 'Navegação por seções',
   variant = 'subtle',
+  style,
 }: TabBarProps) {
   const pathname = usePathname() ?? ''
   const prominent = variant === 'prominent'
 
+  // v3 draws both tab rows the same way — a text label with a 2px accent
+  // underline. `prominent` only differs by the hairline the row sits on and a
+  // little more breathing room, matching the repository sub-navigation in the
+  // mockup.
   const containerStyle: CSSProperties = {
     display: 'flex',
-    alignItems: 'stretch',
-    gap: prominent ? 2 : 4,
+    alignItems: 'center',
+    gap: prominent ? 22 : 20,
+    flexWrap: 'wrap',
     overflowX: 'auto',
     overflowY: 'hidden',
     borderBottom: flush ? 'none' : `1px solid ${T.border}`,
-    padding: prominent ? '6px 18px 0' : '0 18px',
-    background: prominent ? T.surfaceAlt : 'transparent',
+    padding: 0,
+    marginBottom: prominent ? 22 : 18,
+    background: 'transparent',
+    ...style,
   }
 
-  const itemBaseStyle = (active: boolean, disabled: boolean): CSSProperties => {
-    if (prominent) {
-      return {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '10px 14px 11px',
-        fontSize: 13,
-        fontWeight: active ? 600 : 500,
-        color: disabled ? T.faint : active ? T.ink : T.ink3,
-        textDecoration: 'none',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.7 : 1,
-        whiteSpace: 'nowrap',
-        background: active ? T.surface : 'transparent',
-        borderTopLeftRadius: 6,
-        borderTopRightRadius: 6,
-        border: `1px solid ${active ? T.border : 'transparent'}`,
-        borderBottomColor: active ? T.surface : 'transparent',
-        marginBottom: -1,
-        transition: 'background 120ms ease, color 120ms ease',
-      }
-    }
-    return {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '10px 12px 9px',
-      fontSize: 12.5,
-      fontWeight: active ? 600 : 500,
-      color: disabled ? T.faint : active ? T.ink : T.ink2,
-      textDecoration: 'none',
-      cursor: disabled ? 'default' : 'pointer',
-      opacity: disabled ? 0.7 : 1,
-      borderBottom: `2px solid ${active ? T.accent : 'transparent'}`,
-      marginBottom: -1,
-      whiteSpace: 'nowrap',
-    }
-  }
+  const itemBaseStyle = (active: boolean, disabled: boolean): CSSProperties => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: prominent ? '0 0 10px' : '0 0 8px',
+    fontSize: 14,
+    fontWeight: active ? 600 : 500,
+    color: disabled ? T.neutral500 : active ? T.ink : T.faint,
+    textDecoration: 'none',
+    cursor: disabled ? 'default' : 'pointer',
+    borderBottom: `2px solid ${active ? T.accent : 'transparent'}`,
+    marginBottom: -1,
+    whiteSpace: 'nowrap',
+    background: 'none',
+  })
 
   return (
     <nav role="navigation" aria-label={ariaLabel} style={containerStyle}>

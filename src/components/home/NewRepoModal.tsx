@@ -69,7 +69,7 @@ export function NewRepoModal({ isOpen, onClose, onSuccess }: NewRepoModalProps) 
     maxHeight: '90vh',
     background: T.surface,
     border: `1px solid ${T.borderStrong}`,
-    borderRadius: 12,
+    borderRadius: T.radius.dialog,
     boxShadow: T.shadow,
     overflow: 'hidden',
     display: 'flex',

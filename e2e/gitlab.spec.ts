@@ -117,7 +117,9 @@ test.describe('GitLab repository through the UI', () => {
       await expect(page).toHaveURL(/\/code\/repositories\/[0-9a-f-]+/)
 
       await page.getByRole('link', { name: /pull requests/i }).first().click()
-      await expect(page.getByRole('heading', { name: new RegExp(`Pull Requests de`) })).toBeVisible({
+      // The repository header stays put across tabs; what proves the tab
+      // rendered is its own filter.
+      await expect(page.getByRole('radiogroup', { name: 'Filtrar pull requests' })).toBeVisible({
         timeout: 20_000,
       })
 

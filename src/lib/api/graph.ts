@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/api/_shared'
 import { ErrorResponse } from '@/lib/types/auth'
 import {
   CreateRepositoryRelationshipRequest,
@@ -49,7 +50,7 @@ export async function backendCreateRelationship(
   accessToken: string,
   body: CreateRepositoryRelationshipRequest
 ): Promise<RepositoryGraphEdge> {
-  const response = await fetch(getApiUrl('/repository-relationships'), {
+  const response = await backendFetch(getApiUrl('/repository-relationships'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ export async function backendUpdateRelationship(
   id: string,
   body: UpdateRepositoryRelationshipRequest
 ): Promise<RepositoryGraphEdge> {
-  const response = await fetch(getApiUrl(`/repository-relationships/${id}`), {
+  const response = await backendFetch(getApiUrl(`/repository-relationships/${id}`), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -77,7 +78,7 @@ export async function backendUpdateRelationship(
 }
 
 export async function backendDeleteRelationship(accessToken: string, id: string): Promise<void> {
-  const response = await fetch(getApiUrl(`/repository-relationships/${id}`), {
+  const response = await backendFetch(getApiUrl(`/repository-relationships/${id}`), {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${accessToken}` },
   })

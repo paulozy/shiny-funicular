@@ -9,9 +9,15 @@ import { PullRequestListItemResponse } from '@/lib/types/pull_request'
 interface PullRequestCardProps {
   item: PullRequestListItemResponse
   repoId: string
+  /**
+   * When given, the title opens the review sheet instead of navigating. The
+   * "Ver alterações" link below still goes to the full page, so the diff is
+   * always one deliberate click away.
+   */
+  onSelect?: (pr: PullRequestListItemResponse['pull_request']) => void
 }
 
-export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
+export function PullRequestCard({ item, repoId, onSelect }: PullRequestCardProps) {
   const { pull_request: pr } = item
   const detailHref = `/code/repositories/${repoId}/pull-requests/${pr.number}`
 
@@ -123,9 +129,30 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
     <article style={cardStyle} aria-label={`Pull request ${pr.number}: ${pr.title}`}>
       <div style={headerStyle}>
         <span style={numberStyle}>#{pr.number}</span>
-        <Link href={detailHref} style={titleStyle} title={pr.title}>
-          {pr.title}
-        </Link>
+        {onSelect ? (
+          <button
+            type="button"
+            onClick={() => onSelect(pr)}
+            title={pr.title}
+            style={{
+              ...titleStyle,
+              background: 'none',
+              border: 0,
+              padding: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+              font: 'inherit',
+              fontSize: 14.5,
+              fontWeight: 600,
+            }}
+          >
+            {pr.title}
+          </button>
+        ) : (
+          <Link href={detailHref} style={titleStyle} title={pr.title}>
+            {pr.title}
+          </Link>
+        )}
         {pr.draft ? (
           <span style={draftTagStyle}>Draft</span>
         ) : (
@@ -152,10 +179,19 @@ export function PullRequestCard({ item, repoId }: PullRequestCardProps) {
       </div>
 
       <div style={metricsStyle}>
-        <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count}</span>
-        <span style={{ color: T.danger, fontWeight: 600 }}>-{pr.deletions_count}</span>
-        <span>{pr.changed_files} arquivos</span>
-        <span>{pr.commits_count} commits</span>
+        {/* The list endpoint carries no diff stats on GitHub, so these are null
+            there. Showing "+0 -0 / 0 arquivos" claimed every pull request was
+            empty; the detail view has the real numbers. */}
+        {pr.changed_files !== null && (
+          <>
+            <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count ?? 0}</span>
+            <span style={{ color: T.danger, fontWeight: 600 }}>-{pr.deletions_count ?? 0}</span>
+            <span>
+              {pr.changed_files} arquivo{pr.changed_files === 1 ? '' : 's'}
+            </span>
+          </>
+        )}
+        {pr.commits_count !== null && <span>{pr.commits_count} commits</span>}
         <span style={{ color: T.faint, marginLeft: 'auto' }}>
           atualizado{' '}
           {new Date(pr.updated_at).toLocaleString('pt-BR', {

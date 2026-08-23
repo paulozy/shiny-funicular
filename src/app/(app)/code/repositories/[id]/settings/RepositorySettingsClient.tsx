@@ -29,7 +29,7 @@ export function RepositorySettingsClient({
 }: RepositorySettingsClientProps) {
 
   const pageStyle: CSSProperties = {
-    padding: '20px 24px 28px',
+    // Page padding comes from the app shell's content container.
   }
 
   const headerStyle: CSSProperties = {
@@ -57,8 +57,8 @@ export function RepositorySettingsClient({
 
   const layoutStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) 280px',
-    gap: 14,
+    gridTemplateColumns: 'minmax(0, 1fr) 300px',
+    gap: 22,
     alignItems: 'start',
   }
 

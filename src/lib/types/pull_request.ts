@@ -19,10 +19,16 @@ export interface PullRequestResponse {
   base_branch: string
   base_sha: string
   draft: boolean
-  commits_count: number
-  changed_files: number
-  additions_count: number
-  deletions_count: number
+  /**
+   * Null when the provider did not report the number — GitHub omits all of
+   * these when *listing* pull requests and fills them only on the detail call.
+   * Distinct from 0, which means "measured, and nothing changed". Never render
+   * a null as zero.
+   */
+  commits_count: number | null
+  changed_files: number | null
+  additions_count: number | null
+  deletions_count: number | null
   html_url: string
   created_at: string
   updated_at: string

@@ -26,6 +26,11 @@ interface OnboardingStepEditorProps {
   docs: EditorOption[]
   members: EditorOption[]
   disabled?: boolean
+  /**
+   * Hides the "add step" row. The composer offers its own block library, and
+   * two ways to add a step in the same column reads as a bug.
+   */
+  hideAddBar?: boolean
 }
 
 /**
@@ -41,7 +46,7 @@ interface OnboardingStepEditorProps {
  *   at something that does not exist.
  */
 
-const KIND_LABELS: Record<OnboardingStepKind, string> = {
+export const KIND_LABELS: Record<OnboardingStepKind, string> = {
   markdown: 'Texto (markdown)',
   repository: 'Repositório',
   team: 'Time',
@@ -57,7 +62,7 @@ const KIND_LABELS: Record<OnboardingStepKind, string> = {
 
 /** Defaults that keep a freshly added step valid, so the first save cannot
  * fail on a field the person has not reached yet. */
-function defaultsFor(kind: OnboardingStepKind): { body: string; config: OnboardingStepConfig } {
+export function defaultsFor(kind: OnboardingStepKind): { body: string; config: OnboardingStepConfig } {
   switch (kind) {
     case 'markdown':
       return { body: '## Título\n\nEscreva aqui.', config: {} }
@@ -82,6 +87,7 @@ export function OnboardingStepEditor({
   docs,
   members,
   disabled,
+  hideAddBar = false,
 }: OnboardingStepEditorProps) {
   const [adding, setAdding] = useState<OnboardingStepKind>('markdown')
 
@@ -460,6 +466,7 @@ export function OnboardingStepEditor({
         </div>
       ))}
 
+      {!hideAddBar && (
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12 }}>
         <select
           style={selectStyle}
@@ -477,6 +484,7 @@ export function OnboardingStepEditor({
           <MFIcon name="plus" size={11} /> Adicionar passo
         </Button>
       </div>
+      )}
     </div>
   )
 }

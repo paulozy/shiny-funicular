@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { backendGetGraph } from '@/lib/api/graph'
 import { GraphClient } from './GraphClient'
+import { getSessionUser } from '@/lib/api/request-cache'
 
 export default async function GraphPage() {
   const cookieStore = await cookies()
@@ -12,7 +12,7 @@ export default async function GraphPage() {
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }

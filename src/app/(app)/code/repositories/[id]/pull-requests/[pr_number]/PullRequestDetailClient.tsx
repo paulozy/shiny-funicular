@@ -1,12 +1,13 @@
 'use client'
 
-import { CSSProperties } from 'react'
+import { CSSProperties, useState } from 'react'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 import { PullRequestDetailResponse } from '@/lib/types/pull_request'
 import { DiffView } from '@/components/pull-requests/DiffView'
+import { PullRequestBody } from '@/components/pull-requests/PullRequestBody'
 
 interface PullRequestDetailClientProps {
   repoId: string
@@ -23,7 +24,17 @@ export function PullRequestDetailClient({
   const detail = initialDetail
   const pr = detail?.pull_request
 
-  const pageStyle: CSSProperties = { padding: '20px 24px 28px' }
+  /**
+   * How big a change can be before its patch starts folded. Reviewing means
+   * reading a handful of files closely — a 40-file pull request that opens
+   * every patch at once is a scroll bar, not a review.
+   */
+  const AUTO_OPEN_MAX_FILES = 8
+  const AUTO_OPEN_MAX_CHANGES = 120
+
+  const [expandAll, setExpandAll] = useState<boolean | null>(null)
+
+  const pageStyle: CSSProperties = {}
   const backLinkStyle: CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -92,9 +103,15 @@ export function PullRequestDetailClient({
           <span style={branchPillStyle}>{pr.head_branch}</span>
           <span style={{ color: T.faint }}>→</span>
           <span style={branchPillStyle}>{pr.base_branch}</span>
-          <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count}</span>
-          <span style={{ color: T.danger, fontWeight: 600 }}>-{pr.deletions_count}</span>
-          <span>{pr.changed_files} arquivos</span>
+          {pr.changed_files !== null && (
+            <>
+              <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count ?? 0}</span>
+              <span style={{ color: T.danger, fontWeight: 600 }}>-{pr.deletions_count ?? 0}</span>
+              <span>
+                {pr.changed_files} arquivo{pr.changed_files === 1 ? '' : 's'}
+              </span>
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           <a href={pr.html_url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
@@ -112,19 +129,42 @@ export function PullRequestDetailClient({
             <MFIcon name="doc" size={14} color={T.accent} />
             Descrição
           </div>
-          <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{pr.body}</div>
+          <PullRequestBody body={pr.body} />
         </div>
       )}
 
       {files.length > 0 ? (
         <div style={cardStyle}>
-          <div style={sectionTitleStyle}>
+          <div style={{ ...sectionTitleStyle, marginBottom: 12 }}>
             <MFIcon name="code" size={14} color={T.accent} />
             Alterações ({files.length} arquivo{files.length === 1 ? '' : 's'})
+            <span style={{ flex: 1 }} />
+            <button
+              type="button"
+              onClick={() => setExpandAll((current) => !(current ?? false))}
+              style={{
+                font: 'inherit',
+                fontSize: 12.5,
+                fontWeight: 500,
+                background: 'none',
+                border: 0,
+                cursor: 'pointer',
+                color: T.accent700,
+              }}
+            >
+              {expandAll ? 'Recolher todos' : 'Expandir todos'}
+            </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {files.map((file) => (
-              <DiffView key={file.filename} file={file} />
+              <DiffView
+                key={file.filename}
+                file={file}
+                defaultOpen={
+                  expandAll ??
+                  (files.length <= AUTO_OPEN_MAX_FILES && file.changes <= AUTO_OPEN_MAX_CHANGES)
+                }
+              />
             ))}
           </div>
         </div>

@@ -8,7 +8,7 @@ import {
   RepositoryStats,
 } from '@/lib/types/repository'
 import { BackendRepositoryListResponseSchema } from '@/lib/types/repository.schema'
-import { parseOrThrow } from './_shared'
+import { backendFetch, parseOrThrow } from './_shared'
 import {
   CoverageToken,
   CoverageTokenWithSecret,
@@ -72,7 +72,7 @@ export async function backendSyncRepository(
   accessToken: string,
   repoId: string
 ): Promise<RepositorySyncResponse> {
-  const response = await fetch(getApiUrl(`/repositories/${repoId}/sync`), {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoId}/sync`), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -85,7 +85,7 @@ export async function backendCreateRepository(
   accessToken: string,
   body: CreateRepositoryRequest
 ): Promise<RepositoryResponse> {
-  const response = await fetch(getApiUrl('/repositories'), {
+  const response = await backendFetch(getApiUrl('/repositories'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ export async function backendListCoverageTokens(
   accessToken: string,
   repoID: string
 ): Promise<CoverageToken[]> {
-  const response = await fetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   })
@@ -166,7 +166,7 @@ export async function backendCreateCoverageToken(
   repoID: string,
   body: CreateCoverageTokenRequest
 ): Promise<CoverageTokenWithSecret> {
-  const response = await fetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoID}/coverage/tokens`), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

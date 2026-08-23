@@ -36,18 +36,19 @@ export function RelationshipDrawer({
 }: RelationshipDrawerProps) {
   if (!selectedNode && !selectedEdge) return null
 
+  // v3 places the details next to the canvas as a card in the page grid, not
+  // as a panel glued to the viewport edge.
   const containerStyle: CSSProperties = {
-    width: 320,
-    borderLeft: `1px solid ${T.border}`,
     background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    flexShrink: 0,
   }
 
   const headerStyle: CSSProperties = {
-    padding: '12px 16px',
+    padding: '14px 18px',
     borderBottom: `1px solid ${T.border}`,
     display: 'flex',
     alignItems: 'center',
@@ -55,7 +56,7 @@ export function RelationshipDrawer({
   }
 
   const bodyStyle: CSSProperties = {
-    padding: 16,
+    padding: 18,
     overflow: 'auto',
     flex: 1,
     display: 'flex',

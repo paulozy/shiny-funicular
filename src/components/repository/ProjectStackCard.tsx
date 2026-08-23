@@ -1,7 +1,6 @@
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
 import { Tag } from '@/components/ui/Tag'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { colorForLanguage } from '@/lib/language-colors'
 
 interface ProjectStackCardProps {
@@ -53,7 +52,7 @@ export function ProjectStackCard({ languages, frameworks, topics }: ProjectStack
     background: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: 14,
+    padding: 20,
     display: 'flex',
     flexDirection: 'column',
     gap: 14,
@@ -66,7 +65,7 @@ export function ProjectStackCard({ languages, frameworks, topics }: ProjectStack
   }
 
   const sectionTitleStyle: CSSProperties = {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 600,
     color: T.ink,
   }
@@ -129,7 +128,6 @@ export function ProjectStackCard({ languages, frameworks, topics }: ProjectStack
   return (
     <section style={cardStyle} aria-label="Stack do projeto">
       <div style={sectionHeaderStyle}>
-        <MFIcon name="code" size={14} color={T.accent} />
         <span style={sectionTitleStyle}>Stack do projeto</span>
       </div>
 

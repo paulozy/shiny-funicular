@@ -4,7 +4,6 @@ import { CSSProperties, useEffect, useState } from 'react'
 import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
 import { Alert } from '@/components/ui/Alert'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { Team, TeamListResponse } from '@/lib/types/teams'
 import { RepositoryResponse } from '@/lib/types/repository'
 
@@ -72,8 +71,7 @@ export function RepositoryOwnerSection({ repo, canAssign }: RepositoryOwnerSecti
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <MFIcon name="user" size={15} color={T.accent} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Time responsável</span>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: T.ink, margin: 0 }}>Time responsável</h2>
       </div>
 
       <div style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.5, marginBottom: 12 }}>
