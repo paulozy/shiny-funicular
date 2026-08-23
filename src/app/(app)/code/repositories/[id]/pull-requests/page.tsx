@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { backendListPullRequests } from '@/lib/api/pull_requests'
-import { backendGetRepositories } from '@/lib/api/repositories'
+import { canReviewPullRequest } from '@/lib/permissions'
 import { PullRequestsClient } from './PullRequestsClient'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface PullRequestsPageProps {
   params: Promise<{ id: string }>
@@ -18,13 +18,13 @@ export default async function PullRequestsPage({ params }: PullRequestsPageProps
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
 
   const [repos, prsResponse] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
+    listRepositories(accessToken),
     backendListPullRequests(accessToken, id).catch((err) => {
       // Backend returns 503 when the org has no token for this repository's provider —
       // we surface that as "service unavailable" in the client rather than
@@ -42,5 +42,12 @@ export default async function PullRequestsPage({ params }: PullRequestsPageProps
   const loadError =
     prsResponse && 'error' in prsResponse ? prsResponse.error.message : null
 
-  return <PullRequestsClient items={items} repo={repo} loadError={loadError} />
+  return (
+    <PullRequestsClient
+      items={items}
+      repo={repo}
+      loadError={loadError}
+      canReview={canReviewPullRequest(user)}
+    />
+  )
 }

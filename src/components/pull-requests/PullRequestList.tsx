@@ -5,12 +5,22 @@ import { T } from '@/lib/tokens'
 import { PullRequestListItemResponse } from '@/lib/types/pull_request'
 import { PullRequestCard } from './PullRequestCard'
 
+export type PullRequestFilter = 'open' | 'draft' | 'all'
+
 interface PullRequestListProps {
   items: PullRequestListItemResponse[]
   repoId: string
+  /**
+   * When set, the list is flat and shows only the matching pull requests —
+   * the segmented control above it is what names the group. Left unset the
+   * list groups open PRs and drafts under their own headings.
+   */
+  filter?: PullRequestFilter
+  /** Forwarded to each card: opens the review sheet instead of navigating. */
+  onSelect?: (pr: PullRequestListItemResponse['pull_request']) => void
 }
 
-export function PullRequestList({ items, repoId }: PullRequestListProps) {
+export function PullRequestList({ items, repoId, filter, onSelect }: PullRequestListProps) {
   const { open, drafts } = useMemo(() => {
     const sorted = [...items].sort(
       (a, b) =>
@@ -56,6 +66,25 @@ export function PullRequestList({ items, repoId }: PullRequestListProps) {
     return <div style={emptyStyle}>Nenhum PR aberto no momento.</div>
   }
 
+  if (filter) {
+    const visible = filter === 'open' ? open : filter === 'draft' ? drafts : [...open, ...drafts]
+    if (visible.length === 0) {
+      return <div style={emptyStyle}>Nenhum pull request neste filtro.</div>
+    }
+    return (
+      <div style={listStyle}>
+        {visible.map((item) => (
+          <PullRequestCard
+            key={item.pull_request.id}
+            item={item}
+            repoId={repoId}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div>
       {open.length > 0 && (
@@ -63,7 +92,12 @@ export function PullRequestList({ items, repoId }: PullRequestListProps) {
           <h2 style={groupHeaderStyle}>Abertos ({open.length})</h2>
           <div style={listStyle}>
             {open.map((item) => (
-              <PullRequestCard key={item.pull_request.id} item={item} repoId={repoId} />
+              <PullRequestCard
+                key={item.pull_request.id}
+                item={item}
+                repoId={repoId}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         </section>
@@ -74,7 +108,12 @@ export function PullRequestList({ items, repoId }: PullRequestListProps) {
           <h2 style={groupHeaderStyle}>Drafts ({drafts.length})</h2>
           <div style={listStyle}>
             {drafts.map((item) => (
-              <PullRequestCard key={item.pull_request.id} item={item} repoId={repoId} />
+              <PullRequestCard
+                key={item.pull_request.id}
+                item={item}
+                repoId={repoId}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         </section>

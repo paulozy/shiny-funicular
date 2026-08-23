@@ -113,3 +113,21 @@ export interface CreateRepositoryRequest {
   is_private?: boolean
   is_public?: boolean
 }
+
+/**
+ * Whether this repository's host can express "request changes" on a change
+ * request.
+ *
+ * GitHub has the REQUEST_CHANGES review event. GitLab exposes approve and
+ * unapprove over REST but no reviewer "requested changes" state that is stable
+ * across the versions a self-hosted instance may run, so the backend answers
+ * 501 `unsupported_capability` there (see `scm.ErrUnsupportedCapability`).
+ *
+ * This is the single place that knowledge lives on the client — hide the
+ * control rather than offer a button guaranteed to fail.
+ */
+export function supportsRequestChanges(
+  repo: { provider?: RepoProvider; type?: RepoProvider } | null | undefined
+): boolean {
+  return (repo?.provider ?? repo?.type) === 'github'
+}
