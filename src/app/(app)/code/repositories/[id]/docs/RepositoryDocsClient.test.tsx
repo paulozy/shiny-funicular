@@ -24,6 +24,7 @@ const repo: RepositoryResponse = {
 const generation: DocGenerationSummary = {
   id: 'doc-1',
   organization_id: 'org-1',
+  source: 'ai',
   scope: 'repo',
   repository_id: 'repo-1',
   status: 'completed',
@@ -52,19 +53,37 @@ describe('RepositoryDocsClient', () => {
   it('explains the empty state instead of showing a blank panel', () => {
     render(<RepositoryDocsClient repo={repo} initialDocs={[]} canGenerate />)
 
-    expect(screen.getByText(/Nenhuma documentação gerada para web/)).toBeInTheDocument()
+    // "Documento", not "documentação gerada": the panel now holds
+    // hand-written documents too, so the wording no longer claims a model
+    // produced everything in it.
+    expect(screen.getByText(/Nenhum documento para web/)).toBeInTheDocument()
     expect(apiFetch).not.toHaveBeenCalled()
   })
 
-  // Generating is a write; a viewer must not be offered the button.
-  it('offers generation only to roles that may generate', () => {
+  // Both are writes; a viewer must be offered neither.
+  it('offers the two authoring actions only to roles that may write', () => {
     const { rerender } = render(
       <RepositoryDocsClient repo={repo} initialDocs={[]} canGenerate={false} />
     )
-    expect(screen.queryByRole('button', { name: /gerar documentação/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /gerar com ia/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /\+ Nova/i })).not.toBeInTheDocument()
 
     rerender(<RepositoryDocsClient repo={repo} initialDocs={[]} canGenerate />)
-    expect(screen.getByRole('button', { name: /gerar documentação/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /gerar com ia/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /\+ Nova/i })).toBeInTheDocument()
+  })
+
+  // Writing by hand is the primary action because it is the one that always
+  // works — generating needs an Anthropic key, a host credential, token budget
+  // and a live queue.
+  it('leads with writing by hand rather than generating', () => {
+    render(<RepositoryDocsClient repo={repo} initialDocs={[]} canGenerate />)
+
+    const actions = screen.getAllByRole('button')
+    const manualIndex = actions.findIndex((b) => /\+ Nova/i.test(b.textContent ?? ''))
+    const aiIndex = actions.findIndex((b) => /gerar com ia/i.test(b.textContent ?? ''))
+    expect(manualIndex).toBeGreaterThanOrEqual(0)
+    expect(manualIndex).toBeLessThan(aiIndex)
   })
 
   it('keeps a way back to the organization-wide docs hub', () => {

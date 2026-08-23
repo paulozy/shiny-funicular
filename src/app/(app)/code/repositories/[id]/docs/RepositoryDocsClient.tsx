@@ -17,6 +17,10 @@ import { T } from '@/lib/tokens'
 import { DocGenerationCard } from '@/components/docs/DocGenerationCard'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { GenerateDocsModal } from '@/components/docs/GenerateDocsModal'
+import { NewDocModal } from '@/components/docs/NewDocModal'
+import { DocPullRequestBanner } from '@/components/docs/DocPullRequestBanner'
+import { DocMarkdownEditor } from '@/components/docs/DocMarkdownEditor'
+import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 
 interface RepositoryDocsClientProps {
@@ -41,6 +45,9 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
   const [activeType, setActiveType] = useState<DocType>('architecture')
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [showNewDoc, setShowNewDoc] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     if (!selectedDocId) {
@@ -90,6 +97,40 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
     return () => clearInterval(handle)
   }, [docs, selectedDocId])
 
+  // A manual document arrives complete — the response is the stored row, so
+  // there is nothing to poll for.
+  const handleManualCreated = useCallback((created: DocGenerationSummary) => {
+    setDocs((prev) => [created, ...prev])
+    setSelectedDocId(created.id)
+    setActiveType((created.types[0] as DocType) ?? 'architecture')
+  }, [])
+
+  // PATCH creates a new version row and returns it as the new head, which is
+  // why the list entry is replaced rather than appended to.
+  const handleSaveEdit = useCallback(
+    async (content: string) => {
+      if (!detail) return
+      setSavingEdit(true)
+      try {
+        const updated = await apiFetch<DocGenerationDetail>(`/api/docs/${detail.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: { [activeType]: content } }),
+        })
+        setDetail(updated)
+        setDocs((prev) => [
+          updated,
+          ...prev.filter((doc) => doc.id !== detail.id),
+        ])
+        setSelectedDocId(updated.id)
+        setEditing(false)
+      } finally {
+        setSavingEdit(false)
+      }
+    },
+    [detail, activeType]
+  )
+
   const handleGenerated = useCallback(
     (response: DocGenerationAcceptedResponse) => {
       const stub: DocGenerationSummary = {
@@ -97,6 +138,8 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
         organization_id: repo.organization_id,
         scope: 'repo',
         repository_id: repo.id,
+        // This stub stands in for a generation that was just requested.
+        source: 'ai',
         status: response.status,
         types: [],
         tokens_used: 0,
@@ -159,11 +202,11 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
   return (
     <div style={splitStyle}>
       <aside style={sidebarStyle} aria-label="Gerações de documentação do repositório">
-        <div style={railTitleStyle}>Gerado por IA</div>
+        <div style={railTitleStyle}>Documentos</div>
 
         {docs.length === 0 ? (
           <div style={{ padding: '4px 10px 10px', fontSize: 12.5, color: T.faint, lineHeight: 1.5 }}>
-            Nada gerado para este repositório ainda.
+            Nenhum documento para este repositório ainda.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -178,18 +221,6 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
           </div>
         )}
 
-        {canGenerate && (
-          <div style={{ padding: '8px 2px 2px' }}>
-            <Button
-              variant="default"
-              size="md"
-              style={{ width: '100%' }}
-              onClick={() => setShowModal(true)}
-            >
-              Gerar documentação
-            </Button>
-          </div>
-        )}
 
         <Link
           href={`/docs?repo=${repo.id}`}
@@ -200,7 +231,16 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
       </aside>
 
       <section style={panelStyle}>
-        <div style={{ display: 'flex', gap: 18, padding: '12px 18px', borderBottom: `1px solid ${T.border}` }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 18,
+            padding: '12px 18px',
+            borderBottom: `1px solid ${T.border}`,
+            flexWrap: 'wrap',
+          }}
+        >
           {DOC_TYPES.map((type) => (
             <button
               key={type}
@@ -211,12 +251,26 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
               {DOC_TYPE_LABELS[type]}
             </button>
           ))}
+          {canGenerate && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+              {/* Writing by hand leads because it always works; generating
+                  needs an Anthropic key, a host credential, token budget and a
+                  live queue. */}
+              <Button variant="primary" size="sm" onClick={() => setShowNewDoc(true)}>
+                + Nova
+              </Button>
+              <Button variant="default" size="sm" onClick={() => setShowModal(true)}>
+                <MFIcon name="sparkles" size={12} color={T.ai} />
+                Gerar com IA
+              </Button>
+            </div>
+          )}
         </div>
 
         {!selectedDocId ? (
           <div style={{ padding: '40px 18px', textAlign: 'center', fontSize: 13.5, color: T.faint }}>
-            Nenhuma documentação gerada para {repo.name}.
-            {canGenerate ? ' Gere a primeira ao lado.' : ''}
+            Nenhum documento para {repo.name}.
+            {canGenerate ? ' Crie o primeiro pelas ações acima.' : ''}
           </div>
         ) : loadingDetail ? (
           <div style={{ padding: '40px 18px', textAlign: 'center', fontSize: 13.5, color: T.faint }}>
@@ -232,6 +286,19 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
           </div>
         ) : (
           <>
+            {/* Where the generated documentation went. This screen never showed
+                it — only the hub did — so from here the pull request was
+                invisible. */}
+            <div style={{ padding: '12px 18px 0' }}>
+              <DocPullRequestBanner
+                repoId={repo.id}
+                pullRequestNumber={detail.pull_request_number}
+                pullRequestUrl={detail.pull_request_url}
+                branch={detail.gen_branch}
+                provider={repo.provider ?? repo.type}
+              />
+            </div>
+
             {detail.error_message && (
               <div
                 style={{
@@ -246,16 +313,51 @@ export function RepositoryDocsClient({ repo, initialDocs, canGenerate }: Reposit
                 {detail.error_message}
               </div>
             )}
-            <DocMarkdownViewer content={detail.content?.[activeType] ?? ''} />
+            {editing ? (
+              <div style={{ padding: 18 }}>
+                <DocMarkdownEditor
+                  initialContent={detail.content?.[activeType] ?? ''}
+                  saving={savingEdit}
+                  onSave={handleSaveEdit}
+                  onCancel={() => setEditing(false)}
+                />
+              </div>
+            ) : (
+              <>
+                {canGenerate && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      padding: '8px 18px 0',
+                    }}
+                  >
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                      <MFIcon name="doc" size={11} color={T.accent} /> Editar
+                    </Button>
+                  </div>
+                )}
+                <DocMarkdownViewer content={detail.content?.[activeType] ?? ''} />
+              </>
+            )}
           </>
         )}
       </section>
+
+      <NewDocModal
+        isOpen={showNewDoc}
+        onClose={() => setShowNewDoc(false)}
+        scope="repo"
+        repoId={repo.id}
+        onCreated={handleManualCreated}
+      />
 
       <GenerateDocsModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         repoId={repo.id}
         defaultBranch={repo.metadata?.default_branch}
+        existingDocs={docs}
         onSuccess={handleGenerated}
       />
     </div>

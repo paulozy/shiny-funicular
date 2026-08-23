@@ -18,6 +18,9 @@ const baseConfig = {
     // mock it out — the build-time guarantee against client bundling still
     // holds via the real package in the production build.
     '^server-only$': '<rootDir>/__mocks__/server-only.ts',
+    // Stylesheets imported for their side effect (the markdown editor ships
+    // its own CSS) are not parseable by Jest and nothing asserts on them.
+    '\\.(css|scss|sass)$': '<rootDir>/__mocks__/style.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 }

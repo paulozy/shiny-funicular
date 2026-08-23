@@ -11,6 +11,7 @@ import {
 import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
+import { DocTemplateCard } from '@/components/docs/DocTemplateCard'
 
 interface OrgDocsTemplateModalProps {
   isOpen: boolean
@@ -36,7 +37,10 @@ export function OrgDocsTemplateModal({ isOpen, onClose, onSuccess }: OrgDocsTemp
     if (!isOpen || templates.length > 0) return
     setLoadingTemplates(true)
     setError(null)
-    apiFetch<DocTemplate[]>('/api/docs/templates', { method: 'GET' })
+    // Scope is mandatory now that the registry also covers repo templates:
+      // without it this gallery would offer a repository's CONTRIBUTING.md as
+      // an alternative to an org-wide guideline.
+      apiFetch<DocTemplate[]>('/api/docs/templates?scope=org', { method: 'GET' })
       .then((items) => {
         setTemplates(items)
         if (items.length > 0) setSelectedID(items[0].id)
@@ -132,20 +136,6 @@ export function OrgDocsTemplateModal({ isOpen, onClose, onSuccess }: OrgDocsTemp
     gap: 6,
   }
 
-  const cardStyle = (active: boolean): CSSProperties => ({
-    appearance: 'none',
-    border: `1px solid ${active ? T.accent : T.border}`,
-    borderRadius: 8,
-    padding: 10,
-    background: active ? T.accentBg : T.surface,
-    color: T.ink,
-    textAlign: 'left',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  })
-
   const previewStyle: CSSProperties = {
     padding: 16,
     overflow: 'auto',
@@ -216,25 +206,18 @@ export function OrgDocsTemplateModal({ isOpen, onClose, onSuccess }: OrgDocsTemp
             )}
             {!loadingTemplates &&
               templates.map((tmpl) => (
-                <button
+                <DocTemplateCard
                   key={tmpl.id}
-                  type="button"
-                  style={cardStyle(tmpl.id === selectedID)}
-                  onClick={() => setSelectedID(tmpl.id)}
+                  template={tmpl}
+                  selected={tmpl.id === selectedID}
+                  onSelect={() => setSelectedID(tmpl.id)}
                 >
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{tmpl.label}</span>
-                  <span style={{ fontSize: 11, color: T.ink3, lineHeight: 1.45 }}>{tmpl.description}</span>
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      color: T.faint,
-                      fontFamily: T.mono,
-                      marginTop: 2,
-                    }}
-                  >
+                  {/* The type groups the four ADR variants; the sections live
+                      in the preview pane on the right, not on the card. */}
+                  <span style={{ fontSize: 10.5, color: T.faint, fontFamily: T.mono, marginTop: 2 }}>
                     {tmpl.type}
                   </span>
-                </button>
+                </DocTemplateCard>
               ))}
           </div>
 

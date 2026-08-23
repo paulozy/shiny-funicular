@@ -22,6 +22,8 @@ import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocGenerationCard } from '@/components/docs/DocGenerationCard'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { GenerateDocsModal } from '@/components/docs/GenerateDocsModal'
+import { NewDocModal } from '@/components/docs/NewDocModal'
+import { DocPullRequestBanner } from '@/components/docs/DocPullRequestBanner'
 import { Button } from '@/components/ui/Button'
 import { canGenerateDocs } from '@/lib/permissions'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -44,6 +46,7 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
   const [activeType, setActiveType] = useState<DocType>('architecture')
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [showNewDoc, setShowNewDoc] = useState(false)
 
   const selectedRepo = useMemo(
     () => repos.find((r) => r.id === selectedRepoId) ?? null,
@@ -134,6 +137,8 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
         organization_id: user.organization?.id ?? '',
         scope: 'repo',
         repository_id: selectedRepoId!,
+        // This stub stands in for a generation that was just requested.
+        source: 'ai',
         status: response.status,
         types: [],
         tokens_used: 0,
@@ -145,6 +150,13 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     },
     [selectedRepoId]
   )
+
+  // A manual document arrives complete — the response is the stored row, so
+  // there is no stub to reconcile and nothing to poll for.
+  const handleManualCreated = useCallback((created: DocGenerationSummary) => {
+    setDocs((prev) => [created, ...prev])
+    setSelectedDocId(created.id)
+  }, [])
 
   const handleRepoChange = (id: string) => {
     setSelectedRepoId(id)
@@ -222,37 +234,23 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     cursor: 'pointer',
   })
 
-  const bannerStyle: CSSProperties = {
-    padding: '10px 18px',
-    background: T.aiBg,
-    borderBottom: `1px solid ${T.aiBorder}`,
-    fontSize: 12,
-    color: T.ink2,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-  }
-
   return (
     <AppShell
       user={user}
       activeHub="code"
       codeTab="docs"
-      topRight={
-        selectedRepoId &&
-        mayGenerate && (
-          <Button variant="primary" size="md" onClick={() => setShowModal(true)}>
-            Gerar documentação
-          </Button>
-        )
-      }
     >
       <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Documentação</h1>
       <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 20px' }}>
         Gerada a partir do código pelos agentes da organização.
       </p>
 
+      {/* The actions live on this row rather than in the shell's page-action
+          slot. The slot itself is fine — the home and the graph use it well —
+          but here the object of the action is picked by the <select> two
+          controls over, so the button belonged next to it, not 200px above.
+          It also stopped appearing and disappearing from the sticky header as
+          that select changed. */}
       <div style={headerStyle}>
         <DocsScopeTabs active="repo" />
         <select
@@ -278,6 +276,21 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
             Ver repositório →
           </Link>
         )}
+        {selectedRepoId && mayGenerate && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            {/* Writing by hand is the primary action for a material reason,
+                not an aesthetic one: it needs no Anthropic key, no host
+                credential, no token budget and no job queue, so it is the one
+                that always works. */}
+            <Button variant="primary" size="md" onClick={() => setShowNewDoc(true)}>
+              + Nova documentação
+            </Button>
+            <Button variant="default" size="md" onClick={() => setShowModal(true)}>
+              <MFIcon name="sparkles" size={13} color={T.ai} />
+              Gerar com IA
+            </Button>
+          </div>
+        )}
       </div>
 
       <div style={splitStyle}>
@@ -299,30 +312,13 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
         </aside>
 
         <main style={mainStyle}>
-          {docDetail?.pull_request_url && (
-            <div style={bannerStyle}>
-              <MFIcon name="pr" size={13} color={T.ai} />
-              <span>
-                {docDetail.pull_request_number
-                  ? `PR #${docDetail.pull_request_number}`
-                  : 'Pull Request'}{' '}
-                aberta no GitHub
-              </span>
-              {docDetail.gen_branch && (
-                <span style={{ fontFamily: T.mono, fontSize: 11.5 }}>
-                  branch: {docDetail.gen_branch}
-                </span>
-              )}
-              <a
-                href={docDetail.pull_request_url}
-                target="_blank"
-                rel="noreferrer"
-                style={{ marginLeft: 'auto', color: T.accent, fontSize: 12 }}
-              >
-                Abrir no GitHub →
-              </a>
-            </div>
-          )}
+          <DocPullRequestBanner
+            repoId={selectedRepoId ?? undefined}
+            pullRequestNumber={docDetail?.pull_request_number}
+            pullRequestUrl={docDetail?.pull_request_url}
+            branch={docDetail?.gen_branch}
+            provider={selectedRepo?.provider ?? selectedRepo?.type}
+          />
 
           {docDetail?.error_message && (
             <div
@@ -387,11 +383,22 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
       </div>
 
       {selectedRepoId && (
+        <NewDocModal
+          isOpen={showNewDoc}
+          onClose={() => setShowNewDoc(false)}
+          scope="repo"
+          repoId={selectedRepoId}
+          onCreated={handleManualCreated}
+        />
+      )}
+
+      {selectedRepoId && (
         <GenerateDocsModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           repoId={selectedRepoId}
           defaultBranch={selectedRepo?.metadata?.default_branch}
+          existingDocs={docs}
           onSuccess={handleGenerated}
         />
       )}

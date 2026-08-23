@@ -5,7 +5,10 @@ import {
   DocGenerationDetail,
   DocGenerationListResponse,
   DocGenerationStatus,
+  CreateManualDocRequest,
+  DocGenerationSummary,
   DocTemplate,
+  DocTemplateScope,
   GenerateDocsRequest,
   GenerateOrgDocsRequest,
   UpdateDocContentRequest,
@@ -113,10 +116,53 @@ export async function backendUpdateDocContent(
   return handleResponse<DocGenerationDetail>(response)
 }
 
-export async function backendListDocTemplates(accessToken: string): Promise<DocTemplate[]> {
-  const response = await backendFetch(getApiUrl('/docs/templates'), {
+export async function backendListDocTemplates(
+  accessToken: string,
+  scope?: DocTemplateScope
+): Promise<DocTemplate[]> {
+  const query = scope ? `?scope=${scope}` : ''
+  const response = await backendFetch(getApiUrl(`/docs/templates${query}`), {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   return handleResponse<DocTemplate[]>(response)
+}
+
+/**
+ * Store a hand-written document.
+ *
+ * Synchronous, and answers 201 with the stored row — there is no job to wait
+ * for. It also needs none of what generation needs: no Anthropic key, no host
+ * credential, no token budget, no queue. That is why the UI offers it as the
+ * primary action.
+ */
+export async function backendCreateManualRepoDoc(
+  accessToken: string,
+  repoId: string,
+  body: CreateManualDocRequest
+): Promise<DocGenerationSummary> {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoId}/docs/manual`), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  return handleResponse<DocGenerationSummary>(response)
+}
+
+export async function backendCreateManualOrgDoc(
+  accessToken: string,
+  body: CreateManualDocRequest
+): Promise<DocGenerationSummary> {
+  const response = await backendFetch(getApiUrl('/organizations/docs/manual'), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  return handleResponse<DocGenerationSummary>(response)
 }
