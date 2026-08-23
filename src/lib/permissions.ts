@@ -63,3 +63,11 @@ export const canConfigureOrganization = (user: Actor) => hasRole(user, 'admin')
 export const canManageMembers = (user: Actor) => hasRole(user, 'admin')
 export const canGenerateOrgDocs = (user: Actor) => hasRole(user, 'admin')
 export const canManageOnboarding = (user: Actor) => hasRole(user, 'admin')
+
+// Acting on the repository's host — closing an issue, submitting a review
+// verdict. `developer` is the floor; the backend additionally requires the
+// caller's team to own the repository, which cannot be evaluated here, so a
+// developer may still be refused. That is the safe direction: this hides a
+// control the API would reject, it never reveals one.
+export const canCloseIssue = (user: Actor) => hasRole(user, 'developer')
+export const canReviewPullRequest = (user: Actor) => hasRole(user, 'developer')

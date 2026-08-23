@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { AppShell } from '@/components/shell/AppShell'
-import { StickyRepoTabBar } from '@/components/shell/StickyRepoTabBar'
-import { backendGetMe } from '@/lib/api/auth'
-import { backendGetRepositories } from '@/lib/api/repositories'
+import { RepoTabBar } from '@/components/shell/RepoTabBar'
+import { RepositoryHeader } from '@/components/repository/RepositoryHeader'
+import { canSyncRepository } from '@/lib/permissions'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface RepoLayoutProps {
   children: React.ReactNode
@@ -14,10 +15,9 @@ interface RepoLayoutProps {
  * Persistent shell for the per-repository scope.
  *
  * Next.js App Router reuses this layout across navigations between sibling
- * routes (`/[id]`, `/[id]/issues`, `/[id]/pull-requests`, ...), which means
- * the AppShell and the `RepoTabBar` never unmount when the user clicks
- * between tabs. The tabbar is wrapped in `StickyRepoTabBar` so it also stays
- * pinned to the top on long-scrolling sub-pages.
+ * routes (`/[id]`, `/[id]/files`, `/[id]/pull-requests`, ...), which means the
+ * AppShell, the repository header and the tab row never unmount when the user
+ * clicks between tabs.
  *
  * Each `page.tsx` below is responsible only for its own server-side data
  * fetch and rendering its client component — no more AppShell/RepoTabBar
@@ -32,12 +32,12 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
 
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
+  const repos = await listRepositories(accessToken)
 
   const repo = repos?.repositories.find((item) => item.id === id)
   if (!repo || !repos) {
@@ -45,15 +45,14 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
   }
 
   return (
-    <AppShell
-      user={user}
-      activeHub="code"
-      breadcrumb={[
-        { label: 'Code', href: '/' },
-        { label: repo.name, href: `/code/repositories/${repo.id}` },
-      ]}
-    >
-      <StickyRepoTabBar repoId={repo.id} />
+    <AppShell user={user} activeHub="code">
+      <RepositoryHeader repo={repo} canSync={canSyncRepository(user)} />
+      <RepoTabBar
+        repoId={repo.id}
+        prCount={repo.metadata?.pr_count}
+        issueCount={repo.metadata?.issue_count}
+        contributorCount={repo.metadata?.contributors}
+      />
       {children}
     </AppShell>
   )
