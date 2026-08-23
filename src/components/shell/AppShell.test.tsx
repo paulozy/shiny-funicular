@@ -56,6 +56,29 @@ describe('AppShell header', () => {
     expect(screen.getByLabelText('Deploys — Em breve')).toBeInTheDocument()
   })
 
+  // The order is a product decision, not an accident of the array: the hubs that
+  // work come first, so the row does not open with a dead placeholder. Nothing
+  // else pins it, and a reorder is exactly the kind of change that regresses
+  // silently.
+  it('lists the working hubs before the placeholders', () => {
+    render(
+      <AppShell user={user} activeHub="code">
+        <div>content</div>
+      </AppShell>
+    )
+
+    const nav = screen.getByRole('navigation', { name: 'Navegação principal' })
+    const labels = [...nav.children].map((child) => child.textContent)
+    expect(labels).toEqual([
+      'Code',
+      'Arquitetura',
+      'Infra',
+      'Deploys',
+      'Observability',
+      'Knowledge',
+    ])
+  })
+
   // Arquitetura shipped, so it must link rather than say "Em breve". A live
   // feature behind a greyed-out label is worse than no label: it tells people the
   // thing does not exist.
