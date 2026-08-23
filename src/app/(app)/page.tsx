@@ -48,6 +48,9 @@ async function getReviewQueue(
         deletions: pr.deletions_count,
         changedFiles: pr.changed_files,
         draft: pr.draft,
+        reviewDecision: pr.review_decision,
+        approvedBy: pr.approved_by,
+        changesRequestedBy: pr.changes_requested_by,
       }))
     })
   )

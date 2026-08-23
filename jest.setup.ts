@@ -37,3 +37,28 @@ if (typeof window !== 'undefined' && typeof HTMLDialogElement !== 'undefined') {
     }
   }
 }
+
+// The App Router hooks throw outside a router provider ("invariant expected app
+// router to be mounted"), and shared components legitimately use them — the
+// review actions call `router.refresh()` so a submitted verdict is re-read
+// instead of leaving a stale badge on screen.
+//
+// A default mock lives here rather than in each suite because the requirement
+// is environmental, not behavioural: a component under test should not have to
+// know it is being rendered without a router. A suite that wants to assert on
+// navigation still overrides this with its own `jest.mock`.
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+  notFound: jest.fn(),
+  redirect: jest.fn(),
+}))

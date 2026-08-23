@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
 import { PullRequestListItemResponse } from '@/lib/types/pull_request'
+import { ReviewStateBadge } from '@/components/pull-requests/ReviewStateBadge'
 
 interface PullRequestCardProps {
   item: PullRequestListItemResponse
@@ -153,6 +154,12 @@ export function PullRequestCard({ item, repoId, onSelect }: PullRequestCardProps
             {pr.title}
           </Link>
         )}
+        <ReviewStateBadge
+          decision={pr.review_decision}
+          approvedBy={pr.approved_by}
+          changesRequestedBy={pr.changes_requested_by}
+          compact
+        />
         {pr.draft ? (
           <span style={draftTagStyle}>Draft</span>
         ) : (

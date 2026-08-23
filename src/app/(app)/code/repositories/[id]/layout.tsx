@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { AppShell } from '@/components/shell/AppShell'
 import { RepoTabBar } from '@/components/shell/RepoTabBar'
 import { RepositoryHeader } from '@/components/repository/RepositoryHeader'
+import { knownOpenIssueCount } from '@/lib/repo-metrics'
 import { canSyncRepository } from '@/lib/permissions'
 import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
@@ -50,7 +51,7 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
       <RepoTabBar
         repoId={repo.id}
         prCount={repo.metadata?.pr_count}
-        issueCount={repo.metadata?.issue_count}
+        issueCount={knownOpenIssueCount(repo.metadata)}
         contributorCount={repo.metadata?.contributors}
       />
       {children}

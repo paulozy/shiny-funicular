@@ -4,6 +4,8 @@ import { CSSProperties, useState } from 'react'
 import { T } from '@/lib/tokens'
 import { timeAgo } from '@/lib/relative-time'
 import { RepoProvider } from '@/lib/types/repository'
+import { ReviewDecision } from '@/lib/types/pull_request'
+import { ReviewStateBadge } from '@/components/pull-requests/ReviewStateBadge'
 import {
   PullRequestDrawer,
   PullRequestDrawerTarget,
@@ -30,6 +32,13 @@ export interface ReviewQueueItem {
   deletions: number | null
   changedFiles: number | null
   draft: boolean
+  /**
+   * The recorded verdict, or null/undefined when the host could not be asked.
+   * See `review_decision` on the DTO — null must not render as "not reviewed".
+   */
+  reviewDecision?: ReviewDecision | null
+  approvedBy?: string[]
+  changesRequestedBy?: string[]
 }
 
 interface ReviewQueueProps {
@@ -124,6 +133,12 @@ export function ReviewQueue({ items, canReview = false }: ReviewQueueProps) {
                 </span>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{pr.title}</span>
                 <span style={{ flex: 1 }} />
+                <ReviewStateBadge
+                  decision={pr.reviewDecision}
+                  approvedBy={pr.approvedBy}
+                  changesRequestedBy={pr.changesRequestedBy}
+                  compact
+                />
                 {pr.draft && (
                   <span style={{ fontSize: 12, color: T.faint }}>draft</span>
                 )}

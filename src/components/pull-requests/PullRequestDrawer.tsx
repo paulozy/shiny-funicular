@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
@@ -8,10 +9,9 @@ import { PullRequestDetailResponse } from '@/lib/types/pull_request'
 import { timeAgo } from '@/lib/relative-time'
 import { Button } from '@/components/ui/Button'
 import { PullRequestBody } from '@/components/pull-requests/PullRequestBody'
-import { useToast } from '@/components/ui/Toast'
-import { RepoProvider, supportsRequestChanges } from '@/lib/types/repository'
-
-type ReviewAction = 'approve' | 'request-changes'
+import { RepoProvider } from '@/lib/types/repository'
+import { ReviewActions } from '@/components/pull-requests/ReviewActions'
+import { ReviewStateBadge } from '@/components/pull-requests/ReviewStateBadge'
 
 export interface PullRequestDrawerTarget {
   repoId: string
@@ -50,8 +50,7 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
   const [detail, setDetail] = useState<PullRequestDetailResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [reviewing, setReviewing] = useState<ReviewAction | null>(null)
-  const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     if (!target) {
@@ -95,34 +94,6 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
   if (!target) return null
 
   const pr = detail?.pull_request
-  async function submitReview(action: ReviewAction) {
-    if (!target) return
-    setReviewing(action)
-    try {
-      const response = await fetch(
-        `/api/repositories/${target.repoId}/pull-requests/${target.number}/${action}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body: '' }),
-        }
-      )
-      if (!response.ok) {
-        toast(reviewErrorMessage(response.status))
-        return
-      }
-      toast(
-        action === 'approve'
-          ? `PR #${target.number} aprovado`
-          : `Mudanças solicitadas no #${target.number}`
-      )
-      onClose()
-    } catch {
-      toast('Não foi possível falar com o servidor. Tente de novo.')
-    } finally {
-      setReviewing(null)
-    }
-  }
 
   const detailHref = `/code/repositories/${target.repoId}/pull-requests/${target.number}`
 
@@ -239,7 +210,14 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
             >
               <div style={factStyle}>
                 <span style={factLabelStyle}>Estado</span>
-                <span>{pr.draft ? 'draft' : pr.state}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {pr.draft ? 'draft' : pr.state}
+                  <ReviewStateBadge
+                    decision={pr.review_decision}
+                    approvedBy={pr.approved_by}
+                    changesRequestedBy={pr.changes_requested_by}
+                  />
+                </span>
               </div>
               {pr.changed_files !== null && (
                 <div style={factStyle}>
@@ -284,29 +262,20 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
               </Button>
             </a>
           )}
-          {canReview && pr && (
-            <>
-              <Button
-                variant="primary"
-                size="md"
-                disabled={reviewing !== null}
-                onClick={() => submitReview('approve')}
-              >
-                {reviewing === 'approve' ? 'Aprovando…' : 'Aprovar'}
-              </Button>
-              {/* GitLab has no portable "request changes"; the helper is the
-                  single place that knowledge lives on the client. */}
-              {supportsRequestChanges({ provider: target?.provider }) && (
-                <Button
-                  variant="default"
-                  size="md"
-                  disabled={reviewing !== null}
-                  onClick={() => submitReview('request-changes')}
-                >
-                  {reviewing === 'request-changes' ? 'Enviando…' : 'Solicitar mudanças'}
-                </Button>
-              )}
-            </>
+          {pr && (
+            <ReviewActions
+              repoId={target.repoId}
+              number={target.number}
+              provider={target.provider}
+              canReview={canReview}
+              blockedReason={pr.review_blocked_reason ?? null}
+              onReviewed={() => {
+                // The list behind the drawer shows the same state, so it has to
+                // re-read before the drawer disappears over it.
+                router.refresh()
+                onClose()
+              }}
+            />
           )}
           <Button variant="ghost" size="md" onClick={onClose}>
             Ver depois
@@ -317,20 +286,3 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
   )
 }
 
-/**
- * 501 is not a failure: it means this repository's host has no equivalent
- * action. It should be unreachable — the button is hidden for those providers —
- * but saying so plainly beats a generic error if the two ever drift apart.
- */
-function reviewErrorMessage(status: number): string {
-  if (status === 403) {
-    return 'Você não tem permissão para revisar neste repositório.'
-  }
-  if (status === 501) {
-    return 'O provedor deste repositório não suporta essa ação de revisão.'
-  }
-  if (status === 503) {
-    return 'O provedor não respondeu. Verifique o token da organização.'
-  }
-  return 'Não foi possível enviar a revisão.'
-}

@@ -33,7 +33,30 @@ export interface PullRequestResponse {
   created_at: string
   updated_at: string
   merged_at?: string
+  /**
+   * Why the viewer cannot review this PR, or null when nothing known stops
+   * them. Only the detail endpoint fills it; the list does not.
+   *
+   * Advisory, not a permission check — the host is still the authority, and it
+   * enforces rules that are invisible from here. Null means "nothing we can
+   * see", never "allowed". Present as `null` rather than omitted on purpose:
+   * see the Go DTO for why absent must not be confused with null.
+   */
+  review_blocked_reason?: string | null
+  /**
+   * The current review verdict, or null when the host could not be asked.
+   *
+   * Null and `''` are different: `''` is a measured "nobody has reviewed",
+   * null is "we do not know". Render null as nothing — never as "not
+   * reviewed". Only the detail endpoint and the repository PR list fill it;
+   * change requests past the backend's per-list ceiling report null.
+   */
+  review_decision?: ReviewDecision | null
+  approved_by?: string[]
+  changes_requested_by?: string[]
 }
+
+export type ReviewDecision = 'approved' | 'changes_requested' | 'commented' | ''
 
 export interface PullRequestListItemResponse {
   pull_request: PullRequestResponse
