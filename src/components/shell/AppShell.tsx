@@ -38,10 +38,13 @@ interface AppShellProps {
   children: ReactNode
 }
 
+// A hub with no `href` renders disabled as "Em breve". Arquitetura has one
+// because the domain shipped: the graph carries repositories, APIs and resources,
+// so leaving the label greyed out would tell people the feature does not exist.
 const HUBS = [
   { id: 'code', label: 'Code', href: '/' },
   { id: 'infra', label: 'Infra' },
-  { id: 'arch', label: 'Arquitetura' },
+  { id: 'arch', label: 'Arquitetura', href: '/graph' },
   { id: 'deploy', label: 'Deploys' },
   { id: 'obs', label: 'Observability' },
   { id: 'kb', label: 'Knowledge' },
@@ -433,7 +436,7 @@ export function AppShell({
                   href={hub.href}
                   style={hubStyle(active, false)}
                   aria-current={active ? 'page' : undefined}
-                  title="Code Hub"
+                  title={`${hub.label} Hub`}
                 >
                   {hub.label}
                 </Link>

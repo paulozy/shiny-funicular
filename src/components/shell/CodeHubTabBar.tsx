@@ -3,7 +3,9 @@
 import { CSSProperties } from 'react'
 import { TabBar, TabBarItem } from '@/components/shell/TabBar'
 
-export type CodeHubTab = 'repositories' | 'docs' | 'graph' | 'onboarding'
+// `graph` is gone: the graph lives under the Arquitetura hub now, because it is a
+// domain of its own rather than a view of the code catalog.
+export type CodeHubTab = 'repositories' | 'docs' | 'onboarding'
 
 interface CodeHubTabBarProps {
   activeTab?: CodeHubTab
@@ -22,12 +24,6 @@ export function CodeHubTabBar({ activeTab = 'repositories', style }: CodeHubTabB
       href: '/docs',
       matchPrefix: '/docs',
       forceActive: activeTab === 'docs',
-    },
-    {
-      label: 'Grafo',
-      href: '/graph',
-      matchPrefix: '/graph',
-      forceActive: activeTab === 'graph',
     },
     {
       label: 'Meu onboarding',
