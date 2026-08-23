@@ -28,6 +28,15 @@ interface ReviewActionsProps {
   blockedReason?: string | null
   /** Called after a verdict lands, so a caller can close or refresh itself. */
   onReviewed?: () => void
+  /**
+   * How much of the review vocabulary to offer.
+   *
+   * `approve-only` is for the list's side drawer, which is a triage surface:
+   * skim, approve the easy ones, open the diff for the rest. Requesting changes
+   * belongs on the page, because it requires writing *what* needs to change and
+   * that is not a thing anyone can do well without the diff on screen.
+   */
+  mode?: 'full' | 'approve-only'
 }
 
 /**
@@ -46,6 +55,7 @@ export function ReviewActions({
   canReview = false,
   blockedReason = null,
   onReviewed,
+  mode = 'full',
 }: ReviewActionsProps) {
   const [submitting, setSubmitting] = useState<ReviewAction | null>(null)
   const [message, setMessage] = useState('')
@@ -57,7 +67,10 @@ export function ReviewActions({
 
   const blockedMessage = blockedReason ? reviewBlockedMessage(blockedReason) : null
   const disabled = submitting !== null || blockedMessage !== null
-  const canRequestChanges = supportsRequestChanges({ provider })
+  // Two independent reasons to hide it: this host has no equivalent action, or
+  // this surface is not the place to write one.
+  const canRequestChanges = mode === 'full' && supportsRequestChanges({ provider })
+  const canCompose = mode === 'full'
 
   async function submitReview(action: ReviewAction) {
     setSubmitting(action)
@@ -142,7 +155,7 @@ export function ReviewActions({
           {submitting === 'request-changes' ? 'Enviando…' : 'Solicitar mudanças'}
         </Button>
       )}
-      {!blockedMessage && !composing && (
+      {canCompose && !blockedMessage && !composing && (
         <Button variant="ghost" size="md" onClick={() => setComposing(true)}>
           Comentar
         </Button>
@@ -154,7 +167,7 @@ export function ReviewActions({
           with an empty body, so the author was told to change something with no
           indication of what. Requesting changes now requires it; approving does
           not, because "looks good" is a complete thought. */}
-      {!blockedMessage && composing && (
+      {canCompose && !blockedMessage && composing && (
         <div style={composerStyle}>
           <label
             htmlFor={`review-message-${number}`}

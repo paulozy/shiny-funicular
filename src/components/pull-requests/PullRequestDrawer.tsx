@@ -269,6 +269,9 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
               provider={target.provider}
               canReview={canReview}
               blockedReason={pr.review_blocked_reason ?? null}
+              // Triage surface: approve the obvious ones from here, open the
+              // diff for anything that needs an argument written down.
+              mode="approve-only"
               onReviewed={() => {
                 // The list behind the drawer shows the same state, so it has to
                 // re-read before the drawer disappears over it.
@@ -277,9 +280,6 @@ export function PullRequestDrawer({ target, onClose, canReview = false }: PullRe
               }}
             />
           )}
-          <Button variant="ghost" size="md" onClick={onClose}>
-            Ver depois
-          </Button>
         </div>
       </aside>
     </div>
