@@ -16,7 +16,6 @@ import {
 } from '@/lib/types/docs'
 import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
-import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
 import { DocMarkdownEditor } from '@/components/docs/DocMarkdownEditor'
@@ -175,17 +174,16 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
   }, [router, user.organization?.id])
 
   const splitStyle: CSSProperties = {
-    flex: 1,
-    display: 'flex',
-    minHeight: 0,
+    display: 'grid',
+    gridTemplateColumns: '260px minmax(0, 1fr)',
+    gap: 20,
+    alignItems: 'start',
   }
 
   const sidebarStyle: CSSProperties = {
-    width: 300,
-    minWidth: 260,
     background: T.surface,
-    borderRight: `1px solid ${T.border}`,
-    overflow: 'auto',
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
     padding: 12,
     display: 'flex',
     flexDirection: 'column',
@@ -193,30 +191,32 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
   }
 
   const mainStyle: CSSProperties = {
-    flex: 1,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    minHeight: 380,
     display: 'flex',
     flexDirection: 'column',
     minWidth: 0,
+    overflow: 'hidden',
   }
 
   const tabsContainerStyle: CSSProperties = {
     display: 'flex',
-    gap: 4,
-    padding: '8px 24px',
+    gap: 18,
+    padding: '12px 18px',
     borderBottom: `1px solid ${T.border}`,
-    background: T.surface,
   }
 
   const tabButtonStyle = (active: boolean): CSSProperties => ({
     appearance: 'none',
     border: 0,
     background: 'transparent',
-    color: active ? T.ink : T.ink2,
+    color: active ? T.ink : T.faint,
     fontWeight: active ? 600 : 500,
-    fontSize: 12.5,
-    padding: '8px 12px',
+    fontSize: 13,
+    padding: '0 0 4px',
     borderBottom: `2px solid ${active ? T.accent : 'transparent'}`,
-    marginBottom: -1,
     cursor: 'pointer',
   })
 
@@ -224,23 +224,28 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
     <AppShell
       user={user}
       activeHub="code"
-      breadcrumb={[{ label: 'Code', href: '/' }, { label: 'Documentação', href: '/docs' }, { label: 'Organização' }]}
+      codeTab="docs"
       topRight={
         canManage && (
           <Button variant="primary" size="md" onClick={() => setShowModal(true)}>
-            <MFIcon name="sparkles" size={12} />
             Gerar documentação
           </Button>
         )
       }
     >
-      <CodeHubTabBar activeTab="docs" />
-      <DocsScopeTabs active="org" />
+      <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Documentação</h1>
+      <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 20px' }}>
+        Gerada a partir do código pelos agentes da organização.
+      </p>
+
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
+        <DocsScopeTabs active="org" />
+      </div>
 
       <div style={splitStyle}>
         <aside style={sidebarStyle} aria-label="Lista de gerações da organização">
           {docs.length === 0 ? (
-            <div style={{ padding: 16, color: T.faint, fontSize: 12.5, textAlign: 'center' }}>
+            <div style={{ padding: 10, color: T.faint, fontSize: 13, lineHeight: 1.5 }}>
               Nenhuma documentação organizacional gerada ainda.
             </div>
           ) : (
@@ -252,7 +257,7 @@ export function DocsOrgClient({ user, initialDocs, initialDocDetail }: DocsOrgCl
           {docDetail?.error_message && (
             <div
               style={{
-                padding: '10px 24px',
+                padding: '10px 18px',
                 background: T.dangerBg,
                 borderBottom: `1px solid ${T.dangerBorder}`,
                 color: T.danger,

@@ -14,39 +14,40 @@ interface DocsScopeTabsProps {
  * the SSR data prefetch (the page itself reads `?scope` to dispatch).
  */
 export function DocsScopeTabs({ active }: DocsScopeTabsProps) {
+  // Drawn as the design system's segmented control, but built from links so a
+  // scope switch is a real navigation the browser can prefetch and restore.
   const containerStyle: CSSProperties = {
-    display: 'flex',
-    gap: 4,
-    padding: '8px 24px 0',
-    borderBottom: `1px solid ${T.border}`,
+    display: 'inline-flex',
+    overflow: 'hidden',
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.button,
     background: T.surface,
   }
 
-  const tabStyle = (current: boolean): CSSProperties => ({
+  const tabStyle = (current: boolean, first: boolean): CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    padding: '8px 14px',
-    fontSize: 12.5,
-    fontWeight: current ? 600 : 500,
-    color: current ? T.ink : T.ink3,
+    padding: '7px 12px',
+    fontSize: 13,
+    color: current ? T.inkInverse : T.ink,
+    background: current ? T.accent : 'transparent',
     textDecoration: 'none',
-    borderBottom: `2px solid ${current ? T.accent : 'transparent'}`,
-    marginBottom: -1,
+    borderLeft: first ? 'none' : `1px solid ${T.border}`,
   })
 
   return (
     <nav aria-label="Escopo da documentação" style={containerStyle}>
       <Link
         href="/docs?scope=org"
-        style={tabStyle(active === 'org')}
+        style={tabStyle(active === 'org', true)}
         aria-current={active === 'org' ? 'page' : undefined}
       >
         Organização
       </Link>
       <Link
         href="/docs"
-        style={tabStyle(active === 'repo')}
+        style={tabStyle(active === 'repo', false)}
         aria-current={active === 'repo' ? 'page' : undefined}
       >
         Repositório

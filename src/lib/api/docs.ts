@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/api/_shared'
 import { ErrorResponse } from '@/lib/types/auth'
 import {
   DocGenerationAcceptedResponse,
@@ -48,7 +49,7 @@ export async function backendGetDoc(
   accessToken: string,
   docId: string
 ): Promise<DocGenerationDetail> {
-  const response = await fetch(getApiUrl(`/docs/${docId}`), {
+  const response = await backendFetch(getApiUrl(`/docs/${docId}`), {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   })
@@ -60,7 +61,7 @@ export async function backendGenerateDocs(
   repoId: string,
   body: GenerateDocsRequest
 ): Promise<DocGenerationAcceptedResponse> {
-  const response = await fetch(getApiUrl(`/repositories/${repoId}/docs/generate`), {
+  const response = await backendFetch(getApiUrl(`/repositories/${repoId}/docs/generate`), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ export async function backendGenerateDocs(
 // ---- Org-scope endpoints ----
 
 export async function backendListOrgDocs(accessToken: string): Promise<DocGenerationListResponse> {
-  const response = await fetch(getApiUrl('/organizations/docs'), {
+  const response = await backendFetch(getApiUrl('/organizations/docs'), {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   })
@@ -85,7 +86,7 @@ export async function backendGenerateOrgDocs(
   accessToken: string,
   body: GenerateOrgDocsRequest
 ): Promise<DocGenerationAcceptedResponse> {
-  const response = await fetch(getApiUrl('/organizations/docs/generate'), {
+  const response = await backendFetch(getApiUrl('/organizations/docs/generate'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -101,7 +102,7 @@ export async function backendUpdateDocContent(
   docId: string,
   body: UpdateDocContentRequest
 ): Promise<DocGenerationDetail> {
-  const response = await fetch(getApiUrl(`/docs/${docId}`), {
+  const response = await backendFetch(getApiUrl(`/docs/${docId}`), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -113,7 +114,7 @@ export async function backendUpdateDocContent(
 }
 
 export async function backendListDocTemplates(accessToken: string): Promise<DocTemplate[]> {
-  const response = await fetch(getApiUrl('/docs/templates'), {
+  const response = await backendFetch(getApiUrl('/docs/templates'), {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   })

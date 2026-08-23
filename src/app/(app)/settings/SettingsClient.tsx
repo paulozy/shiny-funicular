@@ -306,6 +306,17 @@ function GitLabCallbackTutorial() {
 
 type Tab = 'ia' | 'github' | 'gitlab' | 'oauth' | 'members' | 'teams' | 'onboarding' | 'glossary'
 
+const SETTINGS_TABS: Array<{ id: Tab; label: string }> = [
+  { id: 'ia', label: 'IA' },
+  { id: 'github', label: 'GitHub' },
+  { id: 'gitlab', label: 'GitLab' },
+  { id: 'oauth', label: 'OAuth' },
+  { id: 'members', label: 'Membros' },
+  { id: 'teams', label: 'Times' },
+  { id: 'onboarding', label: 'Onboarding' },
+  { id: 'glossary', label: 'Glossário' },
+]
+
 export function SettingsClient({ user, initialConfig, repos }: SettingsClientProps) {
   const [baseline, setBaseline] = useState(() => defaultConfig(initialConfig))
   const [config, setConfig] = useState(baseline)
@@ -325,6 +336,31 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
     { label: 'OAuth GitLab', ready: config.gitlab_client_id_configured && config.gitlab_client_secret_configured },
   ]
   const readyCount = summaryItems.filter((item) => item.ready).length
+
+  /**
+   * Marks the integration tabs `ok`/`pendente` in the rail. The people-shaped
+   * tabs (members, teams, onboarding, glossary) have nothing to be pending
+   * about, so they show no status at all rather than a misleading one.
+   */
+  const tabMeta = (tab: Tab): 'ok' | 'pending' | null => {
+    switch (tab) {
+      case 'ia':
+        return config.anthropic_api_key_configured ? 'ok' : 'pending'
+      case 'github':
+        return config.github_token_configured ? 'ok' : 'pending'
+      case 'gitlab':
+        return config.gitlab_token_configured ? 'ok' : 'pending'
+      case 'oauth':
+        return config.github_client_id_configured &&
+          config.github_client_secret_configured &&
+          config.gitlab_client_id_configured &&
+          config.gitlab_client_secret_configured
+          ? 'ok'
+          : 'pending'
+      default:
+        return null
+    }
+  }
 
   const setSecret = (key: SecretKey, value: string) => {
     setSecrets((prev) => ({ ...prev, [key]: value }))
@@ -453,22 +489,16 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   }
 
   const pageStyle: CSSProperties = {
-    padding: '0 24px 28px',
     width: '100%',
     boxSizing: 'border-box',
   }
 
   const headerStyle: CSSProperties = {
-    position: 'sticky',
-    top: 0,
-    zIndex: 3,
     display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    margin: '0 -24px 0',
-    padding: '14px 24px',
-    borderBottom: `1px solid ${T.border}`,
-    background: T.bg,
+    alignItems: 'flex-end',
+    gap: 20,
+    flexWrap: 'wrap',
+    marginBottom: 22,
   }
 
   const headerButtonGroupStyle: CSSProperties = {
@@ -478,82 +508,92 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   }
 
   const dirtyIndicatorStyle: CSSProperties = {
-    fontSize: 12,
-    color: T.faint,
-    fontStyle: 'italic',
+    fontSize: 12.5,
+    color: T.warn,
   }
 
-  const tabBarStyle: CSSProperties = {
-    position: 'sticky',
-    top: 54,
-    zIndex: 2,
+  // v3 moves the sections into a left rail: the list of things to configure
+  // stays visible while a section is open, and each tab says whether it is
+  // done. The old horizontal bar hid that behind the active tab.
+  const sidebarStyle: CSSProperties = {
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: 8,
     display: 'flex',
-    gap: 0,
-    borderBottom: `1px solid ${T.border}`,
-    background: T.bg,
-    paddingLeft: 0,
-    margin: '0 -24px 0',
+    flexDirection: 'column',
+    gap: 2,
+    alignSelf: 'start',
   }
 
   const tabStyle = (isActive: boolean): CSSProperties => ({
-    padding: '12px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    color: isActive ? T.ink : T.ink3,
-    borderBottom: isActive ? `2px solid ${T.accent}` : `2px solid transparent`,
-    background: 'transparent',
-    border: 'none',
+    textAlign: 'left',
+    font: 'inherit',
+    fontSize: 13.5,
+    background: isActive ? T.accentBg : 'transparent',
+    border: 0,
+    padding: '9px 11px',
+    borderRadius: T.radius.tag,
     cursor: 'pointer',
-    transition: 'all 200ms ease-in-out',
+    fontWeight: isActive ? 600 : 500,
+    color: T.ink,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
   })
 
   const titleStyle: CSSProperties = {
-    margin: 0,
-    fontSize: 22,
-    fontWeight: 600,
-    letterSpacing: 0,
+    margin: '6px 0 0',
+    fontSize: 28,
   }
 
   const eyebrowStyle: CSSProperties = {
-    fontSize: 10.5,
-    fontWeight: 600,
-    letterSpacing: '0.06em',
+    fontSize: 11.5,
+    letterSpacing: '0.08em',
     textTransform: 'uppercase',
     color: T.faint,
-    marginBottom: 4,
   }
 
   const tabContentStyle: CSSProperties = {
-    paddingTop: 16,
-    paddingBottom: 24,
+    display: 'grid',
+    gridTemplateColumns: '210px minmax(0, 1fr)',
+    gap: 22,
+    alignItems: 'start',
   }
 
   const contentBelowTabsStyle: CSSProperties = {
-    paddingTop: 16,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 22,
   }
 
+  // A floor on the panel so switching from a two-field section (IA) to a long
+  // one (Times) does not resize the page under the cursor. The rail on the left
+  // sets the visual height anyway; matching it keeps the frame still.
   const sectionStyle: CSSProperties = {
     background: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: 16,
+    padding: '22px 24px',
+    minHeight: 520,
   }
 
   const overviewStyle: CSSProperties = {
-    ...sectionStyle,
-    marginBottom: 14,
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: 14,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: '16px 18px',
+    display: 'flex',
     alignItems: 'center',
+    gap: 24,
+    flexWrap: 'wrap',
   }
 
   const overviewNumberStyle: CSSProperties = {
-    fontSize: 30,
-    fontWeight: 650,
-    letterSpacing: 0,
+    fontSize: 26,
+    fontWeight: 600,
     lineHeight: 1,
-    marginBottom: 4,
+    marginBottom: 3,
   }
 
   const overviewDescriptionStyle: CSSProperties = {
@@ -576,7 +616,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   }
 
   const sectionTitleStyle: CSSProperties = {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 600,
   }
 
@@ -626,11 +666,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
 
   if (!isAdmin) {
     return (
-      <AppShell
-        user={user}
-        activeHub="settings"
-        breadcrumb={[{ label: 'Configurações' }]}
-      >
+      <AppShell user={user} activeHub="settings">
         <div style={pageStyle}>
           <Alert variant="danger">Apenas administradores podem alterar configurações da organização.</Alert>
         </div>
@@ -639,15 +675,11 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
   }
 
   return (
-    <AppShell
-      user={user}
-      activeHub="settings"
-      breadcrumb={[{ label: 'Configurações' }, { label: user.organization?.name || 'Organização' }]}
-    >
+    <AppShell user={user} activeHub="settings">
       <div style={pageStyle}>
         <div style={headerStyle}>
           <div>
-            <div style={eyebrowStyle}>Organização</div>
+            <div style={eyebrowStyle}>Organização · {user.organization?.name || 'sem nome'}</div>
             <h1 style={titleStyle}>Configurações</h1>
           </div>
           <div style={{ flex: 1 }} />
@@ -655,38 +687,10 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
             <div style={headerButtonGroupStyle}>
               {isDirty && <span style={dirtyIndicatorStyle}>Alterações não salvas</span>}
               <Button variant="primary" size="md" loading={saving} onClick={save} disabled={!isDirty && !saving}>
-                <MFIcon name="check" size={12} />
                 Salvar
               </Button>
             </div>
           )}
-        </div>
-
-        <div style={tabBarStyle}>
-          <button style={tabStyle(activeTab === 'ia')} onClick={() => setActiveTab('ia')}>
-            IA
-          </button>
-          <button style={tabStyle(activeTab === 'github')} onClick={() => setActiveTab('github')}>
-            GitHub
-          </button>
-          <button style={tabStyle(activeTab === 'gitlab')} onClick={() => setActiveTab('gitlab')}>
-            GitLab
-          </button>
-          <button style={tabStyle(activeTab === 'oauth')} onClick={() => setActiveTab('oauth')}>
-            OAuth
-          </button>
-          <button style={tabStyle(activeTab === 'members')} onClick={() => setActiveTab('members')}>
-            Membros
-          </button>
-          <button style={tabStyle(activeTab === 'onboarding')} onClick={() => setActiveTab('onboarding')}>
-            Onboarding
-          </button>
-          <button style={tabStyle(activeTab === 'glossary')} onClick={() => setActiveTab('glossary')}>
-            Glossário
-          </button>
-          <button style={tabStyle(activeTab === 'teams')} onClick={() => setActiveTab('teams')}>
-            Times
-          </button>
         </div>
 
         <div style={contentBelowTabsStyle}>
@@ -711,11 +715,33 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           </section>
 
           <div style={tabContentStyle}>
+            <nav style={sidebarStyle} aria-label="Seções das configurações">
+              {SETTINGS_TABS.map((tab) => {
+                const meta = tabMeta(tab.id)
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    style={tabStyle(activeTab === tab.id)}
+                    onClick={() => setActiveTab(tab.id)}
+                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                  >
+                    <span>{tab.label}</span>
+                    <span style={{ flex: 1 }} />
+                    {meta && (
+                      <span style={{ fontSize: 11.5, color: meta === 'ok' ? T.ok : T.warn }}>
+                        {meta === 'ok' ? 'ok' : 'pendente'}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </nav>
+
             {activeTab === 'ia' && (
               <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="sparkles" size={15} color={T.ai} />
-                <span style={sectionTitleStyle}>IA</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>IA</h2>
               </div>
               <div style={statusRowStyle}>
                 <Tag variant={configured(config, 'anthropic_api_key') ? 'ok' : 'warn'}>
@@ -748,8 +774,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'github' && (
             <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="branch" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>GitHub</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>GitHub</h2>
               </div>
               <div style={statusRowStyle}>
                 <Tag variant={configured(config, 'github_token') ? 'ok' : 'warn'}>
@@ -770,8 +795,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'gitlab' && (
             <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="branch" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>GitLab</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>GitLab</h2>
               </div>
               <div style={statusRowStyle}>
                 <Tag variant={configured(config, 'gitlab_token') ? 'ok' : 'warn'}>
@@ -804,8 +828,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'onboarding' && (
             <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="flag" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>Fluxos de onboarding</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>Fluxos de onboarding</h2>
               </div>
               <OnboardingFlowsSection canEdit={canManageOnboarding(user)} />
             </section>
@@ -814,8 +837,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'glossary' && (
             <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="doc" size={15} color={T.accent} />
-                <span style={sectionTitleStyle}>Glossário</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>Glossário</h2>
               </div>
               <GlossarySection canEdit={canManageGlossary(user)} />
             </section>
@@ -824,8 +846,7 @@ export function SettingsClient({ user, initialConfig, repos }: SettingsClientPro
           {activeTab === 'oauth' && (
             <section style={sectionStyle}>
               <div style={sectionHeaderStyle}>
-                <MFIcon name="lock" size={15} color={T.ink3} />
-                <span style={sectionTitleStyle}>OAuth</span>
+                <h2 style={{ ...sectionTitleStyle, margin: 0 }}>OAuth</h2>
               </div>
               <div style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.5, marginBottom: 14 }}>
                 Cada organização usa seu próprio OAuth App. Registre o app no provedor, cole aqui o Client ID e o Secret, e use a mesma callback URL nos dois lados.

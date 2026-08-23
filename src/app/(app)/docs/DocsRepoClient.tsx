@@ -18,7 +18,6 @@ import {
 } from '@/lib/types/docs'
 import { T } from '@/lib/tokens'
 import { AppShell } from '@/components/shell/AppShell'
-import { CodeHubTabBar } from '@/components/shell/CodeHubTabBar'
 import { DocsScopeTabs } from '@/components/docs/DocsScopeTabs'
 import { DocGenerationCard } from '@/components/docs/DocGenerationCard'
 import { DocMarkdownViewer } from '@/components/docs/DocMarkdownViewer'
@@ -157,10 +156,9 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
   const headerStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    padding: '12px 24px',
-    borderBottom: `1px solid ${T.border}`,
-    background: T.surface,
+    gap: 14,
+    flexWrap: 'wrap',
+    marginBottom: 20,
   }
 
   const selectStyle: CSSProperties = {
@@ -169,23 +167,23 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     borderRadius: T.radius.input,
     background: T.surface,
     color: T.ink,
-    padding: '6px 10px',
-    fontSize: 12.5,
+    padding: '7px 12px',
+    fontSize: 13,
     minWidth: 240,
+    cursor: 'pointer',
   }
 
   const splitStyle: CSSProperties = {
-    flex: 1,
-    display: 'flex',
-    minHeight: 0,
+    display: 'grid',
+    gridTemplateColumns: '260px minmax(0, 1fr)',
+    gap: 20,
+    alignItems: 'start',
   }
 
   const sidebarStyle: CSSProperties = {
-    width: 300,
-    minWidth: 260,
     background: T.surface,
-    borderRight: `1px solid ${T.border}`,
-    overflow: 'auto',
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
     padding: 12,
     display: 'flex',
     flexDirection: 'column',
@@ -193,18 +191,21 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
   }
 
   const mainStyle: CSSProperties = {
-    flex: 1,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    minHeight: 380,
     display: 'flex',
     flexDirection: 'column',
     minWidth: 0,
+    overflow: 'hidden',
   }
 
   const tabsContainerStyle: CSSProperties = {
     display: 'flex',
-    gap: 4,
-    padding: '8px 24px',
+    gap: 18,
+    padding: '12px 18px',
     borderBottom: `1px solid ${T.border}`,
-    background: T.surface,
   }
 
   const mayGenerate = canGenerateDocs(user)
@@ -213,17 +214,16 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     appearance: 'none',
     border: 0,
     background: 'transparent',
-    color: active ? T.ink : T.ink2,
+    color: active ? T.ink : T.faint,
     fontWeight: active ? 600 : 500,
-    fontSize: 12.5,
-    padding: '8px 12px',
+    fontSize: 13,
+    padding: '0 0 4px',
     borderBottom: `2px solid ${active ? T.accent : 'transparent'}`,
-    marginBottom: -1,
     cursor: 'pointer',
   })
 
   const bannerStyle: CSSProperties = {
-    padding: '10px 24px',
+    padding: '10px 18px',
     background: T.aiBg,
     borderBottom: `1px solid ${T.aiBorder}`,
     fontSize: 12,
@@ -238,22 +238,23 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
     <AppShell
       user={user}
       activeHub="code"
-      breadcrumb={[{ label: 'Code', href: '/' }, { label: 'Documentação' }]}
+      codeTab="docs"
       topRight={
         selectedRepoId &&
         mayGenerate && (
           <Button variant="primary" size="md" onClick={() => setShowModal(true)}>
-            <MFIcon name="sparkles" size={12} />
             Gerar documentação
           </Button>
         )
       }
     >
-      <CodeHubTabBar activeTab="docs" />
-      <DocsScopeTabs active="repo" />
+      <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Documentação</h1>
+      <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 20px' }}>
+        Gerada a partir do código pelos agentes da organização.
+      </p>
 
       <div style={headerStyle}>
-        <span style={{ fontSize: 12.5, color: T.ink2 }}>Repositório:</span>
+        <DocsScopeTabs active="repo" />
         <select
           style={selectStyle}
           value={selectedRepoId ?? ''}
@@ -272,7 +273,7 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
         {selectedRepo && (
           <Link
             href={`/code/repositories/${selectedRepo.id}`}
-            style={{ marginLeft: 'auto', fontSize: 12, color: T.accent, textDecoration: 'none' }}
+            style={{ fontSize: 13, color: T.accent700, textDecoration: 'none' }}
           >
             Ver repositório →
           </Link>
@@ -282,7 +283,7 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
       <div style={splitStyle}>
         <aside style={sidebarStyle} aria-label="Lista de gerações">
           {docs.length === 0 ? (
-            <div style={{ padding: 16, color: T.faint, fontSize: 12.5, textAlign: 'center' }}>
+            <div style={{ padding: 10, color: T.faint, fontSize: 13, lineHeight: 1.5 }}>
               Nenhuma documentação gerada para este repositório.
             </div>
           ) : (
@@ -352,7 +353,7 @@ export function DocsRepoClient({ user, repos, initialSelectedRepoId, initialDocs
 
           <div style={{ flex: 1, overflow: 'auto' }}>
             {!selectedDocId ? (
-              <div style={{ padding: 48, textAlign: 'center', color: T.faint, fontSize: 13 }}>
+              <div style={{ padding: '40px 18px', textAlign: 'center', color: T.faint, fontSize: 13.5 }}>
                 Selecione uma geração à esquerda ou clique em &quot;Gerar documentação&quot;.
               </div>
             ) : loadingDetail ? (

@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/api/_shared'
 import {
   LoginRequest,
   RegisterRequest,
@@ -33,7 +34,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function backendLogin(body: LoginRequest): Promise<TokenResponse | OrganizationSelectionResponse> {
-  const response = await fetch(getApiUrl('/auth/login'), {
+  const response = await backendFetch(getApiUrl('/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -43,7 +44,7 @@ export async function backendLogin(body: LoginRequest): Promise<TokenResponse | 
 }
 
 export async function backendRegister(body: RegisterRequest): Promise<TokenResponse> {
-  const response = await fetch(getApiUrl('/auth/register'), {
+  const response = await backendFetch(getApiUrl('/auth/register'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -53,7 +54,7 @@ export async function backendRegister(body: RegisterRequest): Promise<TokenRespo
 }
 
 export async function backendSelectOrg(body: SelectOrganizationRequest): Promise<TokenResponse> {
-  const response = await fetch(getApiUrl('/auth/select-organization'), {
+  const response = await backendFetch(getApiUrl('/auth/select-organization'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -63,7 +64,7 @@ export async function backendSelectOrg(body: SelectOrganizationRequest): Promise
 }
 
 export async function backendRefresh(refreshToken: string): Promise<TokenResponse> {
-  const response = await fetch(getApiUrl('/auth/refresh'), {
+  const response = await backendFetch(getApiUrl('/auth/refresh'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refreshToken }),
@@ -74,7 +75,7 @@ export async function backendRefresh(refreshToken: string): Promise<TokenRespons
 
 export async function backendLogout(accessToken: string): Promise<void> {
   try {
-    const response = await fetch(getApiUrl('/auth/logout'), {
+    const response = await backendFetch(getApiUrl('/auth/logout'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -91,7 +92,7 @@ export async function backendLogout(accessToken: string): Promise<void> {
 }
 
 export async function backendGetMe(accessToken: string): Promise<UserInfo> {
-  const response = await fetch(getApiUrl('/users/me'), {
+  const response = await backendFetch(getApiUrl('/users/me'), {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -106,7 +107,7 @@ export async function backendOAuthCallback(
   code: string,
   state: string
 ): Promise<TokenResponse> {
-  const response = await fetch(getApiUrl(`/auth/${provider}/callback?code=${code}&state=${state}`), {
+  const response = await backendFetch(getApiUrl(`/auth/${provider}/callback?code=${code}&state=${state}`), {
     method: 'GET',
   })
 

@@ -20,22 +20,21 @@ export function Input({
 
   const inputId = id || generatedId
 
+  // Mirrors the design system's `.input`: the focus ring is the accent border
+  // itself, not a halo — v3 dropped the box-shadow.
   const inputStyle: CSSProperties = {
     width: '100%',
-    padding: '7px 10px',
-    fontSize: '13px',
+    minHeight: 38,
+    padding: '8px 12px',
+    fontSize: '14px',
     fontFamily: T.font,
-    border: `1px solid ${error ? T.danger : isFocused ? T.ink : T.border}`,
+    border: `1px solid ${error ? T.danger : isFocused ? T.accent : T.border}`,
     borderRadius: T.radius.input,
     backgroundColor: T.surface,
     color: T.ink,
+    caretColor: T.accent,
     outline: 'none',
-    transition: 'all 0.15s ease',
-    boxShadow: isFocused
-      ? error
-        ? `0 0 0 3px rgba(184, 65, 59, 0.1)`
-        : `0 0 0 3px rgba(0, 0, 0, 0.06)`
-      : 'none',
+    transition: 'border-color 0.15s ease',
     ...(props.disabled && { opacity: 0.6, cursor: 'not-allowed' }),
     ...style,
   }
@@ -46,10 +45,10 @@ export function Input({
 
   const labelStyle: CSSProperties = {
     display: 'block',
-    marginBottom: '4px',
-    fontSize: '12.5px',
+    marginBottom: '5px',
+    fontSize: '12px',
     fontWeight: 500,
-    color: T.ink,
+    color: T.ink3,
   }
 
   const errorStyle: CSSProperties = {

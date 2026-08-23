@@ -22,13 +22,25 @@ interface RepoGraphProps {
   nodes: RepositoryGraphNode[]
   edges: RepositoryGraphEdge[]
   direction?: LayoutDirection
+  /**
+   * The minimap costs a corner of the canvas. On the inline canvas that corner
+   * is a real fraction of the graph, so it only shows when there is room.
+   */
+  showMiniMap?: boolean
   onNodeSelect?: (node: RepositoryGraphNode | null) => void
   onEdgeSelect?: (edge: RepositoryGraphEdge | null) => void
 }
 
 const nodeTypes = { repo: RepoNode }
 
-function InnerGraph({ nodes, edges, direction = 'LR', onNodeSelect, onEdgeSelect }: RepoGraphProps) {
+function InnerGraph({
+  nodes,
+  edges,
+  direction = 'LR',
+  showMiniMap = false,
+  onNodeSelect,
+  onEdgeSelect,
+}: RepoGraphProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   const { rfNodes, rfEdges } = useMemo(() => {
@@ -84,21 +96,29 @@ function InnerGraph({ nodes, edges, direction = 'LR', onNodeSelect, onEdgeSelect
       }}
       onPaneClick={handlePaneClick}
       fitView
+      // Without a cap the viewport zooms to 2x on a two-node graph and the
+      // nodes fill the canvas; with too little padding the outermost edges
+      // touch the frame. Both make the graph harder to read, not easier.
+      fitViewOptions={{ padding: 0.25, maxZoom: 1.25, minZoom: 0.2 }}
+      minZoom={0.2}
+      maxZoom={2}
       proOptions={{ hideAttribution: true }}
-      style={{ background: T.bg }}
+      style={{ background: T.bg, width: '100%', height: '100%' }}
     >
       <Background color={T.border} gap={20} />
-      <MiniMap
-        nodeColor={() => T.accent}
-        nodeStrokeColor={() => T.borderStrong}
-        nodeBorderRadius={4}
-        maskColor={T.overlay}
-        bgColor={T.surface}
-        pannable
-        zoomable
-        style={{ background: T.surface }}
-      />
-      <Controls position="bottom-right" />
+      {showMiniMap && (
+        <MiniMap
+          nodeColor={() => T.accent}
+          nodeStrokeColor={() => T.borderStrong}
+          nodeBorderRadius={4}
+          maskColor={T.overlay}
+          bgColor={T.surface}
+          pannable
+          zoomable
+          style={{ background: T.surface }}
+        />
+      )}
+      <Controls position="bottom-right" showInteractive={false} />
     </ReactFlow>
   )
 }

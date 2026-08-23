@@ -36,40 +36,44 @@ const repo: RepositoryResponse = {
   updated_at: '2026-01-02T00:00:00Z',
 }
 
+// The repository identity (name, description, branch, actions) moved to
+// `RepositoryHeader`, rendered once by the repository layout — the overview is
+// only the tiles and the cards below them.
 describe('RepositoryOverviewClient', () => {
-  it('renders repository identity, activity metrics and action links', () => {
+  it('renders the activity tiles from the sync metadata', () => {
     render(<RepositoryOverviewClient repo={repo} />)
 
-    expect(screen.getByRole('heading', { name: 'web' })).toBeInTheDocument()
-    expect(screen.getByText(/Frontend principal/i)).toBeInTheDocument()
-    expect(screen.getByText('develop')).toBeInTheDocument()
-    // activity signals from the GitHub sync render
     expect(screen.getByText('PRs abertos')).toBeInTheDocument()
     expect(screen.getByText('Issues')).toBeInTheDocument()
     expect(screen.getByText('Contribuidores')).toBeInTheDocument()
-    // AI-derived UI is gone: no quality score, no analysis status, no
-    // semantic-search entry point.
+    expect(screen.getByText('Conformidade')).toBeInTheDocument()
+
+    // The PR tile is the only one that leads somewhere.
+    expect(screen.getByRole('link', { name: /ver prs abertos/i })).toHaveAttribute(
+      'href',
+      '/code/repositories/repo-1/pull-requests'
+    )
+  })
+
+  it('keeps coverage and drops the AI-derived artifacts', () => {
+    render(<RepositoryOverviewClient repo={repo} />)
+
+    // coverage survives — it comes from the CI upload, not from an analysis
+    expect(screen.getByLabelText('Coverage: 76.0%')).toBeInTheDocument()
     expect(screen.queryByText('85/100')).not.toBeInTheDocument()
     expect(screen.queryByText(/concluída/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /buscar no repositório/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /gerar template/i })).not.toBeInTheDocument()
-    // coverage survives — it comes from the CI upload, not from an analysis
-    expect(screen.getByLabelText('Coverage: 76.0%')).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /configurações/i }).some((link) => link.getAttribute('href') === '/code/repositories/repo-1/settings')).toBe(true)
   })
 
   it('renders stack and metadata fallbacks safely', () => {
-    render(
-      <RepositoryOverviewClient
-        repo={{ ...repo, stats: undefined, metadata: {} }}
-      />
-    )
+    render(<RepositoryOverviewClient repo={{ ...repo, stats: undefined, metadata: {} }} />)
 
     // Stack card collapses to a single empty-state line when languages,
     // frameworks and topics are all absent.
     expect(screen.getByText(/Sem informações de stack detectadas/i)).toBeInTheDocument()
-    expect(screen.getByText('main')).toBeInTheDocument()
-    // no analysis artifacts leak into the empty state
+    // Missing counters render as an em dash, never as a fabricated zero.
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
     expect(screen.queryByText(/sem análise/i)).not.toBeInTheDocument()
   })
 })

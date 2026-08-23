@@ -1,9 +1,8 @@
 import { CSSProperties } from 'react'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import { T } from '@/lib/tokens'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface FileStubPageProps {
   params: Promise<{ id: string }>
@@ -25,12 +24,12 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
 
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
+  const repos = await listRepositories(accessToken)
   const repo = repos?.repositories.find((item) => item.id === id)
   if (!repo) {
     notFound()
@@ -44,7 +43,7 @@ export default async function RepositoryFileStubPage({ params, searchParams }: F
       : queryParams.start_line || '-'
 
   const pageStyle: CSSProperties = {
-    padding: '22px 24px',
+    // Page padding comes from the app shell's content container.
   }
 
   const panelStyle: CSSProperties = {

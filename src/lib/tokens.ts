@@ -1,3 +1,12 @@
+/**
+ * Inline-style token map. Every value is a CSS custom property declared in
+ * `src/app/globals.css`, so a theme switch (or a palette retune) never needs a
+ * component change.
+ *
+ * `T.*` keeps the product's original semantic names; the design-system ramps
+ * shipped with the v3 redesign are exposed under `T.accent100`,
+ * `T.neutral600`, … for components ported straight from the mockup.
+ */
 export const T = {
   bg: 'var(--color-bg)',
   surface: 'var(--color-surface)',
@@ -28,11 +37,35 @@ export const T = {
   dangerBg: 'var(--color-danger-bg)',
   dangerBorder: 'var(--color-danger-border)',
   shadow: 'var(--shadow-elevated)',
+  shadowSm: 'var(--shadow-sm)',
+  shadowMd: 'var(--shadow-md)',
   overlay: 'var(--color-overlay)',
   providerGithub: 'var(--color-provider-github)',
   providerGitlab: 'var(--color-provider-gitlab)',
   providerGitea: 'var(--color-provider-gitea)',
-  font: '"Inter", system-ui, -apple-system, sans-serif',
-  mono: '"JetBrains Mono", ui-monospace, monospace',
-  radius: { card: 8, button: 6, input: 6, tag: 10 },
+
+  // Design-system ramps (v3).
+  accent100: 'var(--color-accent-100)',
+  accent200: 'var(--color-accent-200)',
+  accent300: 'var(--color-accent-300)',
+  accent600: 'var(--color-accent-600)',
+  accent700: 'var(--color-accent-700)',
+  accent800: 'var(--color-accent-800)',
+  accent900: 'var(--color-accent-900)',
+  accent2: 'var(--color-accent-2)',
+  accent2Bg: 'var(--color-accent-2-100)',
+  accent2Border: 'var(--color-accent-2-300)',
+  accent2Ink: 'var(--color-accent-2-800)',
+  neutral100: 'var(--color-neutral-100)',
+  neutral200: 'var(--color-neutral-200)',
+  neutral300: 'var(--color-neutral-300)',
+  neutral500: 'var(--color-neutral-500)',
+  neutral600: 'var(--color-neutral-600)',
+  neutral700: 'var(--color-neutral-700)',
+  neutral800: 'var(--color-neutral-800)',
+  neutral900: 'var(--color-neutral-900)',
+
+  font: 'var(--font-body)',
+  mono: 'var(--mono)',
+  radius: { card: 7, button: 7, input: 7, tag: 4, dialog: 10 },
 } as const

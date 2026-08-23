@@ -1,12 +1,16 @@
 'use client'
 
+import { CSSProperties } from 'react'
 import { TabBar, TabBarItem } from '@/components/shell/TabBar'
 
+export type CodeHubTab = 'repositories' | 'docs' | 'graph' | 'onboarding'
+
 interface CodeHubTabBarProps {
-  activeTab?: 'repositories' | 'docs' | 'graph'
+  activeTab?: CodeHubTab
+  style?: CSSProperties
 }
 
-export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps) {
+export function CodeHubTabBar({ activeTab = 'repositories', style }: CodeHubTabBarProps) {
   const items: TabBarItem[] = [
     {
       label: 'Repositórios',
@@ -25,6 +29,12 @@ export function CodeHubTabBar({ activeTab = 'repositories' }: CodeHubTabBarProps
       matchPrefix: '/graph',
       forceActive: activeTab === 'graph',
     },
+    {
+      label: 'Meu onboarding',
+      href: '/onboarding',
+      matchPrefix: '/onboarding',
+      forceActive: activeTab === 'onboarding',
+    },
   ]
-  return <TabBar items={items} ariaLabel="Seções do Code Hub" />
+  return <TabBar items={items} ariaLabel="Seções do Code Hub" flush style={style} />
 }

@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { backendGetOrganizationConfig } from '@/lib/api/organization'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import { SettingsClient } from './SettingsClient'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 async function getUser() {
   const cookieStore = await cookies()
@@ -14,7 +13,7 @@ async function getUser() {
   }
 
   try {
-    return await backendGetMe(accessToken)
+    return await getSessionUser(accessToken)
   } catch {
     return null
   }
@@ -39,7 +38,7 @@ export default async function SettingsPage() {
 
   const [orgConfig, repos] = await Promise.all([
     accessToken && user.role === 'admin' ? getOrganizationConfig(accessToken) : Promise.resolve(null),
-    accessToken ? backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null) : Promise.resolve(null),
+    accessToken ? listRepositories(accessToken) : Promise.resolve(null),
   ])
 
   return <SettingsClient user={user} initialConfig={orgConfig} repos={repos} />

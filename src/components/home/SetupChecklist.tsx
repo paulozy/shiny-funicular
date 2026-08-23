@@ -6,15 +6,13 @@
  *
  * Not to be confused with the member onboarding in `@/components/onboarding` —
  * different audience (the person setting the platform up, not the person
- * learning the company) and different content. It was called
- * OnboardingTutorial, which made the two impossible to tell apart.
+ * learning the company) and different content.
  */
 
 import { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { OrganizationConfigResponse } from '@/lib/types/organization'
 import { T } from '@/lib/tokens'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { Button } from '@/components/ui/Button'
 
 interface SetupChecklistProps {
@@ -24,6 +22,13 @@ interface SetupChecklistProps {
   onImportRepo: () => void
 }
 
+const NEXT_STEPS = [
+  'Gerar ADRs e documentação de arquitetura',
+  'Definir o time responsável por cada repositório',
+  'Convidar membros e atribuir fluxos de onboarding',
+  'Ativar revisão de código com IA',
+]
+
 export function SetupChecklist({
   orgConfig,
   canConfigure = false,
@@ -31,147 +36,133 @@ export function SetupChecklist({
   onImportRepo,
 }: SetupChecklistProps) {
   const router = useRouter()
-  const containerStyle: CSSProperties = {
-    padding: '40px 60px',
-    maxWidth: 600,
-    margin: '0 auto',
-    paddingTop: 60,
-  }
 
-  const titleStyle: CSSProperties = {
-    fontSize: 28,
-    fontWeight: 600,
-    marginBottom: 8,
-    letterSpacing: '-0.01em',
-  }
+  const containerStyle: CSSProperties = { maxWidth: 720 }
 
-  const subtitleStyle: CSSProperties = {
-    fontSize: 14,
-    color: T.ink3,
-    marginBottom: 32,
-    lineHeight: 1.5,
-  }
-
-  const stepStyle: CSSProperties = {
+  const cardStyle: CSSProperties = {
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius.card,
+    padding: 20,
     display: 'flex',
     gap: 16,
-    marginBottom: 24,
-    padding: '16px',
-    borderRadius: 8,
-    background: T.surfaceAlt,
-    border: `1px solid ${T.border}`,
   }
 
   const stepNumberStyle: CSSProperties = {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: '50%',
     background: T.accent,
-    color: T.inkInverse,
-    display: 'flex',
+    color: '#fff',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 600,
-    fontSize: 14,
+    fontSize: 13,
     flexShrink: 0,
   }
 
-  const stepContentStyle: CSSProperties = {
-    flex: 1,
-  }
+  const stepTitleStyle: CSSProperties = { fontSize: 16, margin: '0 0 8px', fontWeight: 600 }
 
-  const stepTitleStyle: CSSProperties = {
-    fontSize: 13,
-    fontWeight: 600,
-    marginBottom: 4,
-  }
-
-  const stepTextStyle: CSSProperties = {
-    fontSize: 12.5,
+  const bodyStyle: CSSProperties = {
+    fontSize: 13.5,
     color: T.ink3,
-    lineHeight: 1.5,
-    marginBottom: 8,
+    margin: '0 0 14px',
+    lineHeight: 1.55,
   }
 
-  const configKeyStyle = (set: boolean): CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 12,
-    marginBottom: 4,
-  })
+  const showConfigStep = Boolean(orgConfig || canConfigure)
 
-  const ctaStyle: CSSProperties = {
-    marginTop: 32,
-    paddingTop: 24,
-    borderTop: `1px solid ${T.border}`,
-  }
+  const statusRows = orgConfig
+    ? [
+        { label: 'GitHub token configurado', ok: orgConfig.github_token_configured },
+        { label: 'Chave Anthropic configurada', ok: orgConfig.anthropic_api_key_configured },
+      ]
+    : []
 
   return (
     <div style={containerStyle}>
-      <h1 style={titleStyle}>Bem-vindo ao Code Hub</h1>
-      <p style={subtitleStyle}>Configure sua organização e adicione seus primeiros repositórios para começar.</p>
+      <h1 style={{ fontSize: 30, margin: '0 0 8px' }}>Bem-vindo ao Code Hub</h1>
+      <p style={{ fontSize: 15, color: T.ink3, margin: '0 0 28px', lineHeight: 1.6 }}>
+        Configure a organização e importe o primeiro repositório. A partir daí a plataforma sincroniza
+        PRs, issues, cobertura e documentação.
+      </p>
 
-      {/* Step 1: Organization Config */}
-      {(orgConfig || canConfigure) && (
-        <div style={stepStyle}>
-          <div style={stepNumberStyle}>1</div>
-          <div style={stepContentStyle}>
-            <div style={stepTitleStyle}>Status da Organização</div>
-            {orgConfig ? (
-              <div style={stepTextStyle}>
-                {[
-                  { key: 'GitHub Token', value: orgConfig.github_token_configured },
-                  { key: 'Chave Anthropic', value: orgConfig.anthropic_api_key_configured },
-                ].map((item) => (
-                  <div key={item.key} style={configKeyStyle(!!item.value)}>
-                    <MFIcon name={item.value ? 'check' : 'x'} size={12} color={item.value ? T.ok : T.danger} />
-                    <span>
-                      {item.key}: <strong>{item.value ? '✓ Configurado' : '✗ Não configurado'}</strong>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={stepTextStyle}>Configure as chaves e integrações da organização antes de importar repositórios.</div>
-            )}
-            <Button variant="default" size="sm" onClick={() => router.push('/settings')}>
-              Configurar Organização
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Import First Repo */}
-      <div style={stepStyle}>
-        <div style={stepNumberStyle}>{orgConfig || canConfigure ? '2' : '1'}</div>
-        <div style={stepContentStyle}>
-          <div style={stepTitleStyle}>Adicionar Primeiro Repositório</div>
-          <div style={stepTextStyle}>
-            Importe um repositório GitHub, GitLab ou Gitea. Cole a URL do repositório e ele será sincronizado automaticamente.
-          </div>
-          {canImport ? (
-            <Button variant="primary" size="sm" onClick={onImportRepo}>
-              Importar Repositório
-            </Button>
-          ) : (
-            <div style={{ ...stepTextStyle, fontStyle: 'italic' }}>
-              Seu papel na organização não permite importar repositórios. Peça a um
-              desenvolvedor ou admin.
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {showConfigStep && (
+          <div style={cardStyle}>
+            <span style={stepNumberStyle}>1</span>
+            <div style={{ flex: 1 }}>
+              <h2 style={stepTitleStyle}>Status da organização</h2>
+              {orgConfig ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 5,
+                    fontSize: 13.5,
+                    color: T.ink2,
+                    marginBottom: 14,
+                  }}
+                >
+                  {statusRows.map((row) => (
+                    <div key={row.label}>
+                      <span style={{ color: row.ok ? T.ok : T.warn }}>{row.ok ? '✓' : '!'}</span>{' '}
+                      {row.label}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={bodyStyle}>
+                  Configure as chaves e integrações da organização antes de importar repositórios.
+                </p>
+              )}
+              <Button variant="default" size="md" onClick={() => router.push('/settings')}>
+                Configurar organização
+              </Button>
             </div>
-          )}
+          </div>
+        )}
+
+        <div style={cardStyle}>
+          <span style={stepNumberStyle}>{showConfigStep ? '2' : '1'}</span>
+          <div style={{ flex: 1 }}>
+            <h2 style={stepTitleStyle}>Importar o primeiro repositório</h2>
+            <p style={bodyStyle}>
+              Cole a URL de um repositório GitHub, GitLab ou Gitea. A sincronização começa em seguida.
+            </p>
+            {canImport ? (
+              <Button variant="primary" size="md" onClick={onImportRepo}>
+                Importar repositório
+              </Button>
+            ) : (
+              <div style={{ ...bodyStyle, margin: 0, fontStyle: 'italic' }}>
+                Seu papel na organização não permite importar repositórios. Peça a um desenvolvedor ou
+                admin.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Next Steps */}
-      <div style={ctaStyle}>
-        <div style={stepTitleStyle}>Próximos Passos</div>
-        <ul style={{ fontSize: 12.5, color: T.ink3, lineHeight: 1.8, paddingLeft: 20 }}>
-          <li>Sincronize análise de código e métricas</li>
-          <li>Configure webhooks para atualizações em tempo real</li>
-          <li>Convide membros da equipe</li>
-          <li>Ative inteligência IA para code review</li>
-        </ul>
+      <div style={{ marginTop: 30 }}>
+        <h3
+          style={{
+            fontSize: 13,
+            letterSpacing: '.06em',
+            textTransform: 'uppercase',
+            color: T.faint,
+            margin: '0 0 10px',
+            fontWeight: 600,
+          }}
+        >
+          Próximos passos
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 13.5, color: T.ink2 }}>
+          {NEXT_STEPS.map((step) => (
+            <div key={step}>{step}</div>
+          ))}
+        </div>
       </div>
     </div>
   )

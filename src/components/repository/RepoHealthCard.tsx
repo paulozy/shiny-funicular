@@ -1,6 +1,5 @@
 import { CSSProperties } from 'react'
 import { T } from '@/lib/tokens'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { RepositoryResponse, RepositoryStats } from '@/lib/types/repository'
 
 interface RepoHealthCardProps {
@@ -62,7 +61,7 @@ export function RepoHealthCard({ repo }: RepoHealthCardProps) {
     background: T.surface,
     border: `1px solid ${T.border}`,
     borderRadius: T.radius.card,
-    padding: 14,
+    padding: 20,
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
@@ -75,7 +74,7 @@ export function RepoHealthCard({ repo }: RepoHealthCardProps) {
   }
 
   const sectionTitleStyle: CSSProperties = {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 600,
     color: T.ink,
   }
@@ -110,7 +109,6 @@ export function RepoHealthCard({ repo }: RepoHealthCardProps) {
   return (
     <section style={cardStyle} aria-label="Saúde do repositório">
       <div style={sectionHeaderStyle}>
-        <MFIcon name="heart" size={14} color={T.accent} />
         <span style={sectionTitleStyle}>Saúde do repositório</span>
       </div>
       <div style={gridStyle}>

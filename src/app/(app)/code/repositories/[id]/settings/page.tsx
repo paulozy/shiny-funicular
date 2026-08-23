@@ -1,10 +1,9 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { canAssignRepositoryOwner, canConfigureOrganization, canManageCoverageTokens } from '@/lib/permissions'
 import { backendGetOrganizationConfig } from '@/lib/api/organization'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import { RepositorySettingsClient } from './RepositorySettingsClient'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface RepositorySettingsPageProps {
   params: Promise<{ id: string }>
@@ -19,13 +18,13 @@ export default async function RepositorySettingsPage({ params }: RepositorySetti
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
 
   const [repos, orgConfig] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
+    listRepositories(accessToken),
     canConfigureOrganization(user) ? backendGetOrganizationConfig(accessToken).catch(() => null) : Promise.resolve(null),
   ])
   const repo = repos?.repositories.find((item) => item.id === id)

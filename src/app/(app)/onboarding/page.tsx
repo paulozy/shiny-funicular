@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { backendGetMyOnboarding } from '@/lib/api/onboarding'
 import { OnboardingClient } from './OnboardingClient'
+import { getSessionUser } from '@/lib/api/request-cache'
 
 export default async function OnboardingPage() {
   const cookieStore = await cookies()
@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }

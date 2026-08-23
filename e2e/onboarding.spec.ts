@@ -68,29 +68,31 @@ test.describe('Onboarding through the UI', () => {
       await expect(page.getByText('Objetivo de nível de serviço')).toBeVisible({ timeout: 15_000 })
     })
 
-    await test.step('a flow is created from a starter template', async () => {
+    await test.step('a flow is composed from a starter template', async () => {
       await page.getByRole('button', { name: 'Onboarding', exact: true }).click()
+      await page.getByRole('button', { name: 'Criar onboarding' }).click()
 
-      await page.getByLabel('Novo fluxo').fill('Dev Backend')
-      await page.getByLabel('Modelo inicial').selectOption({ label: 'Dev backend' })
-      await page.getByRole('button', { name: 'Criar' }).click()
+      await page.getByLabel('Nome').fill('Dev Backend')
+      await page.getByLabel('A partir de').selectOption({ label: 'Dev backend' })
+      await page.getByRole('button', { name: 'Gerar rascunho' }).click()
 
-      // The template seeds real steps, so the builder is never a blank page.
-      await expect(page.getByText(/passo\(s\)/).first()).toBeVisible({ timeout: 15_000 })
-      await expect(page.getByRole('button', { name: 'Salvar passos' }).first()).toBeVisible()
+      // The template seeds real steps, so the composer is never a blank page.
+      await expect(page.getByText('Blocos da sua organização')).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByRole('button', { name: 'Revisar e publicar' })).toBeEnabled()
+    })
+
+    await test.step('a glossary block is added and the flow is published', async () => {
+      await page.getByRole('button', { name: 'Adicionar Glossário' }).click()
+
+      await page.getByRole('button', { name: 'Revisar e publicar' }).click()
+      await page.getByRole('button', { name: 'Publicar onboarding' }).click()
+
+      await expect(page.getByText('Onboarding publicado.')).toBeVisible({ timeout: 20_000 })
     })
 
     await test.step('the flow becomes the organization default', async () => {
       await page.getByRole('button', { name: 'Tornar padrão' }).click()
       await expect(page.getByText('padrão')).toBeVisible({ timeout: 15_000 })
-    })
-
-    await test.step('a glossary step is added and saved', async () => {
-      await page.getByLabel('Tipo do novo passo').selectOption('glossary')
-      await page.getByRole('button', { name: /Adicionar passo/ }).click()
-
-      await page.getByRole('button', { name: 'Salvar passos' }).first().click()
-      await expect(page.getByText('Passos salvos.')).toBeVisible({ timeout: 20_000 })
     })
 
     await test.step('the runner shows the flow with its steps', async () => {
@@ -115,16 +117,17 @@ test.describe('Onboarding through the UI', () => {
     await test.step('the admin publishes a two-step default flow', async () => {
       await page.goto('/settings')
       await page.getByRole('button', { name: 'Onboarding', exact: true }).click()
-      await page.getByLabel('Novo fluxo').fill('Essencial')
-      await page.getByRole('button', { name: 'Criar' }).click()
+      await page.getByRole('button', { name: 'Criar onboarding' }).click()
 
-      await page.getByLabel('Tipo do novo passo').selectOption('markdown')
-      await page.getByRole('button', { name: /Adicionar passo/ }).click()
-      await page.getByLabel('Tipo do novo passo').selectOption('task')
-      await page.getByRole('button', { name: /Adicionar passo/ }).click()
+      await page.getByLabel('Nome').fill('Essencial')
+      await page.getByRole('button', { name: 'Começar do zero' }).click()
 
-      await page.getByRole('button', { name: 'Salvar passos' }).first().click()
-      await expect(page.getByText('Passos salvos.')).toBeVisible({ timeout: 20_000 })
+      await page.getByRole('button', { name: 'Adicionar Texto (markdown)' }).click()
+      await page.getByRole('button', { name: 'Adicionar Tarefa inicial' }).click()
+
+      await page.getByRole('button', { name: 'Revisar e publicar' }).click()
+      await page.getByRole('button', { name: 'Publicar onboarding' }).click()
+      await expect(page.getByText('Onboarding publicado.')).toBeVisible({ timeout: 20_000 })
 
       await page.getByRole('button', { name: 'Tornar padrão' }).click()
       await expect(page.getByText('padrão')).toBeVisible({ timeout: 15_000 })

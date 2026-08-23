@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
 import { backendGetPullRequest } from '@/lib/api/pull_requests'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import { PullRequestDetailClient } from './PullRequestDetailClient'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface PullRequestDetailPageProps {
   params: Promise<{ id: string; pr_number: string }>
@@ -19,7 +18,7 @@ export default async function PullRequestDetailPage({ params }: PullRequestDetai
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
@@ -29,7 +28,7 @@ export default async function PullRequestDetailPage({ params }: PullRequestDetai
   }
 
   const [repos, detail] = await Promise.all([
-    backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null),
+    listRepositories(accessToken),
     backendGetPullRequest(accessToken, id, prNumber).catch((err) => ({ error: err as Error })),
   ])
 

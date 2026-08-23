@@ -1,7 +1,5 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import {
   backendListDocsForRepo,
   backendListOrgDocs,
@@ -13,6 +11,7 @@ import {
   DocGenerationDetail,
   DocGenerationListResponse,
 } from '@/lib/types/docs'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface DocsPageProps {
   searchParams: Promise<{ scope?: string; repo?: string; doc?: string }>
@@ -27,7 +26,7 @@ export default async function DocsPage({ searchParams }: DocsPageProps) {
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
@@ -55,12 +54,12 @@ export default async function DocsPage({ searchParams }: DocsPageProps) {
     )
   }
 
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => ({
+  const repos = (await listRepositories(accessToken)) ?? {
     repositories: [],
     total: 0,
     limit: 100,
     offset: 0,
-  }))
+  }
   const selectedRepoId = repo || repos.repositories[0]?.id || null
 
   let initialDocs: DocGenerationListResponse = { items: [], total: 0 }

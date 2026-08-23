@@ -30,12 +30,13 @@ export function OAuthButton({ provider, onClick, disabled, loading }: OAuthButto
 
   const buttonStyle: CSSProperties = {
     width: '100%',
-    marginBottom: '10px',
+    gap: 9,
   }
 
   return (
     <Button
       variant="default"
+      size="lg"
       onClick={onClick}
       disabled={disabled}
       loading={loading}

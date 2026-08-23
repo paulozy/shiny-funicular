@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { backendGetMe } from '@/lib/api/auth'
-import { backendGetRepositories } from '@/lib/api/repositories'
 import { RepositoryOverviewClient } from './RepositoryOverviewClient'
 import { canSyncRepository } from '@/lib/permissions'
+import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
 interface RepositoryOverviewPageProps {
   params: Promise<{ id: string }>
@@ -18,7 +17,7 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
     redirect('/login')
   }
 
-  const user = await backendGetMe(accessToken).catch(() => null)
+  const user = await getSessionUser(accessToken)
   if (!user) {
     redirect('/login')
   }
@@ -26,7 +25,7 @@ export default async function RepositoryOverviewPage({ params }: RepositoryOverv
   // The layout already fetched the repo for the AppShell/TabBar; here we just
   // resolve the same repo for this route. The lookup is a cheap call against
   // /repositories?limit=100 so the cost is negligible.
-  const repos = await backendGetRepositories(accessToken, { limit: 100, offset: 0 }).catch(() => null)
+  const repos = await listRepositories(accessToken)
   const repo = repos?.repositories.find((item) => item.id === id)
   if (!repo) {
     notFound()

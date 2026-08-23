@@ -2,84 +2,176 @@
   box-sizing: border-box;
 }
 
+/*
+ * Design tokens — "IDP Redesign v3".
+ *
+ * The palette comes from the Claude Design project (organic design system
+ * retuned for this product): warm paper background, teal accent, clay
+ * secondary and a single shared neutral ramp. Both naming schemes are
+ * exported on purpose:
+ *
+ *   --color-accent-500 / --color-neutral-600 / --radius-md   → design-system
+ *     names, used directly by components ported from the mockup;
+ *   --color-ink / --color-border / --color-surface-alt       → the product's
+ *     original semantic names, kept so every existing inline style picks up
+ *     the new palette without being touched.
+ */
 :root {
   color-scheme: light;
-  --color-bg: #fafaf7;
-  --color-surface: #fff;
-  --color-surface-alt: #f4f2ec;
-  --color-surface-hover: #f9f9f7;
-  --color-surface-elevated: #ffffff;
-  --color-surface-overlay: #ffffff;
-  --color-ink: #1a1a1a;
-  --color-ink-2: #3d3a35;
-  --color-ink-3: #6b6760;
-  --color-ink-inverse: #fff;
-  --color-faint: #a8a49d;
-  --color-border: #e6e2d8;
-  --color-border-strong: #d4cfc2;
-  --color-accent: #d97757;
-  --color-accent-hover: #c4633f;
-  --color-accent-bg: #fff4ec;
-  --color-ai: #7a4cc8;
-  --color-ai-bg: #f6f0ff;
-  --color-ai-border: #dccdf3;
-  --color-ok: #2e7d3e;
-  --color-ok-bg: #eaf5ec;
-  --color-ok-border: #c8e0cc;
-  --color-warn: #a87518;
-  --color-warn-bg: #fbf3df;
-  --color-warn-border: #e8d8a8;
-  --color-danger: #b8413b;
-  --color-danger-bg: #fbe8e4;
-  --color-danger-border: #e8c5c0;
-  --color-overlay: rgba(20, 18, 15, 0.32);
-  --color-provider-github: #1f2328;
-  --color-provider-gitlab: #fb542b;
-  --color-provider-gitea: #34495e;
-  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.18);
+
+  /* — ground — */
+  --color-bg: #f3f2ef;
+  --color-surface: #ffffff;
+  --color-text: #191b1d;
+  --color-divider: color-mix(in srgb, #191b1d 14%, transparent);
+
+  /* — accent (teal) — */
+  --color-accent: #146b62;
+  --color-accent-100: #e4f1ee;
+  --color-accent-200: #c8e3de;
+  --color-accent-300: #9ecfc7;
+  --color-accent-600: #0f5b53;
+  --color-accent-700: #0c4a44;
+  --color-accent-800: #0a3a35;
+  --color-accent-900: #082a26;
+
+  /* — secondary accent (clay) — */
+  --color-accent-2: #8a5a3c;
+  --color-accent-2-100: #f2e9e2;
+  --color-accent-2-300: #d9c3b1;
+  --color-accent-2-800: #4d3021;
+  --color-accent-2-900: #3a241a;
+
+  /* — neutrals — */
+  --color-neutral-100: #f7f6f4;
+  --color-neutral-200: #eceae6;
+  --color-neutral-300: #dcd9d4;
+  --color-neutral-500: #94918b;
+  --color-neutral-600: #6f6c67;
+  --color-neutral-700: #55534f;
+  --color-neutral-800: #3a3937;
+  --color-neutral-900: #232426;
+
+  /* — status — */
+  --ok: #1c7a4f;
+  --warn: #9a6a10;
+  --danger: #a33028;
+
+  /* — shape — */
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+
+  /* — type — */
+  --font-body: var(--font-figtree), 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, monospace;
+
+  /* — elevation — */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #191b1d 10%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #191b1d 12%, transparent);
+  --shadow-lg: 0 14px 38px color-mix(in srgb, #191b1d 20%, transparent);
+
+  /* — semantic aliases consumed by `T` (src/lib/tokens.ts) — */
+  --color-surface-alt: var(--color-neutral-100);
+  --color-surface-hover: var(--color-neutral-100);
+  --color-surface-elevated: var(--color-surface);
+  --color-surface-overlay: var(--color-surface);
+  --color-ink: var(--color-text);
+  --color-ink-2: var(--color-neutral-800);
+  --color-ink-3: var(--color-neutral-700);
+  --color-ink-inverse: #ffffff;
+  --color-faint: var(--color-neutral-600);
+  --color-border: var(--color-divider);
+  --color-border-strong: var(--color-neutral-300);
+  --color-accent-hover: var(--color-accent-600);
+  --color-accent-bg: var(--color-accent-100);
+  --color-ai: var(--color-accent-2);
+  --color-ai-bg: var(--color-accent-2-100);
+  --color-ai-border: var(--color-accent-2-300);
+  --color-ok: var(--ok);
+  --color-ok-bg: #e7f2ec;
+  --color-ok-border: #c3e0d0;
+  --color-warn: var(--warn);
+  --color-warn-bg: #f8f0dd;
+  --color-warn-border: #e6d5a8;
+  --color-danger: var(--danger);
+  --color-danger-bg: #fbeceb;
+  --color-danger-border: #f0cdc9;
+  --color-overlay: rgba(25, 27, 29, 0.42);
+  --color-provider-github: #191b1d;
+  --color-provider-gitlab: #b8451f;
+  --color-provider-gitea: #3a5f57;
+  --shadow-elevated: var(--shadow-lg);
 }
 
+/*
+ * Dark theme. The mockup only specifies the light palette, so the dark one is
+ * derived from it: the same hues, inverted lightness, with the accent lifted
+ * enough to stay legible on ink.
+ */
 [data-theme='dark'] {
   color-scheme: dark;
-  --color-bg: #0f1115;
-  --color-surface: #191c22;
-  --color-surface-alt: #22262d;
-  --color-surface-hover: #2a3038;
-  --color-surface-elevated: #2f353e;
-  --color-surface-overlay: #353c46;
-  --color-ink: #f6f1e8;
-  --color-ink-2: #e1d8cb;
-  --color-ink-3: #c0b6a8;
-  --color-ink-inverse: #0f1115;
-  --color-faint: #958b7d;
-  --color-border: #3f4550;
-  --color-border-strong: #5a6371;
-  --color-accent: #ff9a6d;
-  --color-accent-hover: #ffad86;
-  --color-accent-bg: #3a251d;
-  --color-ai: #c4a7ff;
-  --color-ai-bg: #2b2140;
-  --color-ai-border: #655081;
-  --color-ok: #9fe0aa;
-  --color-ok-bg: #183422;
-  --color-ok-border: #3f6949;
-  --color-warn: #f0c96a;
-  --color-warn-bg: #3a2c11;
-  --color-warn-border: #735820;
-  --color-danger: #ff9d95;
-  --color-danger-bg: #40201e;
-  --color-danger-border: #7a3a36;
-  --color-overlay: rgba(0, 0, 0, 0.56);
+
+  --color-bg: #14161a;
+  --color-surface: #1c1f24;
+  --color-text: #f1efeb;
+  --color-divider: color-mix(in srgb, #f1efeb 16%, transparent);
+
+  --color-accent: #4fb3a4;
+  --color-accent-100: #17332f;
+  --color-accent-200: #1d443e;
+  --color-accent-300: #2b6259;
+  --color-accent-600: #6ac4b6;
+  --color-accent-700: #8ad4c8;
+  --color-accent-800: #b2e4dc;
+  --color-accent-900: #d9f2ee;
+
+  --color-accent-2: #c4906a;
+  --color-accent-2-100: #33251b;
+  --color-accent-2-300: #6b4c33;
+  --color-accent-2-800: #e2c4ac;
+  --color-accent-2-900: #f0dece;
+
+  --color-neutral-100: #22262c;
+  --color-neutral-200: #2b3037;
+  --color-neutral-300: #3a4048;
+  --color-neutral-500: #7d838c;
+  --color-neutral-600: #9aa0a8;
+  --color-neutral-700: #b7bcc3;
+  --color-neutral-800: #d5d9dd;
+  --color-neutral-900: #f1efeb;
+
+  --ok: #64c48f;
+  --warn: #d9ab52;
+  --danger: #e58d84;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 38px rgba(0, 0, 0, 0.55);
+
+  --color-ink-inverse: #14161a;
+  --color-ok-bg: #17301f;
+  --color-ok-border: #2f5c3e;
+  --color-warn-bg: #33280f;
+  --color-warn-border: #6a541f;
+  --color-danger-bg: #3a1f1c;
+  --color-danger-border: #703935;
+  --color-overlay: rgba(0, 0, 0, 0.58);
   --color-provider-github: #e6e7ea;
-  --color-provider-gitlab: #fc8e6f;
-  --color-provider-gitea: #95acc2;
-  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.42);
+  --color-provider-gitlab: #e59173;
+  --color-provider-gitea: #9ab8b0;
 }
 
 html {
   min-height: 100%;
-  font-size: 13px;
-  line-height: 1.45;
+  /*
+   * Always reserve the scrollbar gutter. Without it, navigating from a short
+   * page to a tall one narrows the viewport by the scrollbar width and every
+   * centered container — the header, the tab row — jumps sideways.
+   */
+  scrollbar-gutter: stable;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -89,17 +181,43 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--color-bg);
-  color: var(--color-ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+/*
+ * The design system sets headings in the body face — a display face was tried
+ * and rejected in v3, so headings differ from body copy by weight and
+ * tracking only.
+ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 a {
-  color: var(--color-accent);
+  color: var(--color-accent-700);
   text-decoration: none;
 }
 
 a:hover {
+  color: var(--color-accent-800);
   text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 26%, transparent);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 button {

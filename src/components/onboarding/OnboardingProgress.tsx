@@ -23,7 +23,7 @@ export function OnboardingProgress({ done, total, requiredRemaining, totalMinute
   const trackStyle: CSSProperties = {
     height: 6,
     borderRadius: 999,
-    background: T.surfaceAlt,
+    background: T.neutral200,
     overflow: 'hidden',
   }
 
@@ -35,7 +35,7 @@ export function OnboardingProgress({ done, total, requiredRemaining, totalMinute
   }
 
   return (
-    <div style={{ marginBottom: 18 }}>
+    <div>
       <div
         style={trackStyle}
         role="progressbar"
@@ -46,7 +46,7 @@ export function OnboardingProgress({ done, total, requiredRemaining, totalMinute
       >
         <div style={barStyle} />
       </div>
-      <div style={{ marginTop: 6, display: 'flex', gap: 10, fontSize: 12.5, color: T.ink3 }}>
+      <div style={{ marginTop: 6, display: 'flex', gap: 10, fontSize: 12.5, color: T.ink3, flexWrap: 'wrap' }}>
         <span>
           {done} de {total} passos
         </span>

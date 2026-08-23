@@ -1,4 +1,4 @@
-import { getApiUrl, handleResponse } from '@/lib/api/_shared'
+import { backendFetch, getApiUrl, handleResponse } from '@/lib/api/_shared'
 import {
   AssignOnboardingRequest,
   CreateGlossaryTermRequest,
@@ -40,12 +40,12 @@ function authorized(accessToken: string, init?: RequestInit): RequestInit {
 // ── flows ────────────────────────────────────────────────────────────────────
 
 export async function backendListOnboardingFlows(accessToken: string): Promise<OnboardingFlowListResponse> {
-  const response = await fetch(getApiUrl('/onboarding/flows'), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl('/onboarding/flows'), authorized(accessToken, { method: 'GET' }))
   return handleResponse<OnboardingFlowListResponse>(response)
 }
 
 export async function backendGetOnboardingFlow(accessToken: string, flowId: string): Promise<OnboardingFlow> {
-  const response = await fetch(getApiUrl(`/onboarding/flows/${flowId}`), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl(`/onboarding/flows/${flowId}`), authorized(accessToken, { method: 'GET' }))
   return handleResponse<OnboardingFlow>(response)
 }
 
@@ -108,7 +108,7 @@ export async function backendReplaceOnboardingSteps(
 export async function backendListOnboardingTemplates(
   accessToken: string
 ): Promise<OnboardingTemplateListResponse> {
-  const response = await fetch(getApiUrl('/onboarding/templates'), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl('/onboarding/templates'), authorized(accessToken, { method: 'GET' }))
   return handleResponse<OnboardingTemplateListResponse>(response)
 }
 
@@ -117,7 +117,7 @@ export async function backendListOnboardingTemplates(
 export async function backendListOnboardingAssignments(
   accessToken: string
 ): Promise<OnboardingAssignmentListResponse> {
-  const response = await fetch(getApiUrl('/onboarding/assignments'), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl('/onboarding/assignments'), authorized(accessToken, { method: 'GET' }))
   return handleResponse<OnboardingAssignmentListResponse>(response)
 }
 
@@ -135,7 +135,7 @@ export async function backendAssignOnboarding(
 // ── the runner ───────────────────────────────────────────────────────────────
 
 export async function backendGetMyOnboarding(accessToken: string): Promise<OnboardingRunListResponse> {
-  const response = await fetch(getApiUrl('/onboarding/me'), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl('/onboarding/me'), authorized(accessToken, { method: 'GET' }))
   return handleResponse<OnboardingRunListResponse>(response)
 }
 
@@ -177,7 +177,7 @@ export async function backendSubmitOnboardingFeedback(
 // ── glossary ─────────────────────────────────────────────────────────────────
 
 export async function backendListGlossaryTerms(accessToken: string): Promise<GlossaryTermListResponse> {
-  const response = await fetch(getApiUrl('/glossary'), authorized(accessToken, { method: 'GET' }))
+  const response = await backendFetch(getApiUrl('/glossary'), authorized(accessToken, { method: 'GET' }))
   return handleResponse<GlossaryTermListResponse>(response)
 }
 
@@ -205,6 +205,6 @@ export async function backendUpdateGlossaryTerm(
 }
 
 export async function backendDeleteGlossaryTerm(accessToken: string, termId: string): Promise<void> {
-  const response = await fetch(getApiUrl(`/glossary/${termId}`), authorized(accessToken, { method: 'DELETE' }))
+  const response = await backendFetch(getApiUrl(`/glossary/${termId}`), authorized(accessToken, { method: 'DELETE' }))
   return handleResponse<void>(response)
 }

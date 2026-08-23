@@ -4,7 +4,6 @@ import { CSSProperties, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
-import { MFIcon } from '@/components/icons/MFIcon'
 import { OnboardingRunListResponse } from '@/lib/types/onboarding'
 
 /**
@@ -47,24 +46,26 @@ export function OnboardingBanner() {
   const style: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    padding: '10px 14px',
-    marginBottom: 16,
+    gap: 12,
+    padding: '11px 14px',
+    marginBottom: 22,
     borderRadius: T.radius.card,
-    border: `1px solid ${T.accentBg}`,
     background: T.accentBg,
-    fontSize: 13,
+    fontSize: 13.5,
   }
 
   return (
     <div style={style} role="status">
-      <MFIcon name="flag" size={13} color={T.accent} />
+      <span
+        aria-hidden="true"
+        style={{ width: 7, height: 7, borderRadius: '50%', background: T.accent, flexShrink: 0 }}
+      />
       <span style={{ color: T.ink }}>
         Seu onboarding <strong>{pending.name}</strong> está em {pending.done} de {pending.total} passos.
       </span>
       <Link
         href="/onboarding"
-        style={{ marginLeft: 'auto', color: T.accent, fontWeight: 600, textDecoration: 'none' }}
+        style={{ marginLeft: 'auto', color: T.accent700, fontWeight: 600, textDecoration: 'none', fontSize: 13 }}
       >
         Continuar →
       </Link>

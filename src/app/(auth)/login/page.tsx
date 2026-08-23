@@ -76,37 +76,21 @@ export default function LoginPage() {
   }
 
   const dividerStyle: CSSProperties = {
-    textAlign: 'center' as const,
-    color: T.faint,
-    fontSize: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
     margin: '20px 0',
-    position: 'relative',
   }
 
   const dividerLineStyle: CSSProperties = {
-    position: 'absolute' as const,
-    top: '50%',
-    left: 0,
-    right: 0,
-    height: '1px',
+    flex: 1,
+    height: 1,
     backgroundColor: T.border,
   }
 
   const dividerTextStyle: CSSProperties = {
-    position: 'relative' as const,
-    display: 'inline-block',
-    backgroundColor: T.surface,
-    padding: '0 8px',
-  }
-
-  const linkStyle: CSSProperties = {
-    textAlign: 'center' as const,
-    marginTop: '16px',
-  }
-
-  const linkTextStyle: CSSProperties = {
-    fontSize: '13px',
-    color: T.ink2,
+    fontSize: '12px',
+    color: T.faint,
   }
 
   if (showOrgInput && oauthProvider) {
@@ -144,19 +128,31 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Bem-vindo de volta"
-      subtitle="Acesse sua plataforma de desenvolvimento"
+      title="Entrar"
+      subtitle="A organização é resolvida depois da autenticação. Só perguntamos quando você pertence a mais de uma."
       footer={
-        <div style={linkStyle}>
-          <span style={linkTextStyle}>
-            Não tem conta?{' '}
-            <a href="/register" style={{ color: T.accent }}>
-              Criar conta
-            </a>
-          </span>
-        </div>
+        <span>
+          Sem conta?{' '}
+          <a href="/register" style={{ color: T.accent700 }}>
+            Criar organização
+          </a>
+          .
+        </span>
       }
     >
+      {/* OAuth first: the mockup leads with the provider the code already
+          lives in, and keeps e-mail as the fallback below the rule. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <OAuthButton provider="github" onClick={() => handleOAuth('github')} disabled={loading} />
+        <OAuthButton provider="gitlab" onClick={() => handleOAuth('gitlab')} disabled={loading} />
+      </div>
+
+      <div style={dividerStyle}>
+        <span style={dividerLineStyle} />
+        <span style={dividerTextStyle}>ou com e-mail</span>
+        <span style={dividerLineStyle} />
+      </div>
+
       {error && <Alert variant="danger">{error}</Alert>}
 
       <form onSubmit={handleSubmit}>
@@ -165,7 +161,7 @@ export default function LoginPage() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="seu@email.com"
+          placeholder="voce@empresa.com"
           autoComplete="email"
           required
         />
@@ -183,30 +179,14 @@ export default function LoginPage() {
         <Button
           type="submit"
           variant="primary"
+          size="lg"
           loading={loading}
           disabled={loading}
-          style={{ width: '100%', marginBottom: '16px' }}
+          style={{ width: '100%' }}
         >
           Entrar
         </Button>
       </form>
-
-      <div style={dividerStyle}>
-        <div style={dividerLineStyle} />
-        <div style={dividerTextStyle}>ou continue com</div>
-      </div>
-
-      <OAuthButton
-        provider="github"
-        onClick={() => handleOAuth('github')}
-        disabled={loading}
-      />
-
-      <OAuthButton
-        provider="gitlab"
-        onClick={() => handleOAuth('gitlab')}
-        disabled={loading}
-      />
     </AuthShell>
   )
 }

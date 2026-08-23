@@ -157,8 +157,7 @@ export function MembersSection({ user }: MembersSectionProps) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <MFIcon name="user" size={15} color={T.accent} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Membros</span>
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: T.ink, margin: 0 }}>Membros</h2>
         <div style={{ flex: 1 }} />
         <Button variant="primary" size="md" onClick={() => setInviteOpen(true)}>
           <MFIcon name="plus" size={11} />
