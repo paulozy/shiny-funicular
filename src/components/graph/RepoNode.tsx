@@ -3,7 +3,7 @@
 import { CSSProperties } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { T } from '@/lib/tokens'
-import { RepositoryGraphNode } from '@/lib/types/graph'
+import { RepoGraphNode } from '@/lib/types/graph'
 
 const PROVIDER_COLORS: Record<string, string> = {
   github: T.providerGithub,
@@ -16,7 +16,9 @@ const PROVIDER_COLORS: Record<string, string> = {
  * ~200x60 dimensions that `layoutWithDagre` assumes.
  */
 export function RepoNode({ data, selected }: NodeProps) {
-  const node = data as unknown as RepositoryGraphNode
+  // The node registry routes by kind, so this component only ever receives a repo
+  // node — narrowing the type here is what makes that guarantee checkable.
+  const node = data as unknown as RepoGraphNode
   const dotColor = PROVIDER_COLORS[node.type] ?? T.ink2
 
   const containerStyle: CSSProperties = {

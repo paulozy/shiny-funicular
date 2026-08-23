@@ -5,7 +5,8 @@ import { T } from '@/lib/tokens'
 import { apiFetch } from '@/lib/api/client'
 import {
   CreateRepositoryRelationshipRequest,
-  RELATIONSHIP_KINDS,
+  DECLARABLE_RELATIONSHIP_KINDS,
+  nodeUUID,
   RELATIONSHIP_KIND_LABELS,
   RelationshipKind,
   RepositoryGraphEdge,
@@ -55,11 +56,21 @@ export function RelationshipModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Only repositories can be the ends of a declared relationship. APIs and
+  // resources are derived from a repository's own files, so offering them here
+  // would let someone hand-write a competing copy of a derived fact — and the
+  // API would refuse the id anyway.
+  const repositoryOptions = nodes
+    .filter((n) => n.kind === 'repo')
+    .map((n) => ({ id: nodeUUID(n.id), name: n.name }))
+
   useEffect(() => {
     if (!isOpen) return
     if (initialEdge) {
-      setSourceId(initialEdge.source_repository_id)
-      setTargetId(initialEdge.target_repository_id)
+      // The edge carries prefixed node ids; the form and the API both want bare
+      // repository UUIDs.
+      setSourceId(nodeUUID(initialEdge.source))
+      setTargetId(nodeUUID(initialEdge.target))
       setKind(initialEdge.kind)
       setLabel(initialEdge.label ?? '')
       setDescription(initialEdge.description ?? '')
@@ -195,7 +206,7 @@ export function RelationshipModal({
                 <option value="" disabled>
                   Selecione um repositório
                 </option>
-                {nodes.map((n) => (
+                {repositoryOptions.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.name}
                   </option>
@@ -213,7 +224,7 @@ export function RelationshipModal({
                 <option value="" disabled>
                   Selecione um repositório
                 </option>
-                {nodes.map((n) => (
+                {repositoryOptions.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.name}
                   </option>
@@ -227,7 +238,7 @@ export function RelationshipModal({
                 value={kind}
                 onChange={(e) => setKind(e.target.value as RelationshipKind)}
               >
-                {RELATIONSHIP_KINDS.map((k) => (
+                {DECLARABLE_RELATIONSHIP_KINDS.map((k) => (
                   <option key={k} value={k}>
                     {RELATIONSHIP_KIND_LABELS[k]}
                   </option>

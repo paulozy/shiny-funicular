@@ -3,8 +3,8 @@ import { RelationshipModal } from './RelationshipModal'
 import { RepositoryGraphNode } from '@/lib/types/graph'
 
 const nodes: RepositoryGraphNode[] = [
-  { id: 'r1', name: 'web', url: 'https://github.com/org/web', type: 'github' },
-  { id: 'r2', name: 'api', url: 'https://github.com/org/api', type: 'github' },
+  { id: 'repo:r1', kind: 'repo', name: 'web', url: 'https://github.com/org/web', type: 'github' },
+  { id: 'repo:r2', kind: 'repo', name: 'api', url: 'https://github.com/org/api', type: 'github' },
 ]
 
 describe('RelationshipModal', () => {
