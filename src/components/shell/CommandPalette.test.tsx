@@ -66,6 +66,54 @@ describe('CommandPalette', () => {
     expect(push).toHaveBeenCalledWith('/')
   })
 
+  it('marks the first item as selected and moves the selection with the arrow keys', async () => {
+    render(<CommandPalette open onClose={() => undefined} />)
+
+    const input = screen.getByPlaceholderText('Buscar rotas, repositórios e ações…')
+    const codeHub = screen.getByText('Code Hub').closest('[cmdk-item]') as HTMLElement
+    const settings = screen
+      .getByText('Configurações da organização')
+      .closest('[cmdk-item]') as HTMLElement
+
+    // cmdk selects the first item on mount; the highlight rule keys off this
+    // attribute, so asserting on it guards the arrow-key affordance.
+    await waitFor(() => expect(codeHub).toHaveAttribute('data-selected', 'true'))
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    await waitFor(() => expect(settings).toHaveAttribute('data-selected', 'true'))
+    expect(codeHub).not.toHaveAttribute('data-selected', 'true')
+
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    await waitFor(() => expect(codeHub).toHaveAttribute('data-selected', 'true'))
+  })
+
+  it('opens the arrow-selected entry on Enter', async () => {
+    const onClose = jest.fn()
+    render(<CommandPalette open onClose={onClose} />)
+
+    const input = screen.getByPlaceholderText('Buscar rotas, repositórios e ações…')
+    await waitFor(() =>
+      expect(screen.getByText('Code Hub').closest('[cmdk-item]')).toHaveAttribute(
+        'data-selected',
+        'true',
+      ),
+    )
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/settings'))
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('shows the keyboard hints in the footer', () => {
+    render(<CommandPalette open onClose={() => undefined} />)
+
+    expect(screen.getByText(/navegar/)).toBeInTheDocument()
+    expect(screen.getByText(/abrir/)).toBeInTheDocument()
+    expect(screen.getByText(/fechar/)).toBeInTheDocument()
+  })
+
   it('runs the action onSelect and closes when an action entry is selected', () => {
     const onClose = jest.fn()
     const onSelect = jest.fn()

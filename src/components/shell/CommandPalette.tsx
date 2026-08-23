@@ -116,6 +116,9 @@ export function CommandPalette({ open, onClose, actions = [] }: CommandPalettePr
   const listStyle: CSSProperties = {
     overflow: 'auto',
     padding: 6,
+    // Needed so the list — not the palette — is what scrolls now that a footer
+    // sits below it inside the flex column.
+    minHeight: 0,
   }
 
   const itemStyle: CSSProperties = {
@@ -146,6 +149,28 @@ export function CommandPalette({ open, onClose, actions = [] }: CommandPalettePr
     textAlign: 'center',
   }
 
+  const footerStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '8px 14px',
+    borderTop: `1px solid ${T.border}`,
+    fontSize: 11,
+    color: T.faint,
+  }
+
+  const hintKeyStyle: CSSProperties = {
+    display: 'inline-block',
+    fontFamily: T.mono,
+    fontSize: 10,
+    padding: '0 4px',
+    marginRight: 4,
+    border: `1px solid ${T.border}`,
+    borderRadius: 3,
+    background: T.surfaceAlt,
+    color: T.ink3,
+  }
+
   const kbdStyle: CSSProperties = {
     fontFamily: T.mono,
     fontSize: 10.5,
@@ -172,9 +197,40 @@ export function CommandPalette({ open, onClose, actions = [] }: CommandPalettePr
     >
       <Command
         label="Paleta de comandos"
+        className="cmd-palette"
         style={paletteStyle}
         // cmdk handles arrow-key navigation, enter to select, and filtering.
+        // `loop` makes ArrowDown on the last item wrap back to the first.
+        loop
       >
+        {/*
+         * The selected-item highlight has to live in a stylesheet: cmdk marks the
+         * active row with `data-selected="true"` and inline styles cannot react to
+         * an attribute. Without this rule the arrow keys moved the selection with
+         * no visible feedback, which read as "arrows don't work".
+         */}
+        <style>{`
+          .cmd-palette [cmdk-item] {
+            border-left: 2px solid transparent;
+            transition: background 90ms ease, border-color 90ms ease;
+          }
+          .cmd-palette [cmdk-item][data-selected='true'] {
+            background: ${T.surfaceHover};
+            border-left-color: ${T.accent};
+            color: ${T.ink};
+          }
+          .cmd-palette [cmdk-item][data-selected='true']::after {
+            content: '↵';
+            margin-left: auto;
+            font-family: ${T.mono};
+            font-size: 11px;
+            color: ${T.ink3};
+          }
+          .cmd-palette [cmdk-item][data-disabled='true'] {
+            opacity: 0.45;
+            cursor: default;
+          }
+        `}</style>
         <div style={inputWrapperStyle}>
           <MFIcon name="search" size={14} color={T.ink3} />
           <Command.Input
@@ -246,6 +302,19 @@ export function CommandPalette({ open, onClose, actions = [] }: CommandPalettePr
             ))}
           </Command.Group>
         </Command.List>
+
+        <div style={footerStyle}>
+          <span>
+            <span style={hintKeyStyle}>↑</span>
+            <span style={hintKeyStyle}>↓</span> navegar
+          </span>
+          <span>
+            <span style={hintKeyStyle}>↵</span> abrir
+          </span>
+          <span>
+            <span style={hintKeyStyle}>esc</span> fechar
+          </span>
+        </div>
       </Command>
     </div>
   )
