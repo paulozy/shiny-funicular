@@ -15,6 +15,21 @@ interface PageSkeletonProps {
   variant?: PageSkeletonVariant
   /** Hide the eyebrow / title block at the top. */
   hideHeader?: boolean
+  /**
+   * Whether the skeleton supplies its own page padding.
+   *
+   * Top-level routes render their `AppShell` from inside the page, so while
+   * that page is streaming there is no shell around the skeleton and it has to
+   * pad itself — the default.
+   *
+   * The per-repository routes are the other case: `[id]/layout.tsx` renders the
+   * shell, so a `loading.tsx` below it lands *inside* the shell's content
+   * container, which already pads by exactly this much. Padding again indented
+   * the skeleton 56px while the real content sat at 28px, so every click
+   * between repository tabs visibly jogged the layout sideways. Those callers
+   * pass `padded={false}`.
+   */
+  padded?: boolean
 }
 
 /**
@@ -22,9 +37,13 @@ interface PageSkeletonProps {
  * tree is still streaming. Mirrors the visual rhythm of the actual pages so
  * the layout doesn't pop when content arrives.
  */
-export function PageSkeleton({ variant = 'grid', hideHeader = false }: PageSkeletonProps) {
+export function PageSkeleton({
+  variant = 'grid',
+  hideHeader = false,
+  padded = true,
+}: PageSkeletonProps) {
   const wrapperStyle: CSSProperties = {
-    padding: '20px 24px 28px',
+    padding: padded ? '26px 28px 70px' : 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 18,

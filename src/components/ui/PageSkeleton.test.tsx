@@ -24,6 +24,21 @@ describe('PageSkeleton', () => {
     expect(withoutHeader).toBeLessThan(withHeader)
   })
 
+  // Regression guard. The per-repository `loading.tsx` files render inside the
+  // shell's content container, which already pads by 26/28/70. When the
+  // skeleton padded itself again the placeholder sat 56px in while the real
+  // content sat at 28px, so every click between repository tabs jogged the
+  // layout sideways.
+  it('pads itself by default, for pages that render their own shell', () => {
+    const { container } = render(<PageSkeleton variant="list" />)
+    expect(container.firstChild).toHaveStyle({ padding: '26px 28px 70px' })
+  })
+
+  it('drops its padding when padded=false, for routes already inside the shell', () => {
+    const { container } = render(<PageSkeleton variant="list" padded={false} />)
+    expect(container.firstChild).toHaveStyle({ padding: '0px' })
+  })
+
   // Each variant must render *something* — the count differs but a non-empty
   // tree is the minimum contract. Snapshot tests would be brittle here.
   it.each<PageSkeletonVariant>(['grid', 'split', 'list', 'detail'])(
