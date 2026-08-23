@@ -92,3 +92,64 @@ describe('PullRequestDetailClient', () => {
     expect(screen.queryByText(/revisão da ia/i)).not.toBeInTheDocument()
   })
 })
+
+// The point of this iteration: reviewing used to be possible only from the
+// list's side drawer, never from the page that actually shows the diff.
+describe('PullRequestDetailClient review actions', () => {
+  it('offers no verdicts to a viewer who cannot review', () => {
+    render(
+      <PullRequestDetailClient repoId="r1" prNumber={42} initialDetail={detail()} loadError={null} />
+    )
+    expect(screen.queryByRole('button', { name: 'Aprovar' })).not.toBeInTheDocument()
+  })
+
+  it('offers both verdicts on the PR page itself', () => {
+    render(
+      <PullRequestDetailClient
+        repoId="r1"
+        prNumber={42}
+        initialDetail={detail()}
+        loadError={null}
+        canReview
+        provider="github"
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Solicitar mudanças' })).toBeInTheDocument()
+  })
+
+  it('hides "request changes" for a GitLab repository', () => {
+    render(
+      <PullRequestDetailClient
+        repoId="r1"
+        prNumber={42}
+        initialDetail={detail()}
+        loadError={null}
+        canReview
+        provider="gitlab"
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Solicitar mudanças' })).not.toBeInTheDocument()
+  })
+
+  // Refusing before the click beats a 409 after it.
+  it('disables the verdicts when the backend flagged the PR as unreviewable', () => {
+    const blocked = detail({
+      pull_request: { ...basePR, review_blocked_reason: 'self_authored' },
+    })
+
+    render(
+      <PullRequestDetailClient
+        repoId="r1"
+        prNumber={42}
+        initialDetail={blocked}
+        loadError={null}
+        canReview
+        provider="github"
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeDisabled()
+    expect(screen.getByText(/Você abriu este PR/)).toBeInTheDocument()
+  })
+})

@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { T } from '@/lib/tokens'
 import { MFIcon } from '@/components/icons/MFIcon'
@@ -8,18 +9,32 @@ import { Button } from '@/components/ui/Button'
 import { PullRequestDetailResponse } from '@/lib/types/pull_request'
 import { DiffView } from '@/components/pull-requests/DiffView'
 import { PullRequestBody } from '@/components/pull-requests/PullRequestBody'
+import { ReviewActions } from '@/components/pull-requests/ReviewActions'
+import { ReviewStateBadge } from '@/components/pull-requests/ReviewStateBadge'
+import { RepoProvider } from '@/lib/types/repository'
 
 interface PullRequestDetailClientProps {
   repoId: string
   prNumber: number
   initialDetail: PullRequestDetailResponse | null
   loadError: string | null
+  /**
+   * Whether the viewer's role allows submitting a verdict. Defaults to false:
+   * this page renders for anyone who can read the repository, and the review
+   * controls are the exception, not the rule.
+   */
+  canReview?: boolean
+  /** The repository's host — decides whether "request changes" is offered. */
+  provider?: RepoProvider
 }
 
 export function PullRequestDetailClient({
   repoId,
+  prNumber,
   initialDetail,
   loadError,
+  canReview = false,
+  provider,
 }: PullRequestDetailClientProps) {
   const detail = initialDetail
   const pr = detail?.pull_request
@@ -33,6 +48,7 @@ export function PullRequestDetailClient({
   const AUTO_OPEN_MAX_CHANGES = 120
 
   const [expandAll, setExpandAll] = useState<boolean | null>(null)
+  const router = useRouter()
 
   const pageStyle: CSSProperties = {}
   const backLinkStyle: CSSProperties = {
@@ -103,6 +119,11 @@ export function PullRequestDetailClient({
           <span style={branchPillStyle}>{pr.head_branch}</span>
           <span style={{ color: T.faint }}>→</span>
           <span style={branchPillStyle}>{pr.base_branch}</span>
+          <ReviewStateBadge
+            decision={pr.review_decision}
+            approvedBy={pr.approved_by}
+            changesRequestedBy={pr.changes_requested_by}
+          />
           {pr.changed_files !== null && (
             <>
               <span style={{ color: T.ok, fontWeight: 600 }}>+{pr.additions_count ?? 0}</span>
@@ -120,6 +141,20 @@ export function PullRequestDetailClient({
               Abrir no provedor
             </Button>
           </a>
+          {/* The verdict belongs here, on the page that shows the diff — this
+              is where a reviewer has the context to decide. It used to be
+              reachable only from the list's side drawer. */}
+          <ReviewActions
+            repoId={repoId}
+            number={prNumber}
+            provider={provider}
+            canReview={canReview}
+            blockedReason={pr.review_blocked_reason ?? null}
+            /* The verdict is now part of the page's state, so the page has to
+               re-read it — otherwise the badge keeps showing what was true
+               before the click. */
+            onReviewed={() => router.refresh()}
+          />
         </div>
       </div>
 

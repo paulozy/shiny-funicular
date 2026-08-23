@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { backendGetPullRequest } from '@/lib/api/pull_requests'
+import { canReviewPullRequest } from '@/lib/permissions'
 import { PullRequestDetailClient } from './PullRequestDetailClient'
 import { getSessionUser, listRepositories } from '@/lib/api/request-cache'
 
@@ -46,6 +47,8 @@ export default async function PullRequestDetailPage({ params }: PullRequestDetai
       prNumber={prNumber}
       initialDetail={initialDetail}
       loadError={loadError}
+      canReview={canReviewPullRequest(user)}
+      provider={repo.provider ?? repo.type}
     />
   )
 }
