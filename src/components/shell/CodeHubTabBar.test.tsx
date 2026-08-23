@@ -14,7 +14,9 @@ describe('CodeHubTabBar', () => {
     expect(reposTab).toHaveAttribute('aria-current', 'page')
 
     expect(screen.getByRole('link', { name: 'Documentação' })).toHaveAttribute('href', '/docs')
-    expect(screen.getByRole('link', { name: 'Grafo' })).toHaveAttribute('href', '/graph')
+    // The graph moved to the Arquitetura hub, so it must not also sit here — two
+    // entry points to one page is how a nav starts lying about its structure.
+    expect(screen.queryByRole('link', { name: 'Grafo' })).not.toBeInTheDocument()
     // AI code scaffolding is gone — the tab must not link to a dead route.
     expect(screen.queryByRole('link', { name: 'Templates' })).not.toBeInTheDocument()
   })

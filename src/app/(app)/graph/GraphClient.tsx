@@ -1,8 +1,11 @@
 'use client'
 
-import { CSSProperties, useCallback, useMemo, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { UserInfo } from '@/lib/types/auth'
 import {
+  GRAPH_NODE_KINDS,
+  GRAPH_NODE_KIND_LABELS,
+  GraphNodeKind,
   RELATIONSHIP_KINDS,
   RELATIONSHIP_KIND_LABELS,
   RelationshipKind,
@@ -33,6 +36,13 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
   const [kindFilters, setKindFilters] = useState<Set<RelationshipKind>>(
     new Set(RELATIONSHIP_KINDS)
   )
+  // Node-kind toggles. The default matches the server's: resources are off,
+  // because they are the most numerous and least precise layer and leading with
+  // them would make the graph's first impression its noisiest.
+  const [nodeKinds, setNodeKinds] = useState<Set<GraphNodeKind>>(new Set(['repo', 'api']))
+  // The certainty threshold. It does more for legibility than any per-edge
+  // encoding: it is what lets a person see "only what is certain" in one click.
+  const [minConfidence, setMinConfidence] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const [modalState, setModalState] = useState<
     | { open: false }
@@ -54,18 +64,50 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
     })
   }
 
+  const graphQuery = useMemo(() => {
+    const params = new URLSearchParams({ include_metadata: 'true' })
+    // `repo` is always sent by the server, so only the optional kinds need
+    // naming; sorting keeps the URL stable so the fetch is cacheable.
+    params.set('node_kinds', [...nodeKinds].sort().join(','))
+    if (minConfidence > 0) params.set('min_confidence', String(minConfidence))
+    return `/api/repositories/graph?${params.toString()}`
+  }, [nodeKinds, minConfidence])
+
   const refresh = useCallback(async () => {
     try {
-      const graph = await apiFetch<RepositoryGraphResponse>(
-        '/api/repositories/graph?include_metadata=true',
-        { method: 'GET' }
-      )
+      const graph = await apiFetch<RepositoryGraphResponse>(graphQuery, { method: 'GET' })
       setNodes(graph.nodes)
       setEdges(graph.edges)
     } catch {
       // ignore — UI keeps last good state
     }
-  }, [])
+  }, [graphQuery])
+
+  // Both filters are applied server-side, because a node kind that is off must not
+  // be fetched at all — that is the point of the toggle, given the node count can
+  // multiply several times over with resources on.
+  //
+  // The ref holds the query the payload we already have was fetched with. The page
+  // server-renders with the same defaults, so without this the first mount would
+  // refetch an identical graph — two requests to draw one canvas.
+  const fetchedQuery = useRef(graphQuery)
+  useEffect(() => {
+    if (fetchedQuery.current === graphQuery) return
+    fetchedQuery.current = graphQuery
+    refresh()
+  }, [graphQuery, refresh])
+
+  const handleNodeKindToggle = (kind: GraphNodeKind) => {
+    // Repositories are never optional: every other node hangs off one, so hiding
+    // them would leave APIs and resources floating with no owner visible.
+    if (kind === 'repo') return
+    setNodeKinds((prev) => {
+      const next = new Set(prev)
+      if (next.has(kind)) next.delete(kind)
+      else next.add(kind)
+      return next
+    })
+  }
 
   const handleEdgeCreatedOrUpdated = useCallback((edge: RepositoryGraphEdge) => {
     setEdges((prev) => {
@@ -233,8 +275,7 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
   return (
     <AppShell
       user={user}
-      activeHub="code"
-      codeTab="graph"
+      activeHub="arch"
       topRight={
         mayManage ? (
         <Button
@@ -251,8 +292,55 @@ export function GraphClient({ user, initialGraph }: GraphClientProps) {
     >
       <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Grafo de dependências</h1>
       <p style={{ fontSize: 14, color: T.ink3, margin: '0 0 18px' }}>
-        {nodes.length} repositórios · {visibleEdges.length} de {edges.length} relações visíveis.
+        {nodes.filter((n) => n.kind === 'repo').length} repositórios · {nodes.length} nós ·{' '}
+        {visibleEdges.length} de {edges.length} relações visíveis.
       </p>
+
+      <div style={headerStyle}>
+        {GRAPH_NODE_KINDS.map((kind) => {
+          const active = nodeKinds.has(kind)
+          const locked = kind === 'repo'
+          return (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => handleNodeKindToggle(kind)}
+              disabled={locked}
+              aria-pressed={active}
+              title={locked ? 'Repositórios são sempre exibidos' : undefined}
+              style={{
+                ...chipStyle(active, T.ink2),
+                cursor: locked ? 'default' : 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              {GRAPH_NODE_KIND_LABELS[kind]}
+            </button>
+          )
+        })}
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 11.5,
+            color: T.ink3,
+            marginLeft: 4,
+          }}
+        >
+          Confiança ≥ {minConfidence.toFixed(2)}
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={minConfidence}
+            onChange={(e) => setMinConfidence(Number(e.target.value))}
+            aria-label="Confiança mínima"
+            style={{ width: 96 }}
+          />
+        </label>
+      </div>
 
       <div style={headerStyle}>
         {RELATIONSHIP_KINDS.map((kind) => {

@@ -36,6 +36,10 @@ export async function backendGetGraph(
   if (params?.repository_id) url.searchParams.set('repository_id', params.repository_id)
   if (params?.kind) url.searchParams.set('kind', params.kind)
   if (params?.source) url.searchParams.set('source', params.source)
+  if (params?.node_kinds?.length) url.searchParams.set('node_kinds', params.node_kinds.join(','))
+  if (params?.min_confidence !== undefined) {
+    url.searchParams.set('min_confidence', String(params.min_confidence))
+  }
   if (params?.include_metadata !== undefined) {
     url.searchParams.set('include_metadata', String(params.include_metadata))
   }

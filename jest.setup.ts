@@ -1,3 +1,12 @@
+// `structuredClone` is a browser and Node global that this jsdom version does not
+// install. @dagrejs/dagre calls it during layout, so any component test that
+// renders the graph dies on a ReferenceError rather than on anything it meant to
+// assert. Like the observers below, this is an environmental gap, not behaviour:
+// the JSON round trip is enough for dagre's plain graph objects.
+if (typeof globalThis.structuredClone !== 'function') {
+  globalThis.structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value))
+}
+
 import '@testing-library/jest-dom'
 import 'jest-axe/extend-expect'
 

@@ -19,6 +19,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params
     const response = await backendSyncRepository(token, id)
+    // The body's `status` is the whole point now — `queued`, `throttled` or
+    // `already_syncing` — so it is forwarded verbatim. A dead queue never reaches
+    // here: the backend answers 503 and the catch below carries that through.
     return NextResponse.json(response, { status: 202 })
   } catch (error) {
     const legacy = error as { statusCode?: number; errorResponse?: { error?: string } }

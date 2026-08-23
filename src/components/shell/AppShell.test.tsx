@@ -53,7 +53,23 @@ describe('AppShell header', () => {
 
     expect(screen.queryByRole('link', { name: 'Infra' })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Infra — Em breve')).toBeInTheDocument()
-    expect(screen.getByLabelText('Arquitetura — Em breve')).toBeInTheDocument()
+    expect(screen.getByLabelText('Deploys — Em breve')).toBeInTheDocument()
+  })
+
+  // Arquitetura shipped, so it must link rather than say "Em breve". A live
+  // feature behind a greyed-out label is worse than no label: it tells people the
+  // thing does not exist.
+  it('links the Arquitetura hub now that the graph carries the domain', () => {
+    render(
+      <AppShell user={user} activeHub="arch">
+        <div>content</div>
+      </AppShell>
+    )
+
+    const archHub = screen.getByRole('link', { name: 'Arquitetura' })
+    expect(archHub).toHaveAttribute('href', '/graph')
+    expect(archHub).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByLabelText('Arquitetura — Em breve')).not.toBeInTheDocument()
   })
 
   it('links organization settings from the header', () => {

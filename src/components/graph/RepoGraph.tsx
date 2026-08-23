@@ -16,6 +16,8 @@ import { layoutWithDagre, type LayoutDirection } from '@/lib/graph/dagre-layout'
 import { toReactFlowEdge } from '@/lib/graph/edge-styles'
 import { RepositoryGraphEdge, RepositoryGraphNode } from '@/lib/types/graph'
 import { RepoNode } from './RepoNode'
+import { ApiNode } from './ApiNode'
+import { ResourceNode } from './ResourceNode'
 import { T } from '@/lib/tokens'
 
 interface RepoGraphProps {
@@ -31,7 +33,12 @@ interface RepoGraphProps {
   onEdgeSelect?: (edge: RepositoryGraphEdge | null) => void
 }
 
-const nodeTypes = { repo: RepoNode }
+/**
+ * The registry is the extension point the typed graph needed, and adding to it is
+ * the whole of the render change: `nodeTypes` keys match the `kind` discriminator
+ * on the payload, so a node routes to its component by kind with no branching.
+ */
+const nodeTypes = { repo: RepoNode, api: ApiNode, resource: ResourceNode }
 
 function InnerGraph({
   nodes,
@@ -46,7 +53,9 @@ function InnerGraph({
   const { rfNodes, rfEdges } = useMemo(() => {
     const initialNodes: Node[] = nodes.map((n) => ({
       id: n.id,
-      type: 'repo',
+      // The kind is the React Flow node type, which is also what dagre reads to
+      // size the node. One field drives both.
+      type: n.kind,
       position: { x: 0, y: 0 },
       data: n as unknown as Record<string, unknown>,
       selected: selectedNodeId === n.id,
@@ -108,7 +117,7 @@ function InnerGraph({
       <Background color={T.border} gap={20} />
       {showMiniMap && (
         <MiniMap
-          nodeColor={() => T.accent}
+          nodeColor={(node) => (node.type === 'resource' ? T.ok : node.type === 'api' ? T.accent2 : T.accent)}
           nodeStrokeColor={() => T.borderStrong}
           nodeBorderRadius={4}
           maskColor={T.overlay}
